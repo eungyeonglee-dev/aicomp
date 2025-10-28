@@ -72,7 +72,7 @@ echo "==> APT update and install necessary packages..."
 sudo docker exec -u root "$CONTAINER_NAME" bash -lc '
     export DEBIAN_FRONTEND=noninteractive
     apt-get -y update
-    apt-get install -y --no-install-recommends git net-tools iproute2 openssh-client vim wget
+    apt-get install -y --no-install-recommends psmisc git net-tools iproute2 openssh-client vim wget
     if dpkg -s inetutils-ping >/dev/null 2>&1; then
         if apt-cache show inetutils-ping >/dev/null 2>&1; then
             apt-get install -y inetutils-ping;

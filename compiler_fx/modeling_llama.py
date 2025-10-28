@@ -638,6 +638,7 @@ class LlamaDecoderLayer(nn.Module):
         self.mlp = LlamaMLP(config)
         self.input_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = LlamaRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.layer_idx = layer_idx
 
     def forward(
         self,
@@ -673,6 +674,10 @@ class LlamaDecoderLayer(nn.Module):
                 Arbitrary kwargs to be ignored, used for FSDP and other methods that injects code
                 into the model
         """
+                # For FASOP profiling
+        s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+        s.record()
+
         residual = hidden_states
 
         hidden_states = self.input_layernorm(hidden_states)
@@ -704,6 +709,11 @@ class LlamaDecoderLayer(nn.Module):
 
         if use_cache:
             outputs += (present_key_value,)
+
+        e.record()
+        torch.cuda.synchronize()
+        if torch.distributed.get_rank() == 0:
+            print(f"[{self.layer_idx}] layer time: {s.elapsed_time(e)}")
 
         return outputs
 
@@ -944,8 +954,8 @@ class LlamaModel(LlamaPreTrainedModel):
         #for decoder_layer in self.layers:
         for layer_number, decoder_layer in enumerate(self.layers):
             # For FASOP profiling
-            starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-            starter.record()
+            # starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+            # starter.record()
 
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
@@ -983,11 +993,11 @@ class LlamaModel(LlamaPreTrainedModel):
                 all_self_attns += (layer_outputs[1],)
 
             # For FASOP profiling
-            ender.record()
-            torch.cuda.synchronize()
-            if torch.distributed.get_rank() == 0:
+            # ender.record()
+            # torch.cuda.synchronize()
+            # if torch.distributed.get_rank() == 0:
                 #print(f"[{self.layer_number}] layer time: {starter.elapsed_time(ender)}")
-                print(f"[{layer_number}] layer time: {starter.elapsed_time(ender)}")
+                # print(f"[{layer_number}] layer time: {starter.elapsed_time(ender)}")
 
         hidden_states = self.norm(hidden_states)
 

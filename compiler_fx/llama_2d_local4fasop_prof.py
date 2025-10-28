@@ -38,7 +38,7 @@ from torch.nn.parallel import DistributedDataParallel
 
 
 
-batch_size = 32
+batch_size = 1 # per GPU
 
 rank = int(os.environ["RANK"])
 local_rank = int(os.environ["LOCAL_RANK"])
@@ -212,7 +212,7 @@ def train():
 
         if local_rank == 0:
             total_loss += loss
-            log_interval = 10
+            log_interval = 1
             if i % log_interval == 0 and i > 0:
                 cur_loss = total_loss / log_interval
                 elapsed = time.time() - start_time
@@ -226,6 +226,8 @@ def train():
                 total_loss = 0
                 start_time = time.time()
 
+        if i > 60:
+            break
 if rank == 0:
     tick = time.time()
 

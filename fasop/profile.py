@@ -38,7 +38,7 @@ class Profile():
         if self.model_name == 'T5':
             assert self.en_layer_num > 0 and self.de_layer_num > 0
             return "both"
-        elif self.model_name == 'gpt2XL':
+        elif self.model_name in ['gpt2XL','llama']:
             assert self.de_layer_num > 0
             return "de"
         elif self.model_name == 'bert':
@@ -74,8 +74,9 @@ class Profile():
             # post process    
             if self.model_name == "T5":
                 self.profile_array[-1] += dppt
-            elif self.model_name == "gpt2XL":
+            elif self.model_name in ["gpt2XL", "llama"]:
                 self.profile_array.append(dppt)
+
         return self.profile_array
         
     def save_nparray(self):
@@ -115,6 +116,13 @@ class Profile():
             print(f"./{self.model_name}_{self.gpu_type}_{self.tp_array[i]}" + self.add_name + ".npy")
             print(f"size: {len(ar)}")
             print(ar)
+            
+    def ms2sec(self):
+        for i in range(len(self.tp_array)):
+            filename = self.model_name +"_"+ self.gpu_type + "_" + self.tp_array[i] + self.add_name + ".npy"
+            ar = np.load(filename)
+            ar = ar / 1000.0
+            np.save(f'./{filename}', ar)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -161,7 +169,8 @@ def main():
                          de_layer_num=args.de_layer_num,
                          add_name=args.add_name)
 
-    profile.save_nparray()
+    # profile.save_nparray()
+    # profile.ms2sec()
     profile.print_nparray()
 
     

@@ -10,7 +10,7 @@ import os, sys, argparse
 #     return filename, layer_number, num_mb
 
 def get_args():
-    filename = "tp_output"
+    filename = "output"
     num_mb = 1
     return filename, num_mb
 
@@ -19,8 +19,8 @@ def get_logpath(filename):
     # print(j)
     #log_path = os.path.join(os.getcwd(),"log2",j)
     parent_dir = os.path.dirname(os.getcwd())
-    log_path = os.path.join(parent_dir, "log2", j) 
-    # print(log_path)
+    log_path = os.path.join(parent_dir,'fasop') 
+    # print(parent_dir)
     # print(os.listdir(log_path))
     log_list = sorted([ f for f in os.listdir(log_path) if f.endswith('.out')])
     # print(log_list)
@@ -37,7 +37,7 @@ def main():
     times_array = []
     
     sign_em = "Embedding layer:"
-    sign_layer = "layer time:"
+    sign_layer = "decoder layer:"
     sign_post = "post_process:"
     sign_array.append(sign_em)
     sign_array.append(sign_layer)
@@ -72,7 +72,9 @@ def main():
     # print(f"post process avg: {df_post_process.mean()}")
     print(df_post_process.describe())
     
-    print(f"{df_emb_layer.mean(numeric_only=True)},{df_layer.mean(numeric_only=True)},  {df_post_process.mean(numeric_only=True)}")
+    print(f"{df_emb_layer.mean(numeric_only=True)},\
+        {df_layer.mean(numeric_only=True)},\
+        {df_post_process.mean(numeric_only=True)}")
     
 
 
@@ -91,7 +93,7 @@ def get_layer_time(path, sign_array, num_mb):
             if sign_array[0] in l: # embedding
                 step_count = step_count + 1
                 # print(step_count)
-            if step_count > 40 * int(num_mb):
+            if step_count > 40 and step_count <= 50:
                 if sign_array[0] in l:# embedding
                     # print(l.split())
                     embedding_time = float(l.split()[3])

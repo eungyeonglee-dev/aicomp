@@ -66,19 +66,19 @@ class Comm:
         if use_gpu == True:
             gpu_cnt = torch.cuda.device_count()
             if self.local_rank == 0:
-                print(f"Available GPUs per server: {gpu_cnt}")
+                print(f"> Available GPUs per server: {gpu_cnt}")
             if self.local_rank + 1 > gpu_cnt:
-                logging.error(f"This program cannot create more processes than the number of available GPUs:{gpu_cnt}")
+                logging.error(f"[error] This program cannot create more processes than the number of available GPUs:{gpu_cnt}")
                 sys.exit(1)
 
             self.backend = "nccl"
-            print(f"GPU mode is used.")
+            print(f"[rank:{self.local_rank}] GPU mode is used.")
         else:
             self.backend = "gloo"
-            print(f"CPU mode is used.")
+            print("CPU mode is used.")
 
         if dist.is_initialized():
-            print(f"Communication already initialized")
+            print(f"> Communication already initialized")
             return
 
         init_method = "tcp://" + str(self.master_addr) + ":" + str(self.master_port)
@@ -94,13 +94,10 @@ class Comm:
 
         ds_type = self.ds_id2type[ds_type.item()]
         
-        #if str(ds_type) == "<class 'Tensor'>":
         if ds_type is Tensor:
             return self.receive_tensor(from_rank, device)
-        #elif str(ds_type) == "<class 'tuple'>":
         elif ds_type is tuple:
             return self.receive_tuple(from_rank, device)
-        #elif str(ds_type) == "<class 'list'>":
         elif ds_type is list:
             return self.receive_list(from_rank, device)
         elif ds_type is Size:
@@ -198,13 +195,10 @@ class Comm:
 
         shape = torch.tensor([0] * dimension.item(), dtype=torch.long, device=device)
         dist.recv(shape, from_rank)
-        #logging.debug(f" >>>>> recv_tensor, shaple:{shape} from rank:{from_rank}")
         shape = tuple(shape.tolist())
 
         ttype = torch.tensor([0], dtype=torch.long, device=device)
         dist.recv(ttype, from_rank)
-        #logging.debug(f" >>>>> recv_tensor, ttype:{ttype} from rank:{from_rank}")
-
         ttype = self.tensor_id2type[ttype.item()]
 
         obj = torch.zeros(size=shape, dtype=ttype, device=device)
@@ -227,15 +221,12 @@ class Comm:
         ttype = self.tensor_type2id[obj.dtype]
         ttype = torch.tensor(ttype, dtype=torch.long, device=device)
         dist.send(ttype, to_rank)
-        #logging.debug(f" >>>>> send_tensor, ttype:{ttype}")
 
         if not obj.is_contiguous():
             obj = obj.contiguous()
-            #logging.debug(f" >>> obj made to be contiguous")
 
         obj = obj.to(device)
         dist.send(obj, to_rank)
-        #logging.debug(f" >>>>> send_tensor, obj:{obj}")
 
     def receive_list(self, from_rank, device):
         length = torch.tensor([0], dtype=torch.long, device=device)

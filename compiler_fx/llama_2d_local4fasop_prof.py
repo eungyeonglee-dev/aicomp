@@ -38,7 +38,7 @@ from torch.nn.parallel import DistributedDataParallel
 
 
 
-batch_size = 1 # per GPU
+# batch_size = 1 # per GPU
 
 rank = int(os.environ["RANK"])
 local_rank = int(os.environ["LOCAL_RANK"])
@@ -46,35 +46,45 @@ world_size = int(os.environ["WORLD_SIZE"])
 master_addr = os.getenv("MASTER_ADDR")
 master_port = os.getenv("MASTER_PORT")
 
+rank0 = True if rank == 0 else False
+def print0(msg):
+    if rank0:
+        print("[rank: 0] ",msg)
+
+def print_rank(msg):
+    print(f"[rank: {rank}] ", msg)
 
 if len(sys.argv) > 1:
     os.environ['LLAMA_ACCESS_TOKEN'] = sys.argv[1]
-
+    os.environ['batch_size'] = sys.argv[2]
+    
 # Llama access token
 access_token = os.getenv('LLAMA_ACCESS_TOKEN')
 if access_token is None:
     raise ValueError("LLAMA_ACCESS_TOKEN environment variable is not set."
                      "       [Usage:] torchrun --nproc_per_node=<#_of_GPUs_per_node> --nnodes=<#_of_nodes> --node_rank=<current_node_rank> --master_addr=<IP_of_rank_0> --master_port=29500 llama_2d.py <llama_access_token>")
-elif rank == 0:
-    print(f"LLAMA_ACCESS_TOKEN is processed.")
+else:
+    print0(f"LLAMA_ACCESS_TOKEN is processed.")
 
+# batch size
+batch_size = int(os.getenv('batch_size')) if os.getenv('batch_size') is not None else 1
 
 # torch version
 required_version = "2.3.1"
 current_version = torch.__version__
 if version.parse(current_version) >= version.parse(required_version):
-    print(f"[rank:{int(os.environ['RANK'])}] torch version 2.3.1 or higher --> OK")
+    print_rank(f"torch version 2.3.1 or higher --> OK")
 else:
-    print(f"[rank:{int(os.environ['RANK'])}] current torch version is {current_version}.")
+    print_rank(f"current torch version is {current_version}.")
     raise ValueError('This program needs torch version 2.3.1 or higher.')
 
 # transformers version
 required_tf_version = "4.46.2"
 current_tf_version = transformers.__version__
 if version.parse(current_tf_version) >= version.parse(required_tf_version):
-    print(f"[rank:{int(os.environ['RANK'])}] transformers version 4.46.2 or higher --> OK")
+    print_rank("transformers version 4.46.2 or higher --> OK")
 else:
-    print(f"[rank:{int(os.environ['RANK'])}] current transformers version is {current_tf_version}.")
+    print_rank(f" current transformers version is {current_tf_version}.")
     raise ValueError('This program needs transformers version 4.46.2 or higher.')
 
 
@@ -137,7 +147,7 @@ class Optimus_t:
         self.tp_mesh = self.device_mesh["tp"]
 
         #
-        print(f"[{rank}] >>>  tp group:{self.tp_mesh}, dp_group:{self.dp_mesh}")
+        print_rank(f"tp group:{self.tp_mesh}, dp_group:{self.dp_mesh}")
 
         #self.prepare_tp(model)
         ##self.parallelized_model = FSDP(self.parallelized_model, device_mesh=self.dp_mesh, sharding_strategy=ShardingStrategy.NO_SHARD)
@@ -175,16 +185,15 @@ datasets = load_dataset("squad").data["train"]["context"]
 datasets = [str(record) for record in datasets if len(str(record)) < 500]
 dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
 data_size=len(dataloader.dataset)
-print(f"data_size={data_size}")
+print0(f"data_size={data_size}")
 nbatches = len(dataloader)
-print(f"nbatches={nbatches}")
+print0(f"nbatches={nbatches}")
 
 optimus_t = Optimus_t(model, dp_size=1, tp_size=world_size)
 #optimus_t = Optimus_t(model, dp_size=1, tp_size=2)
 #optimus_t = Optimus_t(model, dp_size=1, tp_size=4)
 
-if rank == 0:
-    print(f">> tp_size:{optimus_t.tp_size}, dp_size:{optimus_t.dp_size}")
+print0(f"tp_size:{optimus_t.tp_size}, dp_size:{optimus_t.dp_size}")
 
 epochs = 1 # The number of epochs
 
@@ -216,7 +225,7 @@ def train():
             if i % log_interval == 0 and i > 0:
                 cur_loss = total_loss / log_interval
                 elapsed = time.time() - start_time
-                print('[rank:{:3d}| epoch {:3d} | {:5d}/{:5d} batches | '
+                print0('| epoch {:3d} | {:5d}/{:5d} batches | '
                     'lr {:02.2f} | ms/batch {:5.2f} | '
                     'loss {:5.2f} | ppl {:8.2f}'.format(
                         rank, epoch, i, nbatches, optimus_t.scheduler.get_lr()[0],
@@ -240,9 +249,9 @@ if rank == 0:
     tock = time.time()
     elapsed_time = tock - tick
 
-    print('Time elapsed: %.3f sec ' % (elapsed_time))
+    print0('==> Time elapsed: %.3f sec ' % (elapsed_time))
 
-print(f"[rank:{rank}, run completed ...")
+print0("==> run completed successfully!")
 
 
 

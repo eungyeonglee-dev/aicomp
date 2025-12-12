@@ -674,10 +674,9 @@ class LlamaDecoderLayer(nn.Module):
                 Arbitrary kwargs to be ignored, used for FSDP and other methods that injects code
                 into the model
         """
-                # For FASOP profiling
+        # For FASOP profiling
         s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
         s.record()
-
         residual = hidden_states
 
         hidden_states = self.input_layernorm(hidden_states)
@@ -714,7 +713,6 @@ class LlamaDecoderLayer(nn.Module):
         torch.cuda.synchronize()
         if torch.distributed.get_rank() == 0:
             print(f"[{self.layer_idx}] layer time: {s.elapsed_time(e)}")
-
         return outputs
 
 

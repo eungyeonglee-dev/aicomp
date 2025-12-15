@@ -31,7 +31,7 @@ class Schedule:
 
     def __init__(self, optimus): 
         self.optimus = optimus
-        self.profile_mode = "2" # "0": default, "1": timelog, "2": nvtx
+        self.profile_mode = self.optimus.profile_mode # "0": default, "1": nvtx, "2": torch_profiler
         if self.optimus.force_free_mem == True:
             self.total_mem = torch.cuda.get_device_properties(self.optimus.tpl.local_rank).total_memory 
             self.allocated_mem = torch.cuda.memory_allocated(self.optimus.tpl.local_rank) 
@@ -303,9 +303,14 @@ class Schedule:
 
 
     def pre_fx_micro_forward_core(self, mb_idx):
+        self.optimus.timers(f'pre-forward-{mb_idx}', log_level=2).start()
         if self.optimus.tpl.is_first_stage():
             target_node_name = "placeholder"
             self.optimus.run_info.env[mb_idx][self.placeholder_name] = self.optimus.run_info.env[mb_idx][target_node_name]
+            # Register timer for forward-recv-{mb_idx} on rank0 to ensure gather works correctly
+            # This registers the timer without starting it, so elapsed will be 0.0
+            if self.profile_mode != "1":
+                self.optimus.timers.register_timer(f'forward-recv-{mb_idx}', log_level=2)
 
         if self.optimus.tpl.get_stage() > self.optimus.tpl.get_first_stage():
             pre_split_rank = self.optimus.tpl.get_prev_rank()
@@ -316,17 +321,12 @@ class Schedule:
                         submod_name = self.optimus.run_info.getitem_dic[node_name][0]
                         if self.optimus.run_info.env_recv_mark[mb_idx][submod_name] is None:
                             if self.profile_mode == "1":
-                                s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-                                s.record()
-                                self.optimus.run_info.env[mb_idx][submod_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
-                                e.record()
-                                torch.cuda.synchronize()
-                                print(f">>[rank:{self.optimus.tpl.rank}] pre_fx_micro_forward_core mb_idx:{mb_idx}, submod_name:{submod_name}, receive_time:{s.elapsed_time(e)}")
-                            elif self.profile_mode == "2":
                                 with torch.cuda.nvtx.range(f"[rank:{self.optimus.tpl.rank}] pre_fw recv submod_name:{submod_name}"):
                                     self.optimus.run_info.env[mb_idx][submod_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
                             else:
+                                self.optimus.timers(f'forward-recv-{mb_idx}', log_level=2).start()
                                 self.optimus.run_info.env[mb_idx][submod_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
+                                self.optimus.timers(f'forward-recv-{mb_idx}').stop()
                             self.optimus.run_info.env_recv_mark[mb_idx][submod_name] = 1
                         if isinstance(self.optimus.run_info.env[mb_idx][submod_name], torch.Tensor):
                             if not self.optimus.run_info.env[mb_idx][submod_name].requires_grad or self.optimus.run_info.env[mb_idx][submod_name].grad_fn is None:
@@ -335,17 +335,12 @@ class Schedule:
                     else:
                         if self.optimus.run_info.env_recv_mark[mb_idx][node_name] is None:
                             if self.profile_mode == "1":
-                                s,e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-                                s.record()
-                                self.optimus.run_info.env[mb_idx][node_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
-                                e.record()
-                                torch.cuda.synchronize()
-                                print(f">>[rank:{self.optimus.tpl.rank}] pre_fx_micro_forward_core mb_idx:{mb_idx}, node_name:{node_name}, receive_time:{s.elapsed_time(e)}")
-                            elif self.profile_mode == "2":
                                 with torch.cuda.nvtx.range(f"[rank:{self.optimus.tpl.rank}] pre_fw recv node_name:{node_name}"):
                                     self.optimus.run_info.env[mb_idx][node_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
                             else:
+                                self.optimus.timers(f'forward-recv-{mb_idx}', log_level=2).start()
                                 self.optimus.run_info.env[mb_idx][node_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
+                                self.optimus.timers(f'forward-recv-{mb_idx}').stop()
                             self.optimus.run_info.env_recv_mark[mb_idx][node_name] = 1
                         # TODO: Seq Cls.
                         #if isinstance(self.optimus.run_info.env[mb_idx][node_name], torch.Tensor):
@@ -354,6 +349,7 @@ class Schedule:
                             if not self.optimus.run_info.env[mb_idx][node_name].requires_grad or self.optimus.run_info.env[mb_idx][node_name].grad_fn is None:
                                 self.optimus.run_info.env[mb_idx][node_name].requires_grad_(True)
                                 logging.info(f" ###### node name:{node_name} requires_grad(True) #####") 
+        self.optimus.timers(f'pre-forward-{mb_idx}').stop()
 
 
 
@@ -450,7 +446,7 @@ class Schedule:
 
 
     def post_fx_micro_forward_core(self, mb_idx):
-
+        self.optimus.timers(f'post-forward-{mb_idx}', log_level=2).start()
         if self.optimus.tpl.stage < self.optimus.tpl.get_last_stage():
             next_split_rank = self.optimus.tpl.get_next_rank()
         
@@ -462,17 +458,12 @@ class Schedule:
                         if self.optimus.run_info.env_send_mark[mb_idx][submod_name] is None:
                             obj = self.optimus.run_info.env[mb_idx][submod_name]
                             if self.profile_mode == "1":
-                                s,e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-                                s.record()
-                                self.optimus.comm.send_data(obj, next_split_rank, self.optimus.run_info.device)    
-                                e.record()
-                                torch.cuda.synchronize()
-                                print(f">>[rank:{self.optimus.tpl.rank}] post_fx_micro_forward_core mb_idx:{mb_idx}, submod_name:{submod_name}, send_time:{s.elapsed_time(e)}")
-                            elif self.profile_mode == "2":
                                 with torch.cuda.nvtx.range(f"[rank:{self.optimus.tpl.rank}] post_fw submod_name:{submod_name}"):
                                     self.optimus.comm.send_data(obj, next_split_rank, self.optimus.run_info.device)
                             else:
+                                self.optimus.timers(f'forward-send-{mb_idx}', log_level=2).start()
                                 self.optimus.comm.send_data(obj, next_split_rank, self.optimus.run_info.device)
+                                self.optimus.timers(f'forward-send-{mb_idx}').stop()
                             self.optimus.run_info.env_send_mark[mb_idx][submod_name] = 1
                             if self.optimus.activation_ckpt == True and needed_by_stage - src_stage == 1: # For Act ckpt
                                 self.optimus.run_info.env[mb_idx][submod_name] = None  
@@ -482,23 +473,19 @@ class Schedule:
                         if self.optimus.run_info.env_send_mark[mb_idx][node_name] is None:
                             obj = self.optimus.run_info.env[mb_idx][node_name]
                             if self.profile_mode == "1":
-                                s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-                                s.record()
-                                self.optimus.comm.send_data(obj, next_split_rank, self.optimus.run_info.device)
-                                e.record()
-                                torch.cuda.synchronize()
-                                print(f">>[rank:{self.optimus.tpl.rank}] post_fx_micro_forward_core mb_idx:{mb_idx}, node_name:{node_name}, send_time:{s.elapsed_time(e)}")
-                            elif self.profile_mode == "2":
                                 with torch.cuda.nvtx.range(f"[rank:{self.optimus.tpl.rank}] post_fw node_name:{node_name}"):
                                     self.optimus.comm.send_data(obj, next_split_rank, self.optimus.run_info.device)
                             else:
+                                self.optimus.timers(f'forward-send-{mb_idx}', log_level=2).start()
                                 self.optimus.comm.send_data(obj, next_split_rank, self.optimus.run_info.device)
+                                self.optimus.timers(f'forward-send-{mb_idx}').stop()
                             self.optimus.run_info.env_send_mark[mb_idx][node_name] = 1
                             if self.optimus.activation_ckpt == True and needed_by_stage - src_stage == 1: # For Act ckpt
                                 self.optimus.run_info.env[mb_idx][node_name] = None 
                                 self.optimus.run_info.flat_args[mb_idx][node_name] = None
                                 #print(f"... [Act ckpt] rank:{self.optimus.tpl.rank}, mb_idx:{mb_idx}, node name:{node_name} <- None") 
 
+        self.optimus.timers(f'post-forward-{mb_idx}').stop()
         yield 0
         
     def get_num_nodes(self, name):
@@ -549,11 +536,6 @@ class Schedule:
         if forward_output_list[0] != None and forward_output_gradient_list[0] != None and forward_output_list[0].shape != forward_output_gradient_list[0].shape:
             forward_output_list[0] = forward_output_list[0].view(-1, forward_output_list[0].size(-1))
         torch.autograd.backward(forward_output_list, grad_tensors=forward_output_gradient_list)
-        #inputs_with_grad = []
-        #for val in forward_input:
-        #    if isinstance(val, torch.Tensor) and val.requires_grad:
-        #        inputs_with_grad.append(val)
-        #forward_input_gradient = torch.autograd.grad(forward_output_list, inputs_with_grad, forward_output_gradient_list,)
         forward_input_gradient = []
         for v in forward_input:
             if isinstance(v, torch.Tensor):
@@ -566,14 +548,15 @@ class Schedule:
         if self.optimus.force_free_mem == True:
             self.cond_free_mem_()
         args = ()
-        kwargs = dict()
+        kwargs = dict() 
         #if self.optimus.activation_ckpt == True and node.name != "output":
+        # Act ckpt
         if self.optimus.activation_ckpt == True and node.name != "output" and not self.optimus.tpl.is_last_stage():
             src, needed_by_stage = self.optimus.run_info.special_nodes[node.name]
             if needed_by_stage - src > 1:
                 k1 = self.optimus.run_info.env[mb_idx].pop(node.name)
             else:
-                k1 = self.produce_forward_output(mb_idx, node.name)
+                k1 = self.produce_forward_output(mb_idx, node.name) # Act ckpt
         else:
             k1 = self.optimus.run_info.env[mb_idx].pop(node.name)
         k1 = ((k1,) if not isinstance(k1, tuple) else k1)
@@ -589,38 +572,44 @@ class Schedule:
             if mb_idx == self.optimus.mbsize - 1:
                 #logging.info(f" DDP ... [node.name:{node.name}], [mb_idx:{mb_idx}], prepare_for_backward ...") 
                 self.optimus.run_info.submod.reducer.prepare_for_backward(list(torch.nn.parallel.distributed._find_tensors(kwargs['forward_output'])))
-                result = self.core_backward(*args, **kwargs)
+                # Measure gradient all-reduce communication time for DP
+                
+                if self.profile_mode == "1":
+                    with torch.cuda.nvtx.range(f"[rank:{self.optimus.tpl.rank}] dp-gradient-allreduce"):
+                        result = self.core_backward(*args, **kwargs)
+                else:
+                    self.optimus.timers('dp-gradient-allreduce', log_level=1).start()
+                    result = self.core_backward(*args, **kwargs)
+                    self.optimus.timers('dp-gradient-allreduce').stop()
+                
             else:
                 with self.optimus.run_info.submod.no_sync():
                     result = self.core_backward(*args, **kwargs)
         else:
             result = self.core_backward(*args, **kwargs)
+
         if self.optimus.force_free_mem == True:
             self.cond_free_mem_()
         return result
 
 
     def pre_fx_micro_backward_core(self, mb_idx):
+        self.optimus.timers(f'pre-backward-{mb_idx}', log_level=2).start()
         grads = None
         if self.optimus.tpl.stage < self.optimus.tpl.get_last_stage():
             pre_split_rank = self.optimus.tpl.get_next_rank()
             node_name = self.get_next_node_name()
             if self.optimus.run_info.env_grad_recv_mark[mb_idx][node_name] is None:
                 if self.profile_mode == "1":
-                    s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-                    s.record()
-                    self.optimus.run_info.grads[mb_idx][node_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
-                    e.record()
-                    torch.cuda.synchronize()
-                    print(f">>[rank:{self.optimus.tpl.rank}] pre_fx_micro_backward_core mb_idx:{mb_idx}, node_name:{node_name}, receive_time:{s.elapsed_time(e)}")
-                elif self.profile_mode == "2":
                     with torch.cuda.nvtx.range(f"[rank:{self.optimus.tpl.rank}] pre_bw recv node_name:{node_name}"):
                         self.optimus.run_info.grads[mb_idx][node_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
                 else:
+                    self.optimus.timers(f'backward-recv-{mb_idx}', log_level=2).start()
                     self.optimus.run_info.grads[mb_idx][node_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
+                    self.optimus.timers(f'backward-recv-{mb_idx}').stop()
                 grads = self.optimus.run_info.grads[mb_idx][node_name]
                 self.optimus.run_info.env_grad_recv_mark[mb_idx][node_name] = 1
-
+        self.optimus.timers(f'pre-backward-{mb_idx}').stop()
         return grads
 
 
@@ -649,7 +638,7 @@ class Schedule:
 
 
     def post_fx_micro_backward_core(self, mb_idx):
-
+        self.optimus.timers(f'post-backward-{mb_idx}', log_level=2).start()
         if self.optimus.tpl.get_stage() > 0:
             next_split_rank = self.optimus.tpl.get_prev_rank()
 
@@ -657,21 +646,21 @@ class Schedule:
             if self.optimus.run_info.env_grad_send_mark[mb_idx][node_name] is None:
                 obj = self.optimus.run_info.grads[mb_idx][node_name]
                 if self.profile_mode == "1":
-                    s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-                    s.record()
-                    self.optimus.comm.send_data(obj, next_split_rank, self.optimus.run_info.device)
-                    e.record()
-                    torch.cuda.synchronize()
-                    print(f">>[rank:{self.optimus.tpl.rank}] post_fx_micro_backward_core mb_idx:{mb_idx}, node_name:{node_name}, send_time:{s.elapsed_time(e)}")
-                elif self.profile_mode == "2":
                     with torch.cuda.nvtx.range(f"[rank:{self.optimus.tpl.rank}] post_bw node_name:{node_name}"):
                         self.optimus.comm.send_data(obj, next_split_rank, self.optimus.run_info.device)
                 else:
+                    self.optimus.timers(f'backward-send-{mb_idx}', log_level=2).start()
                     self.optimus.comm.send_data(obj, next_split_rank, self.optimus.run_info.device)
+                    self.optimus.timers(f'backward-send-{mb_idx}').stop()
                 self.optimus.run_info.env_grad_send_mark[mb_idx][node_name] = 1
                 if self.optimus.activation_ckpt == True:
                     self.optimus.run_info.grads[mb_idx][node_name] = None
-
+        else:
+            # Register timer for backward-send-{mb_idx} on rank0 to ensure gather works correctly
+            # This registers the timer without starting it, so elapsed will be 0.0
+            if self.profile_mode != "1":
+                self.optimus.timers.register_timer(f'backward-send-{mb_idx}', log_level=2)
+        self.optimus.timers(f'post-backward-{mb_idx}').stop()
         yield 0
 
 
@@ -780,8 +769,8 @@ class Schedule1F1B(Schedule):
         # print(f"[rank:{self.optimus.tpl.rank}] Schedule1F1B.run() called ... ")
         global model_offloaded
         global optimizer_offloaded
-        num_warmup_microbatches = self.optimus.tpl.get_last_stage() - self.optimus.tpl.stage
-        num_warmup_microbatches = min(num_warmup_microbatches, self.optimus.mbsize)
+        num_warmup_microbatches = self.optimus.tpl.get_last_stage() - self.optimus.tpl.stage # get_last_stage() is num_stage - 1
+        num_warmup_microbatches = min(num_warmup_microbatches, self.optimus.mbsize) # this self.optimus.mbsize is  the number of microbatches, equals to gas(gradient accumulation steps)
         remaining = self.optimus.mbsize - num_warmup_microbatches
 
         if self.optimus.tpl.is_first_stage():
@@ -791,8 +780,10 @@ class Schedule1F1B(Schedule):
             self.init_env_mark(i)
             self.init_env_grad_mark(i)
             
-
+        
         if self.optimus.force_free_mem == True:
+            
+            self.optimus.timers('free-memory',log_level=1).start()
             self.cond_free_mem_()
             if self.optimus.swap_model_in_optstep == True and model_offloaded == True:
                 self.load_model()
@@ -802,17 +793,24 @@ class Schedule1F1B(Schedule):
                     if self.optimus.display_mem == True:
                         print(f" >>> [rank:{self.optimus.tpl.rank}], load optimizer ...")
                 model_offloaded = False
+            
+            self.optimus.timers('free-memory').stop()
 
+        self.optimus.timers('forward-backward', log_level=1).start()
+        # warm-up
         for i in range(num_warmup_microbatches):
             self.pre_fx_micro_forward_core(i)
+            self.optimus.timers(f'forward-{i}', log_level=2).start()
             self.fx_micro_forward_core(i)
+            self.optimus.timers(f'forward-{i}').stop()
             result = self.post_fx_micro_forward_core(i)
             next(result)
 
+        # steady
         reorder_mbi = -1
-        for i in range(remaining): # steady
+        for i in range(remaining):
             forward_i = i + num_warmup_microbatches
-            backward_i = i
+            backward_i = i  
 
             self.pre_fx_micro_forward_core(forward_i)
             if reorder_mbi >= 0:
@@ -820,19 +818,29 @@ class Schedule1F1B(Schedule):
                 next(result)
                 reorder_mbi = -1
 
+            self.optimus.timers(f'forward-{forward_i}', log_level=2).start()
             self.fx_micro_forward_core(forward_i)
+            self.optimus.timers(f'forward-{forward_i}').stop()
+            
+
             result = self.post_fx_micro_forward_core(forward_i)
             next(result)
 
             if self.optimus.tpl.is_last_stage():
                 self.run_loss(backward_i)
 
-
             grads = self.pre_fx_micro_backward_core(backward_i)
+            
+
+            self.optimus.timers(f'backward-{backward_i}', log_level=2).start()
             self.fx_micro_backward_core(backward_i, grads)
+            self.optimus.timers(f'backward-{backward_i}').stop()
+            
 
             reorder_mbi = backward_i
 
+        
+        # cool-down
         if num_warmup_microbatches == 0 and reorder_mbi >= 0: 
             result = self.post_fx_micro_backward_core(reorder_mbi)
             next(result)
@@ -850,13 +858,19 @@ class Schedule1F1B(Schedule):
                 reorder_mbi = -1
 
             grads = self.pre_fx_micro_backward_core(backward_i)
+            
+
+            self.optimus.timers(f'backward-{backward_i}', log_level=2).start()
             self.fx_micro_backward_core(backward_i, grads)
+            self.optimus.timers(f'backward-{backward_i}').stop()
+            
 
             result = self.post_fx_micro_backward_core(backward_i)
             next(result)
 
 
         if self.optimus.force_free_mem == True:
+            self.optimus.timers('free-memory',log_level=1).start()
             self.optimus.run_info.clean_run_info(self.optimus.mbsize)
             if self.optimus.swap_model_in_optstep == True:
                 self.check_swap_model_in_optstep()
@@ -867,4 +881,5 @@ class Schedule1F1B(Schedule):
                     if self.optimus.display_mem == True:
                         print(f" >>>>>> [rank:{self.optimus.tpl.rank}], load optimizer ...")
                 optimizer_offloaded = False
+            self.optimus.timers('free-memory').stop()
 

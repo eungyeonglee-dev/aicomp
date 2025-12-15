@@ -4,8 +4,11 @@
 
 import sys
 import math
+import re
 import torch
 import torch.nn as nn
+from torch.autograd import Function
+from transformers.models.llama.modeling_llama import LlamaDecoderLayer
 
 #from transformers import GPT2Config
 #from transformers import BertConfig
@@ -33,6 +36,222 @@ from torch.fx.graph_module import GraphModule
 from torch.fx.passes.split_module import split_module
 import copy
 import time
+
+# ==== 251215: Layer timing (FX) globals ====
+_FX_LAYER_STATS = None
+_FX_LAYER_START = None
+_FX_LAYER_END = None
+_FX_LAYER_STEP = 0
+_FX_LAYER_FWD_START = {}
+
+# ==== 251215: layer timing (FX) init ====
+def fx_layer_timer_init(num_layers, start_step, end_step):
+    """Initialize global storage for FX layer timing."""
+    global _FX_LAYER_STATS, _FX_LAYER_START, _FX_LAYER_END, _FX_LAYER_STEP
+    _FX_LAYER_STATS = {
+        "forward": [0.0 for _ in range(num_layers)],
+        "backward": [0.0 for _ in range(num_layers)],
+        "forward_count": [0 for _ in range(num_layers)],
+        "backward_count": [0 for _ in range(num_layers)],
+    }
+    _FX_LAYER_START = start_step
+    _FX_LAYER_END = end_step
+    _FX_LAYER_STEP = 0
+
+# ==== 251215: layer timing (FX) set step ====
+def fx_layer_timer_set_step(step: int):
+    global _FX_LAYER_STEP
+    _FX_LAYER_STEP = step
+
+# ==== 251215: layer timing (FX) get stats ====
+def fx_layer_timer_get():
+    return _FX_LAYER_STATS
+
+# ==== 251215: layer timing (FX) nvtx push ====
+def fx_layer_nvtx_push(layer_idx: int):
+    if torch.cuda.is_available():
+        torch.cuda.nvtx.range_push(f"layer{layer_idx}")
+
+# ==== 251215: layer timing (FX) nvtx pop ====
+def fx_layer_nvtx_pop():
+    if torch.cuda.is_available():
+        torch.cuda.nvtx.range_pop()
+
+# ==== 251215: layer timing (FX) mark forward start ====
+def fx_layer_mark_fwd_start(layer_idx: int):
+    global _FX_LAYER_STATS, _FX_LAYER_START, _FX_LAYER_END, _FX_LAYER_STEP, _FX_LAYER_FWD_START
+    if _FX_LAYER_STATS is None:
+        return
+    if not (_FX_LAYER_START <= _FX_LAYER_STEP <= _FX_LAYER_END):
+        return
+    evt = torch.cuda.Event(enable_timing=True)
+    evt.record()
+    _FX_LAYER_FWD_START[layer_idx] = evt
+
+# ==== 251215: layer timing (FX) mark forward end ====
+def fx_layer_mark_fwd_end(layer_idx: int):
+    global _FX_LAYER_STATS, _FX_LAYER_FWD_START, _FX_LAYER_START, _FX_LAYER_END, _FX_LAYER_STEP
+    if _FX_LAYER_STATS is None:
+        return
+    if not (_FX_LAYER_START <= _FX_LAYER_STEP <= _FX_LAYER_END):
+        return
+    start_evt = _FX_LAYER_FWD_START.get(layer_idx)
+    if start_evt is None:
+        return
+    end_evt = torch.cuda.Event(enable_timing=True)
+    end_evt.record()
+    torch.cuda.synchronize()
+    elapsed_ms = start_evt.elapsed_time(end_evt)
+    _FX_LAYER_STATS["forward"][layer_idx] += elapsed_ms
+    _FX_LAYER_STATS["forward_count"][layer_idx] += 1
+    _FX_LAYER_FWD_START.pop(layer_idx, None)
+
+# ==== 251215: layer timing (FX) backward timer ====
+class _LayerBwdTimer(Function):
+    @staticmethod
+    def forward(ctx, input_tensor, layer_idx: int):
+        ctx.layer_idx = layer_idx
+        return input_tensor
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        global _FX_LAYER_STATS, _FX_LAYER_START, _FX_LAYER_END, _FX_LAYER_STEP
+        if _FX_LAYER_STATS is not None and (_FX_LAYER_START <= _FX_LAYER_STEP <= _FX_LAYER_END):
+            b_start = torch.cuda.Event(enable_timing=True)
+            b_end = torch.cuda.Event(enable_timing=True)
+            b_start.record()
+            b_end.record()
+            torch.cuda.synchronize()
+            elapsed_ms = b_start.elapsed_time(b_end)
+            idx = ctx.layer_idx
+            _FX_LAYER_STATS["backward"][idx] += elapsed_ms
+            _FX_LAYER_STATS["backward_count"][idx] += 1
+        return grad_output, None
+
+# ==== 251215: layer timing (FX) attach backward ====
+def fx_layer_attach_bwd(layer_idx: int, obj):
+    """Wrap tensor output with backward hook timing."""
+    if torch.is_tensor(obj):
+        return _LayerBwdTimer.apply(obj, layer_idx)
+    elif isinstance(obj, (list, tuple)):
+        if not obj:
+            return obj
+        # wrap first tensor only to keep overhead low
+        new_list = []
+        wrapped = False
+        for v in obj:
+            if torch.is_tensor(v) and not wrapped:
+                new_list.append(_LayerBwdTimer.apply(v, layer_idx))
+                wrapped = True
+            else:
+                new_list.append(v)
+        return type(obj)(new_list) if isinstance(obj, tuple) else new_list
+    return obj
+
+# ==== 251215: layer timing (FX) call ====
+def fx_layer_call(module: nn.Module, layer_idx: int, *args, **kwargs):
+    """Wrap a module call to record forward/backward CUDA event timing in ms, for the current FX step."""
+    global _FX_LAYER_STATS, _FX_LAYER_START, _FX_LAYER_END, _FX_LAYER_STEP
+    out = None
+
+    # Forward timing
+    if _FX_LAYER_STATS is not None and _FX_LAYER_START <= _FX_LAYER_STEP <= _FX_LAYER_END:
+        start = torch.cuda.Event(enable_timing=True)
+        end = torch.cuda.Event(enable_timing=True)
+        start.record()
+        out = module(*args, **kwargs)
+        end.record()
+        torch.cuda.synchronize()
+        elapsed_ms = start.elapsed_time(end)
+        _FX_LAYER_STATS["forward"][layer_idx] += elapsed_ms
+        _FX_LAYER_STATS["forward_count"][layer_idx] += 1
+    else:
+        out = module(*args, **kwargs)
+
+    # Backward timing via hook on output tensor
+    def _bwd_hook(grad):
+        if _FX_LAYER_STATS is None:
+            return grad
+        if not (_FX_LAYER_START <= _FX_LAYER_STEP <= _FX_LAYER_END):
+            return grad
+        b_start = torch.cuda.Event(enable_timing=True)
+        b_end = torch.cuda.Event(enable_timing=True)
+        b_start.record()
+        b_end.record()
+        torch.cuda.synchronize()
+        elapsed_ms = b_start.elapsed_time(b_end)
+        _FX_LAYER_STATS["backward"][layer_idx] += elapsed_ms
+        _FX_LAYER_STATS["backward_count"][layer_idx] += 1
+        return grad
+
+    def _register_hook(obj):
+        if torch.is_tensor(obj):
+            obj.register_hook(_bwd_hook)
+        elif isinstance(obj, (list, tuple)):
+            for t in obj:
+                if torch.is_tensor(t):
+                    t.register_hook(_bwd_hook)
+                    break
+
+    _register_hook(out)
+    return out
+
+# ==== 251215: layer timing (FX) wrap decoder layers for timing ====
+def wrap_decoder_layers_for_timing(model: nn.Module, start_step: int, end_step: int):
+    """Wrap LlamaDecoderLayer forward to record CUDA-event timings (ms) with step filter."""
+    decoder_layers = [m for m in model.modules() if isinstance(m, LlamaDecoderLayer)]
+    stats = {
+        "forward": [0.0 for _ in range(len(decoder_layers))],
+        "backward": [0.0 for _ in range(len(decoder_layers))],
+        "forward_count": [0 for _ in range(len(decoder_layers))],
+        "backward_count": [0 for _ in range(len(decoder_layers))],
+    }
+
+    for idx, layer in enumerate(decoder_layers):
+        if hasattr(layer, "_orig_forward_timing"):
+            continue
+        orig_forward = layer.forward
+
+        def wrapped_forward(*args, __layer=layer, __orig=orig_forward, __idx=idx, **kwargs):
+            step = getattr(__layer, "_lt_step", 0)
+            measure = (start_step <= step <= end_step)
+            if measure:
+                s = torch.cuda.Event(enable_timing=True)
+                e = torch.cuda.Event(enable_timing=True)
+                s.record()
+                out = __orig(*args, **kwargs)
+                e.record()
+                torch.cuda.synchronize()
+                elapsed_ms = s.elapsed_time(e)
+                stats["forward"][__idx] += elapsed_ms
+                stats["forward_count"][__idx] += 1
+
+                def bwd_hook(grad):
+                    b_s = torch.cuda.Event(enable_timing=True)
+                    b_e = torch.cuda.Event(enable_timing=True)
+                    b_s.record()
+                    b_e.record()
+                    torch.cuda.synchronize()
+                    b_elapsed_ms = b_s.elapsed_time(b_e)
+                    stats["backward"][__idx] += b_elapsed_ms
+                    stats["backward_count"][__idx] += 1
+                    return grad
+
+                if torch.is_tensor(out):
+                    out.register_hook(bwd_hook)
+                elif isinstance(out, (list, tuple)):
+                    for elem in out:
+                        if torch.is_tensor(elem):
+                            elem.register_hook(bwd_hook)
+                            break
+                return out
+            else:
+                return __orig(*args, **kwargs)
+
+        layer._orig_forward_timing = orig_forward
+        layer.forward = wrapped_forward
+
+    return stats, decoder_layers
 
 import torch.distributed as dist
 import datetime
@@ -166,6 +385,97 @@ class IR(object):
             for n in self.model_ir[0].graph.nodes:
                 print(f"n.op:{n.op}, n.name:{n.name}, n.target:{n.target}, n.args:{n.args}, n.all_input_nodes:{n.all_input_nodes}")
             print(f"[rank:0] ------------------------------------------------------------")
+
+    # ==== 251215: layer timing (FX) instrument layer timers ====
+    def instrument_layer_timers(self, start_step: int, end_step: int, rank: int = 0):
+        """Rewrite FX graph to wrap LlamaDecoderLayer calls with timing."""
+        if not self.model_ir:
+            return 0
+        root_gm = self.model_ir[0]
+
+        def collect_graphmodules(gm: GraphModule):
+            gms = [gm]
+            for _, child in gm.named_children():
+                if isinstance(child, GraphModule):
+                    gms.append(child)
+            return gms
+
+        gms = collect_graphmodules(root_gm)
+
+        pat_us = re.compile(r"model_layers_(\d+)_")
+        pat_dot = re.compile(r"model\\.layers\\.(\\d+)\\.")
+
+        # Collect global layer indices present
+        layer_indices = set()
+        for gm in gms:
+            for node in gm.graph.nodes:
+                target_str = node.target if isinstance(node.target, str) else str(node.target)
+                m = pat_us.search(target_str) or pat_dot.search(target_str) or pat_us.search(node.name) or pat_dot.search(node.name)
+                if m:
+                    layer_indices.add(int(m.group(1)))
+
+        if not layer_indices:
+            if rank == 0:
+                print("[layer-timing][FX] No layer-pattern nodes found; skipping instrumentation.")
+                # Debug: print a few node targets to understand naming
+                for gm in gms:
+                    print(f"[layer-timing][FX][debug] graphmodule={getattr(gm, '_get_name', lambda: type(gm).__name__)()} children={list(dict(gm.named_children()).keys())}")
+                    shown = 0
+                    for node in gm.graph.nodes:
+                        if node.op in ("call_module", "call_function"):
+                            tgt = node.target if isinstance(node.target, str) else str(node.target)
+                            print(f"  op={node.op} name={node.name} target={tgt}")
+                            shown += 1
+                            if shown >= 15:
+                                break
+            return 0
+
+        max_idx = max(layer_indices)
+        num_layers = max_idx + 1
+        fx_layer_timer_init(num_layers, start_step, end_step)
+
+        # Insert start/end/attach nodes per layer per graph
+        for gm in gms:
+            gm_layer_nodes = {}
+            for node in gm.graph.nodes:
+                target_str = node.target if isinstance(node.target, str) else str(node.target)
+                m = pat_us.search(target_str) or pat_dot.search(target_str) or pat_us.search(node.name) or pat_dot.search(node.name)
+                if m:
+                    idx = int(m.group(1))
+                    gm_layer_nodes.setdefault(idx, []).append(node)
+
+            for idx, nodes in gm_layer_nodes.items():
+                if not nodes:
+                    continue
+                first = nodes[0]
+                last = nodes[-1]
+                # start: NVTX push + fwd start
+                with gm.graph.inserting_before(first):
+                    n_push = gm.graph.call_function(fx_layer_nvtx_push, args=(idx,))
+                    n_push.name = f"lt_nvtx_push_{idx}"
+                    n_start = gm.graph.call_function(fx_layer_mark_fwd_start, args=(idx,))
+                    n_start.name = f"lt_fwd_start_{idx}"
+                # end: fwd end + NVTX pop
+                with gm.graph.inserting_after(last):
+                    n_end = gm.graph.call_function(fx_layer_mark_fwd_end, args=(idx,))
+                    n_end.name = f"lt_fwd_end_{idx}"
+                    n_pop = gm.graph.call_function(fx_layer_nvtx_pop, args=())
+                    n_pop.name = f"lt_nvtx_pop_{idx}"
+                # backward attach: wrap outputs of last node
+                with gm.graph.inserting_after(last):
+                    new_out = gm.graph.call_function(fx_layer_attach_bwd, args=(idx, last))
+                    new_out.name = f"lt_attach_bwd_{idx}"
+                # Replace uses of `last` with `new_out`, but avoid rewriting inside `new_out` itself
+                for user in list(last.users):
+                    if user is new_out:
+                        continue
+                    user.replace_input_with(last, new_out)
+
+            gm.recompile()
+
+        if rank == 0:
+            print(f"[layer-timing][FX] instrumented layers 0..{max_idx}, steps [{start_step},{end_step}] (pattern match + NVTX)")
+        return max_idx + 1
 
 
     def simple_split(self, module, num_stage):

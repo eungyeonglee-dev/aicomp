@@ -15,8 +15,8 @@ from torch.utils.data.distributed import DistributedSampler
 
 from opt_prime.comm import Comm
 from opt_prime.IR import IR, IR_Anal
-from opt_prime.schedule import ScheduleGPipe 
-from opt_prime.schedule import Schedule1F1B 
+from opt_prime.schedule import ScheduleGPipe
+from opt_prime.schedule import Schedule1F1B
 
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -35,8 +35,6 @@ SCHEDULE = {
     "gpipe": ScheduleGPipe,
     "1f1b": Schedule1F1B, 
     }
-
-
 
 class Topology:
 
@@ -225,6 +223,7 @@ class Run_Info:
 
     #def __init__(self, ir, device, mbsize):
     def __init__(self, device, mbsize, num_classes):
+        # mbsize: micro-batch size
         #self.mod = ir.model_ir[0] # TODO
         #self.graph = self.mod.graph
         self.name = None
@@ -335,20 +334,13 @@ def print_cpu_memory_usage(str, print_flag = False):
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False):
-
-        #self.model_ir = []
+    def __init__(self, module:nn.Module, mbsize, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False, timers=None, profile_mode="0"):
         self.mbsize = mbsize
-
-        #self.special_nodes: Dict[str, Tuple[int, int]] = {}  # { node_name : {stage#, needed-by-stage#),}
-
         self.use_gpu = use_gpu
-
         self.comm = Comm(use_gpu=use_gpu, ir_analyze=ir_analyze)
-
         self.activation_ckpt = activation_ckpt
-
-
+        self.timers = timers
+        self.profile_mode = profile_mode
         rank = self.comm.rank
         world_size = self.comm.world_size
         local_rank = self.comm.local_rank
@@ -356,46 +348,29 @@ class Optimus_p:
         if world_size == 1:
             print(f"> WORLD SIZE is 1. mbsize reset to 1")
             self.mbsize = mbsize = 1
-
         assert tp_size >= 1 and world_size % tp_size == 0, f"world size({world_size}) must be divisible by tp size({tp_size})"
-
         assert dp_size >= 1 and world_size % dp_size == 0, f"world size({world_size}) must be divisible by dp size({dp_size})"
 
 
         if pp_size == 1:
             pp_size = world_size // tp_size // dp_size
-
         assert pp_size >= 1 and world_size == pp_size * dp_size * tp_size, f"world size({world_size}) == pp_size({pp_size}) * dp_size({dp_size}) * tp_size({tp_size})"
 
         if tp_size > 1:
             assert "llama" in  module.__class__.__name__.lower(), f"Tensor parallel (size={tp_size}) is only supported for Llama models."
 
-        ##pp_size = world_size // dp_size
-        #pp_size = world_size // tp_size // dp_size
-
-        if rank == 0:
-            print(f"> World Size: {world_size}")
-
-            print(f"> Pipeline Parallel Size: {pp_size}")  
-
-            if dp_size > 1:
-                print(f"> Data Parallel Size: {dp_size}")
-
-            if tp_size > 1:
-                print(f"> Tensor Parallel Size: {tp_size}")
-
-            print(f">> ir_analyze: {ir_analyze}")
-
-
+        # if rank == 0:
+        #     print(f"> World Size: {world_size}")
+        #     print(f"> Pipeline Parallel Size(pp degree): {pp_size}")
+        #     print(f"> Data Parallel Size(dp degree): {dp_size}")
+        #     print(f"> Tensor Parallel Size(tp degree): {tp_size}")
+        #     print(f"> ir_analyze method: {ir_analyze}")
         self.tpl = Topology(rank, local_rank, world_size, pp_size, dp_size, tp_size)
-
         self.checkpoint = checkpoint
         self.ckpt_dir = f"checkpoint_{ckpt_dir_postfix}_{self.tpl.stage}" or f"checkpoint_{self.tpl.stage}"
         if self.checkpoint == True:
             os.makedirs(self.ckpt_dir, exist_ok=True)
-
         self.prt_shape = prt_shape
-
         if use_gpu == True:
             torch.cuda.set_device(local_rank) # TODO
             self.device = torch.device(f"cuda:{local_rank}")
@@ -403,67 +378,59 @@ class Optimus_p:
         else:
             self.device = torch.device("cpu")
             print(f">>> Using CPU ...")
-
-
         # num_classes auto config
         self.ignore_index = -100
-
         self.run_info = Run_Info(device=self.device, mbsize=mbsize, num_classes=self.ignore_index)
         #self.model2type = { "hf" : 50, "sy" : 51,}
         self.model2type = { "hf" : 50, "sy" : 51, "vt" : 52,}
         self.model_type = None
-
         self.clean_module_memory = True
 
         # TODO
         split_method = "llama-tp-split" if module.__class__.__name__.startswith("Llama") and tp_size > 1 else "simple"
-        print(f">> model class name: {module.__class__.__name__}")
-        print(f">> split method: {split_method}")
+        print(f"[rank:{local_rank} model class name: {module.__class__.__name__}")
+        print(f"[rank:{local_rank} split method: {split_method}")
 
         if ir_analyze == IR_Anal.SEQUENTIAL:
-            print(f"SEQUENTIAL mode >> [rank:{rank}, local_world_size:{self.comm.local_world_size}]")
-
+            print(f"[rank:{rank}] SEQUENTIAL mode IR processing ...")
+            self.timers('IR-preparing', log_level=1).start()
             for i in range(self.comm.local_world_size):
                 if local_rank == i:
                     self.ir = IR(module, self)
-
                     self.model_type = self.ir.retrieve_IR(module)
-                    #self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
                     self.ir.split_IR(module, split_method, num_stage=self.tpl.get_num_stage())
-
+                    # Optional FX layer timing instrumentation before submodule extraction/cleanup
+                    if os.environ.get("OPTPRIME_FX_LAYER_TIMING", "0") == "1":
+                        try:
+                            s = int(os.environ.get("OPTPRIME_FX_LAYER_START_STEP", "1"))
+                            e = int(os.environ.get("OPTPRIME_FX_LAYER_END_STEP", "1000000"))
+                            self.ir.instrument_layer_timers(s, e, rank)
+                        except Exception as _e:
+                            if rank == 0:
+                                print(f"[layer-timing][fx] instrumentation failed in init: {_e}")
                     self.ir.setup_submod(self.tpl.stage, rank) # setup name, submod, node
                     self.ir.build_getitem_dic()
-
                     self.run_info.submod.to(self.run_info.device)
                     print(f" ### Rank:{rank}, name:{self.run_info.node.name}, move {self.run_info.name} to {self.run_info.device}")
-
                     self.run_info.output_node = self.ir.get_output_node()
-
                     if rank == 0:
                         self.ir.print_graph(rank)
                         self.run_info.print_getitem_dic()
-
-                    #    for stage in reversed(range(1, self.tpl.get_num_stage())):
-                    #        self.ir.cross_reference_analyze(stage, self.ir.model_ir[0].graph)
-
                     for stage in reversed(range(1, self.tpl.get_num_stage())):
                          self.ir.cross_reference_analyze(stage, self.ir.model_ir[0].graph)
                     self.run_info.special_nodes = self.ir.special_nodes
                     self.run_info.metadata_range = self.ir.metadata_range
                     self.run_info.getitem_dic = self.run_info.getitem_dic
-
                     if self.prt_shape == True:
                         self.ir.print_module_shape_before_parallel()
-
                     if self.clean_module_memory == True:
                         print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
                         self.ir.clean_module_memory()
                         print(f" ### Rank:{rank}, clean_module_memory ...")
                         print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
                     print(f"[rank:{rank}, local_rank:{local_rank}] SEQUENTIAL MODE PROCESSING ...")
-
                 dist.barrier()
-
+            self.timers('IR-preparing').stop()
 
         if (ir_analyze == IR_Anal.SINGLE and rank == 0) or ir_analyze == IR_Anal.PARALLEL:
             # IR effective at #0 process when IR_Anal.SINGLE
@@ -474,6 +441,15 @@ class Optimus_p:
             self.model_type = self.ir.retrieve_IR(module)
             #self.ir.split_IR(module, "simple", num_stage=self.tpl.get_num_stage())
             self.ir.split_IR(module, split_method, num_stage=self.tpl.get_num_stage())
+            # Optional FX layer timing instrumentation before submodule extraction/cleanup
+            if os.environ.get("OPTPRIME_FX_LAYER_TIMING", "0") == "1":
+                try:
+                    s = int(os.environ.get("OPTPRIME_FX_LAYER_START_STEP", "1"))
+                    e = int(os.environ.get("OPTPRIME_FX_LAYER_END_STEP", "1000000"))
+                    self.ir.instrument_layer_timers(s, e, rank)
+                except Exception as _e:
+                    if rank == 0:
+                        print(f"[layer-timing][fx] instrumentation failed in init: {_e}")
 
             self.ir.setup_submod(self.tpl.stage, rank) # setup name, submod, node
             self.ir.build_getitem_dic()
@@ -540,8 +516,6 @@ class Optimus_p:
                     pre_barrier_remaining = self.comm.local_world_size - self.comm.local_rank - 1
                     for j in range(pre_barrier_remaining):
                         dist.barrier(group=pre_barrier)
-
-
         elif ir_analyze == IR_Anal.SINGLE and rank != 0:
             object_list = [None, None, None]
             dist.broadcast_object_list(object_list, src=0, group=self.comm.ctrl_group[rank], device=self.run_info.device)
@@ -549,7 +523,6 @@ class Optimus_p:
             print(f"<< [Rank:{rank}, Stage:{self.tpl.stage}] <== Received {self.run_info.name} ...")
             self.run_info.submod = object_list[1]
             self.run_info.node = object_list[2]
-
         if ir_analyze == IR_Anal.SINGLE:
             self.run_info.submod.to(self.run_info.device)
             print(f" ### Rank:{rank}, name:{self.run_info.node.name}, move {self.run_info.name} to {self.run_info.device}")
@@ -570,7 +543,6 @@ class Optimus_p:
                     dist.broadcast_object_list(object_list2, src=0, group=self.comm.ctrl_group[rank], device=self.run_info.device)
                     self.run_info.output_node = object_list2[0]
                     print(f"[Rank:{rank}, Stage:{self.tpl.stage}] <<<< Received output node[{self.run_info.output_node}] ...")
-
         if ir_analyze == IR_Anal.SINGLE:
             if rank == 0:
                 self.ir.print_graph(rank)
@@ -588,27 +560,16 @@ class Optimus_p:
                     print(f" ### Rank:{rank}, clean_module_memory ...")
                     print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
                 print(f"[rank:{rank}, local_rank:{local_rank}] SINGLE MODE PROCESSING ...")
-
         self.preserve_output = preserve_output
-
         self.force_free_mem = force_free_mem
         self.free_threshold = 4294967296 # 4GB # For forcefully garbage collection/cache cleaning
         self.free_threshold2 = 5368709120 # 5GB # For optimizer offloading
-        #self.free_threshold3 = 22548578304 # 21GB # For model offloading
         self.free_threshold3 = 26843545600 # 25GB # For model offloading
-
         self.display_mem = display_mem
-
         if tp_size > 1:
             self.prepare_tp_group()
-
         if dp_size > 1:
             self.prepare_dp_group()
-
-        #if rank == 0:
-        #    self.ir.print_graph(rank)
-        #    self.run_info.print_getitem_dic()
-
         if ir_analyze == IR_Anal.SINGLE:
             if rank == 0:
                 #for stage in reversed(range(1, self.tpl.get_num_stage())):
@@ -630,31 +591,19 @@ class Optimus_p:
                 self.run_info.metadata_range = special_nodes_obj[1]
                 self.run_info.getitem_dic = special_nodes_obj[2]
                 self.model_type = special_nodes_obj[3]
-
-
         print(f" *********** rank:{rank} cross-referenced nodes *****************")
         print(f"   special_nodes: {self.run_info.special_nodes}")
         print(f" *************************************************************************")
-
-        #if self.clean_module_memory == True:
-        #    if (ir_analyze == IR_Anal.PARALLEL) or (ir_analyze == IR_Anal.SINGLE and rank == 0):
-        #        print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
-        #        self.ir.clean_module_memory()
-        #        print(f" ### Rank:{rank}, clean_module_memory ...")
-        #        print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
-
         self.optimizer = None  # TODO
         self.swap_opt_in_fwdbwd = swap_opt_in_fwdbwd 
         self.swap_model_in_optstep = swap_model_in_optstep 
         self.use_padding = use_padding  # padding option
-
         if self.prt_shape == True:
             self.ir.print_module_shape_after_parallel()
-
         self.swap_use_disk = swap_use_disk
-
-
+        
     def prepare_labels(self, labels):
+        self.timers('prepare-labels', log_level=1).start()
         if self.tpl.is_first_stage():
             target_node_name = "labels"
 
@@ -680,6 +629,8 @@ class Optimus_p:
                     self.comm.send_data(obj, self.tpl.get_last_rank(), self.device)
             else:
                 self.run_info.env[0][target_node_name] = self.run_info.env[0][target_node_name].to(self.device)
+        self.timers('prepare-labels').stop()
+                
 
 
     def ready_labels(self):
@@ -758,7 +709,9 @@ class Optimus_p:
     #        else:
     #            dist.new_group(dp_group)
     #
-        self.run_info.submod = DistributedDataParallel(self.run_info.submod, find_unused_parameters=True, device_mesh=self.tpl.dp_mesh)
+        self.run_info.submod = DistributedDataParallel(self.run_info.submod, \
+                                                       find_unused_parameters=True, \
+                                                       device_mesh=self.tpl.dp_mesh)
 
     def check_tp_post(self, arg0):
         if isinstance(arg0, torch.fx.Node):

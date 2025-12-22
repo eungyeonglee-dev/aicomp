@@ -20,6 +20,7 @@ import os
 import sys
 import math
 import time
+import re
 import nvtx
 from torch.profiler import profile, record_function, ProfilerActivity, tensorboard_trace_handler
 from packaging import version
@@ -33,9 +34,9 @@ import transformers
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from opt_prime.opti_pri import Optimus_p
 from opt_prime.IR import IR_Anal
+from opt_prime import get_timers
 
 logging.basicConfig(level=logging.ERROR)
-
 
 
 # This program needs 'access token' for Llama. First, obtain your access token for Llama !!!
@@ -60,6 +61,7 @@ parser.add_argument('--batch-size', type=int, default=32, help='global batch siz
 parser.add_argument('--profile-mode', type=str, default="0", help='"0": normal, "1": nvtx, "2": pytorch profiler')
 parser.add_argument('--profile-cut', type=bool, default=False, help='"False": normal training, "True": profile only a few steps')
 parser.add_argument('--profile-step', type=int, default=20, help='the number of steps to profile')
+parser.add_argument('--log-level', type=int, default=0, help='log-level')
 parser.add_argument('--pipeline-parallel-schedule', type=str, default="1f1b", help='"1f1b" or "gpipe"')
 
 args = parser.parse_args()
@@ -112,17 +114,30 @@ def get_total_params(module: torch.nn.Module):
         total_params += param.numel()
     return total_params
 
-if rank == 0:
-    print ('> Total parameters in model: {:,}'.format(get_total_params(model)))
-    print(f"> batch size: {batch_size}")
-    print(f"> micro batch size: {micro_batch_size}")
-    print(f"> gradient accumulation steps(equals the number of micro-batch): {gas}")
+def print0(message):
+    if rank == 0:
+        print(message)
+
+ir_analyze = IR_Anal.SEQUENTIAL
+print0('> Total parameters in model: {:,}'.format(get_total_params(model)))
+print0('> World size: {}'.format(world_size)) # world size
+print0('> IR: {}'.format(ir_analyze)) # IR analysis mode
+print0('> GAS: {}'.format(gas)) # gradient accumulation steps(equals the number of micro-batch)
+print0('> GBS: {}'.format(batch_size))
+print0('> MBS: {}'.format(micro_batch_size)) # micro batch size
+print0('> TP: {}'.format(tp_degree)) # tensor parallelism degree
+print0('> DP: {}'.format(dp_degree)) # data parallelism degree
+print0('> PP: {}'.format(pp_degree)) # pipeline parallelism degree
+
+timers = get_timers(log_level=args.log_level)
 
 optimus_p = Optimus_p(model, mbsize=gas, use_gpu=True, \
              pp_size=pp_degree , dp_size=dp_degree, tp_size=tp_degree, \
              activation_ckpt=False, \
              force_free_mem=True, display_mem=False, \
-             swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze=IR_Anal.SEQUENTIAL)
+             swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze=ir_analyze, \
+             timers=timers, profile_mode=profile_mode)
+
 optimus_rank = optimus_p.get_rank()
 print(f" rank={optimus_rank} ...")
 
@@ -138,19 +153,27 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimus_p.optimizer, 1.0, gamma=0.95
 
 datasets = load_dataset("squad").data["train"]["context"]
 datasets = [str(record) for record in datasets if len(str(record)) < 500]
-dataloader = DataLoader(datasets, batch_size=batch_size)
+# dataloader = DataLoader(datasets, batch_size=batch_size)
+dataloader = optimus_p.prepare_dataloader(datasets, batch_size)
 data_size=len(dataloader.dataset)
-if rank == 0:
-    print(f"data_size={data_size}")
+print0(f"data_size={data_size}")
 nbatches = len(dataloader)
-if rank == 0:
-    print(f"nbatches={nbatches}")
+print0(f"nbatches={nbatches}")
 
 epochs = 1 # The number of epochs
 def train():
+    timers_to_log = [
+    'tokenizer',
+    'IR-preparing',
+    'prepare-labels',
+    'free-memory',
+    'forward-backward']
+    a_timers_to_log = []
     optimus_p.train() # turn on the train mode
     total_loss = 0
     start_time = time.time()
+    # timers('training-time',log_level=1).start()
+    # print0('> training started')
     if profile_mode == "1":
         for i, batch in enumerate(dataloader):
             with torch.cuda.nvtx.range(f"rank-{optimus_p.get_rank()}_batch-{i}"):
@@ -203,18 +226,21 @@ def train():
                 break
     elif profile_mode == "0":
         for i, batch in enumerate(dataloader):
-
             data, labels = None, None
-
             # prepare input and label
             if optimus_p.is_first_stage():
+                # print0('> tokenizer started')
+                timers('tokenizer', log_level=1).start()
                 tokens =  tokenizer(batch, padding=True, truncation=True, max_length=1024,return_tensors="pt")
                 data, labels = tokens.input_ids, tokens.input_ids
+                timers('tokenizer').stop()
             
+            # print0('> move_labels2last_stage started')
             labels = optimus_p.move_labels2last_stage(labels)
             
             optimus_p.optimizer.zero_grad()
 
+            # print0('> run started')
             optimus_p.run(data, labels, mode=pp_schedule)
 
             if optimus_p.is_last_stage():
@@ -226,8 +252,11 @@ def train():
                 pass
             else:
                 torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5) # if tp > 1, don't use this line
-                
+            
+            # print0('> optimizer-step started')
+            timers('optimizer-step',log_level=1).start()
             optimus_p.optimizer.step()
+            timers('optimizer-step').stop()
 
             if optimus_p.is_last_stage():
                 loss = sum(loss) / optimus_p.mbsize
@@ -237,7 +266,7 @@ def train():
                     cur_loss = total_loss / log_interval
                     elapsed = time.time() - start_time
                     # print(f'[RANK {optimus_p.get_rank()}] world_size={world_size}, pp_degree={pp_degree}')
-                    # print(f"{optimus_p.get_rank() % int(world_size/pp_degree)}")
+                    print(f"rank [{optimus_p.get_rank() % int(world_size/pp_degree)}]")
                     if optimus_p.get_rank() % int(world_size/pp_degree) == 0:
                         print('| epoch {:3d} | {:5d}/{:5d} batches | '
                             'lr {:02.2f} | ms/batch {:5.2f} | '
@@ -248,6 +277,22 @@ def train():
 
                     total_loss = 0
                     start_time = time.time()
+            if args.log_level == 2:
+                all_timers = timers.get_timer_names()
+                # Filter timers that start with prefix and end with a number
+                prefixes = ['pre-forward-','forward-recv-', 'forward-','post-forward-','forward-send-', 
+                            'pre-backward-','backward-recv-','backward-','post-backward-','backward-send-']
+                dynamic_timers = [name for name in all_timers
+                                if any(name.startswith(prefix) and 
+                                        re.match(r'^' + re.escape(prefix) + r'\d+$', name) 
+                                        for prefix in prefixes)]
+                
+                # print0(f"dynamic_timers: {dynamic_timers}")
+                a_timers_to_log = timers_to_log + dynamic_timers + ['dp-gradient-allreduce', 'optimizer-step']
+                timers.log(a_timers_to_log)
+            else:
+                pass
+
             if profile_cut and i > profile_step:
                 break
     elif profile_mode == "2":
@@ -304,20 +349,14 @@ def train():
                     break
     else:
         assert False, f">> profile mode: {profile_mode}. It is unknown profile mode. Please set profile_mode to '0', '1', or '2'."
+    
+    
+    
+    # timers('training-time').stop()
         
-if optimus_rank == 0:
-    tick = time.time()
-
 for epoch in range(1, epochs + 1):
-    epoch_start_time = time.time()
     train()
     scheduler.step()
-
-if optimus_rank == 0:
-    tock = time.time()
-    elapsed_time = tock - tick
-
-    print('Time elapsed: %.3f sec ' % (elapsed_time))
 
 print(f"[rank:{optimus_rank}, run completed ...")
 

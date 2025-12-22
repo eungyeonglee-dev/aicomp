@@ -10,6 +10,7 @@ from torch import fx
 import logging
 import os
 import sys
+import time
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from torch.nn.parallel import DistributedDataParallel
 
@@ -52,6 +53,37 @@ class Schedule:
             return "pixel_values"
         elif self.optimus.model_type == self.optimus.model2type["sy"]:
             return "x"
+
+
+    def _get_free_workload_stats(self):
+        """
+        Calculate the number of objects and memory size that will be freed
+        when clean_run_info is called.
+        """
+        n_obj = 0
+        m_bytes = 0
+        
+        # Containers to check: env, grads, flat_args
+        containers = [self.optimus.run_info.env, self.optimus.run_info.grads, self.optimus.run_info.flat_args]
+        
+        for container in containers:
+            for mb_data in container: # Iterate over microbatches
+                if not mb_data: 
+                    continue
+                
+                # Each mb_data is a dict
+                if isinstance(mb_data, dict):
+                    for val in mb_data.values():
+                        if isinstance(val, torch.Tensor):
+                            n_obj += 1
+                            m_bytes += val.numel() * val.element_size()
+                        elif isinstance(val, (list, tuple)): # e.g. flat_args values or grads tuples
+                            for v in val:
+                                if isinstance(v, torch.Tensor):
+                                    n_obj += 1
+                                    m_bytes += v.numel() * v.element_size()
+        
+        return n_obj, m_bytes
 
 
     def init_env_mark(self, mb_idx):
@@ -728,10 +760,21 @@ class ScheduleGPipe(Schedule):
             next(result)
 
         if self.optimus.force_free_mem == True:
+            # [Analysis] Pre-calculate workload stats for analytical prediction
+            n_obj, m_bytes = self._get_free_workload_stats()
+            start_t = time.time()
+
             self.optimus.run_info.clean_run_info(self.optimus.num_mb)
             if self.optimus.swap_model_in_optstep == True:
                 self.check_swap_model_in_optstep()
             self.force_free_mem()
+
+            elapsed = time.time() - start_t
+            # Print stats for analysis (You can use this log to fit the linear model)
+            if self.optimus.display_mem:
+                print(f"[Rank:{self.optimus.tpl.rank}] force_free_mem Analysis: "
+                      f"N_obj={n_obj}, Mem={m_bytes/1024**2:.2f}MB, Time={elapsed:.5f}s")
+
             if optimizer_offloaded == True and model_offloaded == False:
                 if self.optimus.swap_opt_in_fwdbwd == True:
                     self.load_optimizer()
@@ -837,10 +880,21 @@ class Schedule1F1B(Schedule):
 
 
         if self.optimus.force_free_mem == True:
+            # [Analysis] Pre-calculate workload stats for analytical prediction
+            n_obj, m_bytes = self._get_free_workload_stats()
+            start_t = time.time()
+
             self.optimus.run_info.clean_run_info(self.optimus.num_mb)
             if self.optimus.swap_model_in_optstep == True:
                 self.check_swap_model_in_optstep()
             self.force_free_mem()
+
+            elapsed = time.time() - start_t
+            # Print stats for analysis (You can use this log to fit the linear model)
+            if self.optimus.display_mem:
+                print(f"[Rank:{self.optimus.tpl.rank}] force_free_mem Analysis: "
+                      f"N_obj={n_obj}, Mem={m_bytes/1024**2:.2f}MB, Time={elapsed:.5f}s")
+
             if optimizer_offloaded == True and model_offloaded == False:
                 if self.optimus.swap_opt_in_fwdbwd == True:
                     self.load_optimizer()

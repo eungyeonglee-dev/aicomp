@@ -17,7 +17,6 @@ mkdir -p $LOG_DIR
 DATE=$1
 FAILED=false
 TRYNUMBER=1
-HF_ACCESS_TOKEN={your_huggingface_token_here}
 MBS=1
 TP=1
 DP=4

@@ -13,14 +13,15 @@ export MASTER_PORT=29500
 LOG_DIR="./_logs"
 mkdir -p $LOG_DIR
 # DATE="20251029_055110"
-DATE=$(date +%Y%m%d_%H%M%S)
+# DATE=$(date +%Y%m%d_%H%M%S)
+DATE=$1
 FAILED=false
 TRYNUMBER=3
 HF_ACCESS_TOKEN={your_huggingface_token_here}
-PP=8
+MBS=1
 TP=1
 DP=1
-MBS=1
+PP=8
 GBS=32
 PROFILE_MODE=0 # 0: no profile, 1: nvtx, 2: torch profiler
 PROFILE_CUT="True" # whether to cut off after profiling steps
@@ -35,7 +36,7 @@ TRAIN_ARGS="--access-token $HF_ACCESS_TOKEN
             --profile-mode $PROFILE_MODE
             --profile-cut $PROFILE_CUT
             --profile-step $PROFILE_STEP"
-            
+
 for i in $(seq 1 $TRYNUMBER)
 do
     echo "=== Training Attempt: $i ==="
@@ -44,7 +45,8 @@ do
         --nproc_per_node=8 --nnodes=1 --node_rank=0 \
         --master_port=$MASTER_PORT \
         examples/pp_train_llama4.py $TRAIN_ARGS > "${LOG_DIR}/${DATE}_log_llama4_${i}.txt" 2>&1 &&
-    ./get_time.sh "${LOG_DIR}/${DATE}_log_llama4_${i}.txt" > "${LOG_DIR}/${DATE}_steptime_log_llama4_${i}.txt"
+    ./get_time.sh "${LOG_DIR}/${DATE}_log_llama4_${i}.txt" > "${LOG_DIR}/${DATE}_steptime_log_llama4_${i}.txt" 2>&1 &&
+
     # status=$?
     # if [ $status -ne 0 ]; then
     #     echo "Training Attempt: $i failed with status $status"

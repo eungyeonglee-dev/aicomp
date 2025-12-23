@@ -13,7 +13,7 @@ RUN apt-get update \
 	git \
  && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 install transformers==4.46.2 datasets
+RUN pip3 install transformers==4.46.2 datasets nsys
 
 WORKDIR /workspace
 RUN wget https://github.com/huggingface/transformers/archive/refs/tags/v4.46.2.tar.gz \

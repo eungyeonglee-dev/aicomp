@@ -623,6 +623,9 @@ class Optimus_p:
                 for j in range(self.mbsize):
                     self.run_info.env[j][target_node_name] = mbatches[j]
 
+            # Only pipeline-parallelism needs inter-stage label transfer.
+            # For PP=1, every rank is both first/last stage, so sending to self is invalid.
+            # if self.comm.world_size > 1 and self.tpl.get_last_stage() != self.tpl.get_first_stage():
             if self.comm.world_size > 1:
                 for j in range(self.mbsize):
                     obj = self.run_info.env[j][target_node_name]
@@ -638,9 +641,16 @@ class Optimus_p:
         if self.tpl.is_last_stage():
             target_node_name = "labels"
 
+            # Only pipeline-parallelism needs inter-stage label transfer.
+            # if self.comm.world_size > 1 and self.tpl.get_last_stage() != self.tpl.get_first_stage():
             if self.comm.world_size > 1:
                 for j in range(self.mbsize):
                     self.run_info.env[j][target_node_name] = self.comm.receive_data(self.tpl.get_first_rank(), self.device)
+            # else:
+            #     # PP=1: labels already prepared locally.
+            #     for j in range(self.mbsize):
+            #         if target_node_name in self.run_info.env[j]:
+            #             self.run_info.env[j][target_node_name] = self.run_info.env[j][target_node_name].to(self.device)
             if self.mbsize == 1:
                 labels = self.run_info.env[0][target_node_name]
             else:

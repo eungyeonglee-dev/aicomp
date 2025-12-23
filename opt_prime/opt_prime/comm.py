@@ -14,6 +14,32 @@ logging.basicConfig(level=logging.ERROR)
 
 NoneType=type(None)
 
+def _comm_shape_debug_enabled() -> bool:
+    # Enable with: OPTPRIME_COMM_TENSOR_SHAPE=1
+    return os.environ.get("OPTPRIME_COMM_TENSOR_SHAPE", "0") == "1"
+
+def _comm_rank_filter_ok(rank: int) -> bool:
+    # Optional: limit prints to certain ranks. Example: OPTPRIME_COMM_TENSOR_SHAPE_RANKS="0,7"
+    s = os.environ.get("OPTPRIME_COMM_TENSOR_SHAPE_RANKS", "").strip()
+    if not s:
+        return True
+    try:
+        allow = {int(x.strip()) for x in s.split(",") if x.strip() != ""}
+        return rank in allow
+    except Exception:
+        # If misconfigured, don't block logs.
+        return True
+
+def _tensor_desc(t: torch.Tensor) -> str:
+    try:
+        nbytes = t.element_size() * t.numel()
+    except Exception:
+        nbytes = -1
+    return (
+        f"shape={tuple(t.shape)} dtype={t.dtype} device={t.device} "
+        f"contig={t.is_contiguous()} numel={t.numel()} bytes={nbytes}"
+    )
+
 
 class Comm:
 
@@ -201,9 +227,22 @@ class Comm:
         dist.recv(ttype, from_rank)
         ttype = self.tensor_id2type[ttype.item()]
 
+        if _comm_shape_debug_enabled() and _comm_rank_filter_ok(self.rank):
+            print(
+                f"[comm][rank{self.rank}] RECV meta from rank{from_rank}: "
+                f"dim={dimension.item()} shape={shape} dtype={ttype} device={device}",
+                flush=True,
+            )
+
         obj = torch.zeros(size=shape, dtype=ttype, device=device)
         dist.recv(obj, from_rank)
         #logging.debug(f" >>>>> recv_tensor, obj:{obj} from rank:{from_rank}")
+
+        if _comm_shape_debug_enabled() and _comm_rank_filter_ok(self.rank):
+            print(
+                f"[comm][rank{self.rank}] RECV payload from rank{from_rank}: {_tensor_desc(obj)}",
+                flush=True,
+            )
 
         return obj
 
@@ -222,10 +261,24 @@ class Comm:
         ttype = torch.tensor(ttype, dtype=torch.long, device=device)
         dist.send(ttype, to_rank)
 
+        if _comm_shape_debug_enabled() and _comm_rank_filter_ok(self.rank):
+            print(
+                f"[comm][rank{self.rank}] SEND meta to rank{to_rank}: "
+                f"dim={len(obj_size)} shape={tuple(obj_size)} dtype={obj.dtype} device={device}",
+                flush=True,
+            )
+
         if not obj.is_contiguous():
             obj = obj.contiguous()
 
         obj = obj.to(device)
+
+        if _comm_shape_debug_enabled() and _comm_rank_filter_ok(self.rank):
+            print(
+                f"[comm][rank{self.rank}] SEND payload to rank{to_rank}: {_tensor_desc(obj)}",
+                flush=True,
+            )
+
         dist.send(obj, to_rank)
 
     def receive_list(self, from_rank, device):

@@ -4,6 +4,7 @@ CONTAINER_NAME="optimus-timelog"
 DOCKER_IMAGE_NAME="optimus-timelog"
 WORKSPACE_DIR="${HOME}/workspace/aicomp"
 CONTAINER_DIR="/workspace/aicomp"
+DATE=$(date +%Y%m%d_%H%M%S)
 
 # delete existing container if it exists
 if [ "$(sudo docker ps -aq -f name=^${CONTAINER_NAME}$)" ]; then
@@ -25,7 +26,7 @@ sudo docker run -d --name $CONTAINER_NAME \
                 bash -lc "tail -f /dev/null"
 # run the training script inside the container in order to get the steptime
 echo "==> Running llama training script inside the container..."
-sudo docker exec -it $CONTAINER_NAME bash -lc "cd /workspace/aicomp/opt_prime && bash get_steptime_run_llama.sh"
+sudo docker exec -it $CONTAINER_NAME bash -lc "cd /workspace/aicomp/opt_prime && bash get_steptime_run_llama_combi.sh ${DATE}"
 
 
                 

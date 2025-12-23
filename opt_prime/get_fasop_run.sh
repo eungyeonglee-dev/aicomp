@@ -2,33 +2,25 @@
 set -euo pipefail
 
 # Run OptPrime llama training for configs listed in FASOP csv (rank 1~5),
-# collect per-step component/layer timing logs (FX instrumentation),
-# and write a results csv with log pointers.
+# measure steptime (ms/batch for steps 51~60), and write a results csv.
 #
-# This script is derived from get_fasop_run.sh but is specialized for:
-#   - profile-mode=0
-#   - log-level=1
-#   - FX layer/component timing window (default steps 51~60)
-#
-# IMPORTANT:
-# - Uses examples/pp_train_llama.py because it prints FX layer/component timing summaries.
-# - For FX instrumentation, we set:
-#     OPTPRIME_FX_LAYER_TIMING=1
-#     OPTPRIME_FX_LAYER_START_STEP / OPTPRIME_FX_LAYER_END_STEP
+# Intended to be run from: /workspace/aicomp/opt_prime (inside container) OR host.
+# If running inside container, make sure the input csv is visible inside the container
+# (e.g., bind-mount /home/ieg95/workspace/FASOP or copy the csv into /workspace/aicomp).
 #
 # Usage:
-#   bash get_fasop_timelog_run.sh <DATE> [INPUT_CSV] [OUT_CSV]
+#   bash get_fasop_run.sh <DATE> [INPUT_CSV] [OUT_CSV]
 #
 # Example:
 #   DATE=$(date +%Y%m%d_%H%M%S)
-#   bash get_fasop_timelog_run.sh "$DATE" /home/ieg95/workspace/FASOP/main_logs/llama_evenly.csv ./_logs/${DATE}_fasop_rank1-5_timelog.csv
+#   bash get_fasop_run.sh "$DATE" /home/ieg95/workspace/FASOP/main_logs/llama_evenly.csv ./_logs/${DATE}_fasop_rank1-5.csv
 
 DATE="${1:-$(date +%Y%m%d_%H%M%S)}"
-INPUT_CSV="${2:-/workspace/FASOP/main_logs/llama_detail_timelog.csv}"
-OUT_CSV="${3:-./_logs/${DATE}_detail_timelog.csv}"
+INPUT_CSV="${2:-/workspace/FASOP/main_logs/llama_evenly_mbs_test.csv}"
+OUT_CSV="${3:-./_logs/${DATE}_fasop_rank1-5_steptime.csv}"
 
 NPROC_PER_NODE="${NPROC_PER_NODE:-8}"
-TRYNUMBER="${TRYNUMBER:-1}"
+TRYNUMBER="${TRYNUMBER:-3}"
 GBS_DEFAULT="${GBS_DEFAULT:-32}"
 
 export NCCL_IB_DISABLE="${NCCL_IB_DISABLE:-1}"
@@ -36,15 +28,9 @@ export MASTER_ADDR="${MASTER_ADDR:-127.0.0.1}"
 BASE_MASTER_PORT="${BASE_MASTER_PORT:-29500}"
 
 HF_ACCESS_TOKEN="${HF_ACCESS_TOKEN:-{your_huggingface_token_here}}"
-
-# Fixed per request
-PROFILE_MODE="0"
-LOG_LEVEL="1"
-
-# Keep training short but ensure we include end_step+1 to stop capture windows if enabled.
+PROFILE_MODE="${PROFILE_MODE:-0}"
 PROFILE_CUT="${PROFILE_CUT:-True}"
-PROFILE_STEP="${PROFILE_STEP:-50}"
-
+PROFILE_STEP="${PROFILE_STEP:-60}"
 
 LOG_DIR="${LOG_DIR:-./_logs}"
 mkdir -p "$LOG_DIR"
@@ -60,7 +46,6 @@ echo "[info] DATE=$DATE"
 echo "[info] INPUT_CSV=$INPUT_CSV"
 echo "[info] OUT_CSV=$OUT_CSV"
 echo "[info] NPROC_PER_NODE=$NPROC_PER_NODE TRYNUMBER=$TRYNUMBER GBS_DEFAULT=$GBS_DEFAULT"
-echo "[info] profile-mode=$PROFILE_MODE log-level=$LOG_LEVEL"
 
 # Extract configs (rank 1..5) from csv robustly (handles quoted fields w/ commas),
 # keep only configs with PP>1, and cap to at most 5 configs.
@@ -72,14 +57,16 @@ import csv, sys
 from collections import OrderedDict
 
 path = sys.argv[1]
-out = OrderedDict()  # (rank,mbs,tp,dp,pp)->fasop_step_time_s (keep first)
+
+
+out = OrderedDict()  # (mbs,tp,dp,pp)->fasop_step_time_s (keep first)
 limit = 10
 
 with open(path, newline="") as f:
     reader = csv.DictReader(f)
     for row in reader:
         try:
-            rank = int(float((row.get("rank", "") or "").strip()))
+            rank = int(float(row.get("rank", "").strip()))
         except Exception:
             continue
 
@@ -119,7 +106,7 @@ fi
 
 echo "[info] extracted ${#CONFIG_LINES[@]} unique configs (rank 1..5)"
 
-echo "rank,mbs,tp,dp,pp,gbs,tries,profile_step,status,log_prefix,stdout_log,fasop_step_time_s" > "$OUT_CSV"
+echo "rank,mbs,tp,dp,pp,gbs,tries,avg_ms_batch,trial_std_ms_batch,avg_s_batch,fasop_step_time_s,status,log_prefix" > "$OUT_CSV"
 
 cfg_idx=0
 for line in "${CONFIG_LINES[@]}"; do
@@ -130,14 +117,13 @@ for line in "${CONFIG_LINES[@]}"; do
   world=$((DP * TP * PP))
   if [[ "$world" -ne "$NPROC_PER_NODE" ]]; then
     echo "[warn] skip rank=$RANK mbs=$MBS tp=$TP dp=$DP pp=$PP (dp*tp*pp=$world != $NPROC_PER_NODE)"
-    echo "$RANK,$MBS,$TP,$DP,$PP,$GBS_DEFAULT,0,$PROFILE_STEP,skip_world_mismatch,,,,${FASOP_STEP_S}" >> "$OUT_CSV"
+    echo "$RANK,$MBS,$TP,$DP,$PP,$GBS_DEFAULT,0,,,,${FASOP_STEP_S},skip_world_mismatch," >> "$OUT_CSV"
     continue
   fi
 
   GBS="$GBS_DEFAULT"
   config_name="rank${RANK}_MBS${MBS}_TP${TP}_DP${DP}_PP${PP}_GBS${GBS}"
   log_prefix="${LOG_DIR}/${DATE}_${config_name}"
-  stdout_log="${log_prefix}_log_llama_fx_${LOG_LEVEL}.txt"
 
   echo "=========================================="
   echo "[run] ($cfg_idx/${#CONFIG_LINES[@]}) $config_name"
@@ -152,11 +138,11 @@ for line in "${CONFIG_LINES[@]}"; do
               --profile-mode ${PROFILE_MODE}
               --profile-cut ${PROFILE_CUT}
               --profile-step ${PROFILE_STEP}
-              --log-level ${LOG_LEVEL}
   "
 
-  declare -i tries_ok=0
+  declare -a AVGS_MS=()
   status="ok"
+
   for i in $(seq 1 "$TRYNUMBER"); do
     # Per-run port to reduce collision risk if any process lingers.
     export MASTER_PORT=$((BASE_MASTER_PORT + cfg_idx * 10 + i))
@@ -165,26 +151,65 @@ for line in "${CONFIG_LINES[@]}"; do
     torchrun --standalone \
       --nproc_per_node="${NPROC_PER_NODE}" --nnodes=1 --node_rank=0 \
       --master_port="${MASTER_PORT}" \
-      examples/pp_train_llama4.py ${TRAIN_ARGS} > "${stdout_log%.*}_${i}.txt" 2>&1 || {
+      examples/pp_train_llama4.py ${TRAIN_ARGS} > "${log_prefix}_log_llama4_${i}.txt" 2>&1 || {
         echo "[warn] torchrun failed (try=${i}) for $config_name"
         status="torchrun_failed"
         break
       }
 
-    tries_ok=$((tries_ok + 1))
+    ./get_time.sh "${log_prefix}_log_llama4_${i}.txt" > "${log_prefix}_steptime_log_llama4_${i}.txt" 2>&1 || {
+      echo "[warn] get_time.sh failed (try=${i}) for $config_name"
+      status="time_parse_failed"
+      continue
+    }
+
+    avg_file="${log_prefix}_log_llama4_${i}_avg.txt"
+    if [[ ! -f "$avg_file" ]]; then
+      echo "[warn] missing avg file: $avg_file"
+      status="avg_missing"
+      continue
+    fi
+
+    avg_ms="$(head -n 1 "$avg_file" | tr -d '\r' | xargs)"
+    if [[ -z "$avg_ms" ]]; then
+      echo "[warn] empty avg value in $avg_file"
+      status="avg_empty"
+      continue
+    fi
+    AVGS_MS+=("$avg_ms")
+    echo "[ok] try=${i} avg_ms_batch(51~60)=${avg_ms}"
   done
 
+  tries_ok="${#AVGS_MS[@]}"
   if [[ "$tries_ok" -eq 0 ]]; then
     echo "[warn] no successful tries for $config_name"
-    echo "$RANK,$MBS,$TP,$DP,$PP,$GBS,0,$PROFILE_STEP,${status},${log_prefix},,${FASOP_STEP_S}" >> "$OUT_CSV"
+    echo "$RANK,$MBS,$TP,$DP,$PP,$GBS,0,,,,${FASOP_STEP_S},${status},${log_prefix}" >> "$OUT_CSV"
     continue
   fi
 
-  echo "[done] $config_name tries_ok=$tries_ok"
-  # For convenience, store the last try's stdout path in the csv.
-  echo "$RANK,$MBS,$TP,$DP,$PP,$GBS,$tries_ok,$PROFILE_STEP,ok,${log_prefix},${stdout_log%.*}_${tries_ok}.txt,${FASOP_STEP_S}" >> "$OUT_CSV"
+  # Compute mean and std across successful tries (ms/batch).
+  read -r mean_ms std_ms <<< "$(
+    python3 - <<'PY' "${AVGS_MS[@]}"
+import sys, math
+vals = [float(x) for x in sys.argv[1:]]
+mean = sum(vals)/len(vals)
+var = sum((x-mean)**2 for x in vals)/len(vals)
+std = math.sqrt(var)
+print(f'{mean:.3f} {std:.3f}')
+PY
+  )"
+
+  mean_s="$(python3 - <<PY "$mean_ms"
+import sys
+print(f'{float(sys.argv[1])/1000.0:.6f}')
+PY
+)"
+
+  echo "[done] $config_name tries_ok=$tries_ok mean_ms=${mean_ms} std_ms=${std_ms}"
+  echo "$RANK,$MBS,$TP,$DP,$PP,$GBS,$tries_ok,$mean_ms,$std_ms,$mean_s,${FASOP_STEP_S},ok,${log_prefix}" >> "$OUT_CSV"
 done
 
 echo ""
 echo "[done] wrote: $OUT_CSV"
+
 

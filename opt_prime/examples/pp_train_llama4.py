@@ -277,6 +277,8 @@ def train():
 
                     total_loss = 0
                     start_time = time.time()
+            timers.log(timers_to_log)
+
             if args.log_level == 2:
                 all_timers = timers.get_timer_names()
                 # Filter timers that start with prefix and end with a number
@@ -289,10 +291,10 @@ def train():
                 
                 # print0(f"dynamic_timers: {dynamic_timers}")
                 a_timers_to_log = timers_to_log + dynamic_timers + ['dp-gradient-allreduce', 'optimizer-step']
-                timers.log(a_timers_to_log)
             else:
                 pass
 
+            timers.log(a_timers_to_log)
             if profile_cut and i > profile_step:
                 break
     elif profile_mode == "2":

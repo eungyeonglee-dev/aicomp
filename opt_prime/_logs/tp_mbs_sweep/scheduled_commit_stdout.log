@@ -1,0 +1,10 @@
+[commit] waiting for scheduled sweeps to finish...
+./schedule_tp_mbs_runs.sh: line 80: wait: pid 2769644 is not a child of this shell
+./schedule_tp_mbs_runs.sh: line 81: wait: pid 2769645 is not a child of this shell
+Already on 'feature/ir-layer-profiling'
+M	opt_prime/examples/pp_train_llama4.py
+M	opt_prime/run_tp_mbs_sweep.sh
+The following paths are ignored by one of your .gitignore files:
+opt_prime/_logs
+Use -f if you really want to add them.
+[commit] no new logs to commit.

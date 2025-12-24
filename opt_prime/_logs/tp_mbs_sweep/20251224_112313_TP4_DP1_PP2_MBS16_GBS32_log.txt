@@ -1,0 +1,1124 @@
+W1224 11:23:14.668000 28405 site-packages/torch/distributed/run.py:793] 
+W1224 11:23:14.668000 28405 site-packages/torch/distributed/run.py:793] *****************************************
+W1224 11:23:14.668000 28405 site-packages/torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1224 11:23:14.668000 28405 site-packages/torch/distributed/run.py:793] *****************************************
+[rank:0] torch version 2.3.1 or higher --> OK
+[rank:0] transformers version 4.46.2 or higher --> OK
+> Total parameters in model: 1,235,814,400
+> World size: 8
+> IR: IR_Anal.SEQUENTIAL
+> GAS: 2
+> GBS: 32
+> MBS: 16
+> TP: 4
+> DP: 1
+> PP: 2
+Available GPUs per server: 8
+GPU mode is used.
+GPU mode is used.
+GPU mode is used.
+GPU mode is used.
+GPU mode is used.
+GPU mode is used.
+GPU mode is used.
+GPU mode is used.
+> World Size: 8
+> Pipeline Parallel Size: 2
+> Tensor Parallel Size: 4
+>> ir_analyze: IR_Anal.SEQUENTIAL
+> [rank:0] pp group:DeviceMesh('cuda', [0, 4], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [0, 1, 2, 3], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [0], mesh_dim_names=('dp',))
+ ----------------------------------
+stage2rank = {0: [0, 1, 2, 3], 1: [4, 5, 6, 7]}
+ ----------------------------------
+>>> Using GPU ... cuda:0
+>> model class name: LlamaForCausalLM
+>> split method: llama-tp-split
+SEQUENTIAL mode >> [rank:0, local_world_size:8]
+> [rank:6] pp group:DeviceMesh('cuda', [2, 6], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [4, 5, 6, 7], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [6], mesh_dim_names=('dp',))
+> [rank:3] pp group:DeviceMesh('cuda', [3, 7], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [0, 1, 2, 3], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [3], mesh_dim_names=('dp',))
+> [rank:1] pp group:DeviceMesh('cuda', [1, 5], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [0, 1, 2, 3], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [1], mesh_dim_names=('dp',))
+> [rank:5] pp group:DeviceMesh('cuda', [1, 5], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [4, 5, 6, 7], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [5], mesh_dim_names=('dp',))
+> [rank:2] pp group:DeviceMesh('cuda', [2, 6], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [0, 1, 2, 3], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [2], mesh_dim_names=('dp',))
+> [rank:7] pp group:DeviceMesh('cuda', [3, 7], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [4, 5, 6, 7], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [7], mesh_dim_names=('dp',))
+> [rank:4] pp group:DeviceMesh('cuda', [0, 4], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [4, 5, 6, 7], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [4], mesh_dim_names=('dp',))
+ num_stage: 2
+ num_blocks = 18
+ layers_per_stage = [0, 9, 18]
+ stage_layers = [[0, 1, 2, 3, 4, 5, 6, 7, 8], [9, 10, 11, 12, 13, 14, 15, 16, 17]]
+ ------------------------------------------------------------
+  rank:0,  first metadata_range: [(0, 'model_layers_8_mlp_down_proj'), (1, 'model_layers_15_mlp_down_proj')]
+ ------------------------------------------------------------
+>>> Using GPU ... cuda:6
+>> model class name: LlamaForCausalLM
+>> split method: llama-tp-split
+SEQUENTIAL mode >> [rank:6, local_world_size:8]
+[rank6]:[W1224 11:23:21.789443429 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 6]  using GPU 6 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+>>> Using GPU ... cuda:3
+>> model class name: LlamaForCausalLM
+>> split method: llama-tp-split
+SEQUENTIAL mode >> [rank:3, local_world_size:8]
+[rank3]:[W1224 11:23:22.889446042 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 3]  using GPU 3 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+>>> Using GPU ... cuda:5
+>> model class name: LlamaForCausalLM
+>> split method: llama-tp-split
+SEQUENTIAL mode >> [rank:5, local_world_size:8]
+[rank5]:[W1224 11:23:22.923787038 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 5]  using GPU 5 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+>>> Using GPU ... cuda:7
+>> model class name: LlamaForCausalLM
+>> split method: llama-tp-split
+SEQUENTIAL mode >> [rank:7, local_world_size:8]
+[rank7]:[W1224 11:23:22.985991299 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 7]  using GPU 7 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+>>> Using GPU ... cuda:2
+>> model class name: LlamaForCausalLM
+>> split method: llama-tp-split
+SEQUENTIAL mode >> [rank:2, local_world_size:8]
+[rank2]:[W1224 11:23:22.992681535 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 2]  using GPU 2 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+>>> Using GPU ... cuda:1
+>> model class name: LlamaForCausalLM
+>> split method: llama-tp-split
+SEQUENTIAL mode >> [rank:1, local_world_size:8]
+[rank1]:[W1224 11:23:22.997778900 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 1]  using GPU 1 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+>>> Using GPU ... cuda:4
+>> model class name: LlamaForCausalLM
+>> split method: llama-tp-split
+SEQUENTIAL mode >> [rank:4, local_world_size:8]
+[rank4]:[W1224 11:23:22.011561475 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 4]  using GPU 4 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+ ------------------------------------------------------------
+  rank:0,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+>> ------------------ FX graph --------------------------------
+n.op:placeholder, n.name:input_ids, n.target:input_ids, n.args:(), n.all_input_nodes:[]
+n.op:call_module, n.name:submod_0, n.target:submod_0, n.args:(input_ids,), n.all_input_nodes:[input_ids]
+n.op:call_function, n.name:getitem, n.target:<built-in function getitem>, n.args:(submod_0, 0), n.all_input_nodes:[submod_0]
+n.op:call_function, n.name:getitem_1, n.target:<built-in function getitem>, n.args:(submod_0, 1), n.all_input_nodes:[submod_0]
+n.op:call_function, n.name:getitem_2, n.target:<built-in function getitem>, n.args:(submod_0, 2), n.all_input_nodes:[submod_0]
+n.op:call_function, n.name:getitem_3, n.target:<built-in function getitem>, n.args:(submod_0, 3), n.all_input_nodes:[submod_0]
+n.op:call_function, n.name:getitem_4, n.target:<built-in function getitem>, n.args:(submod_0, 4), n.all_input_nodes:[submod_0]
+n.op:call_module, n.name:submod_1, n.target:submod_1, n.args:(getitem, getitem_1, getitem_2, getitem_3, getitem_4), n.all_input_nodes:[getitem, getitem_1, getitem_2, getitem_3, getitem_4]
+n.op:output, n.name:output, n.target:output, n.args:({'logits': submod_1},), n.all_input_nodes:[submod_1]
+>> ------------------------------------------------------------
+ ### Rank:0, name:submod_0, move submod_0 to cuda:0
+ # rank = 0, metadata_range:[(0, 'submod_0'), (1, 'submod_1')]
+-- node.op:placeholder, node.name:input_ids, node.target:input_ids, node.args:(), node.all_input_nodes:[]
+-- node.op:call_module, node.name:submod_0, node.target:submod_0, node.args:(input_ids,), node.all_input_nodes:[input_ids]
+-- node.op:call_function, node.name:getitem, node.target:<built-in function getitem>, node.args:(submod_0, 0), node.all_input_nodes:[submod_0]
+-- node.op:call_function, node.name:getitem_1, node.target:<built-in function getitem>, node.args:(submod_0, 1), node.all_input_nodes:[submod_0]
+-- node.op:call_function, node.name:getitem_2, node.target:<built-in function getitem>, node.args:(submod_0, 2), node.all_input_nodes:[submod_0]
+-- node.op:call_function, node.name:getitem_3, node.target:<built-in function getitem>, node.args:(submod_0, 3), node.all_input_nodes:[submod_0]
+-- node.op:call_function, node.name:getitem_4, node.target:<built-in function getitem>, node.args:(submod_0, 4), node.all_input_nodes:[submod_0]
+-- node.op:call_module, node.name:submod_1, node.target:submod_1, node.args:(getitem, getitem_1, getitem_2, getitem_3, getitem_4), node.all_input_nodes:[getitem, getitem_1, getitem_2, getitem_3, getitem_4]
+-- node.op:output, node.name:output, node.target:output, node.args:({'logits': submod_1},), node.all_input_nodes:[submod_1]
+ ========= getitem_dic =========
+ --- key:getitem, values:('submod_0', 0)
+ --- key:getitem_1, values:('submod_0', 1)
+ --- key:getitem_2, values:('submod_0', 2)
+ --- key:getitem_3, values:('submod_0', 3)
+ --- key:getitem_4, values:('submod_0', 4)
+ ===============================
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:0, clean_module_memory ...
+[rank:0, local_rank:0] SEQUENTIAL MODE PROCESSING ...
+[rank0]:[W1224 11:23:22.747234433 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 0]  using GPU 0 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+ num_stage: 2
+ num_blocks = 18
+ layers_per_stage = [0, 9, 18]
+ stage_layers = [[0, 1, 2, 3, 4, 5, 6, 7, 8], [9, 10, 11, 12, 13, 14, 15, 16, 17]]
+ ------------------------------------------------------------
+  rank:1,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+ ### Rank:1, name:submod_0, move submod_0 to cuda:1
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:1, clean_module_memory ...
+[rank:1, local_rank:1] SEQUENTIAL MODE PROCESSING ...
+ num_stage: 2
+ num_blocks = 18
+ layers_per_stage = [0, 9, 18]
+ stage_layers = [[0, 1, 2, 3, 4, 5, 6, 7, 8], [9, 10, 11, 12, 13, 14, 15, 16, 17]]
+ ------------------------------------------------------------
+  rank:2,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+ ### Rank:2, name:submod_0, move submod_0 to cuda:2
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:2, clean_module_memory ...
+[rank:2, local_rank:2] SEQUENTIAL MODE PROCESSING ...
+ num_stage: 2
+ num_blocks = 18
+ layers_per_stage = [0, 9, 18]
+ stage_layers = [[0, 1, 2, 3, 4, 5, 6, 7, 8], [9, 10, 11, 12, 13, 14, 15, 16, 17]]
+ ------------------------------------------------------------
+  rank:3,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+ ### Rank:3, name:submod_0, move submod_0 to cuda:3
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:3, clean_module_memory ...
+[rank:3, local_rank:3] SEQUENTIAL MODE PROCESSING ...
+ ------------------------------------------------------------
+  rank:4,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+ ### Rank:4, name:submod_1, move submod_1 to cuda:4
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:4, clean_module_memory ...
+[rank:4, local_rank:4] SEQUENTIAL MODE PROCESSING ...
+ ------------------------------------------------------------
+  rank:5,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+ ### Rank:5, name:submod_1, move submod_1 to cuda:5
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:5, clean_module_memory ...
+[rank:5, local_rank:5] SEQUENTIAL MODE PROCESSING ...
+ ------------------------------------------------------------
+  rank:6,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+ ### Rank:6, name:submod_1, move submod_1 to cuda:6
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:6, clean_module_memory ...
+[rank:6, local_rank:6] SEQUENTIAL MODE PROCESSING ...
+ ------------------------------------------------------------
+  rank:7,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+ ### Rank:7, name:submod_1, move submod_1 to cuda:7
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:7, clean_module_memory ...
+[rank:7, local_rank:7] SEQUENTIAL MODE PROCESSING ...
+ >> rank:7 -----------------------------------------------
+rank: 7, #### last layer id:15
+ >> rank:7 -----------------------------------------------
+>>>> self.tpl.tp_mesh.size(): 4
+>model_layers_9_self_attn_q_proj ==> node.args[3]:32
+> >model_layers_9_self_attn_q_proj ==> node.args[3]:8
+>>model_layers_9_self_attn_k_proj ===> node.args[3]:8
+>> >> model_layers_9_self_attn_k_proj ===> node.args[3]:2
+>>>model_layers_9_self_attn_v_proj ===> node.args[3]:8
+>>> >>>model_layers_9_self_attn_v_proj ===> node.args[3]:2
+>model_layers_10_self_attn_q_proj ==> node.args[3]:32
+> >model_layers_10_self_attn_q_proj ==> node.args[3]:8
+>>model_layers_10_self_attn_k_proj ===> node.args[3]:8
+>> >> model_layers_10_self_attn_k_proj ===> node.args[3]:2
+>>>model_layers_10_self_attn_v_proj ===> node.args[3]:8
+>>> >>>model_layers_10_self_attn_v_proj ===> node.args[3]:2
+>model_layers_11_self_attn_q_proj ==> node.args[3]:32
+ >> rank:6 -----------------------------------------------> >model_layers_11_self_attn_q_proj ==> node.args[3]:8
+
+rank: 6, #### last layer id:15>>model_layers_11_self_attn_k_proj ===> node.args[3]:8
+
+ >> rank:6 -----------------------------------------------
+>> >> model_layers_11_self_attn_k_proj ===> node.args[3]:2
+>>>model_layers_11_self_attn_v_proj ===> node.args[3]:8
+>>> >>>model_layers_11_self_attn_v_proj ===> node.args[3]:2
+>>>> self.tpl.tp_mesh.size(): 4
+>model_layers_12_self_attn_q_proj ==> node.args[3]:32
+> >model_layers_12_self_attn_q_proj ==> node.args[3]:8
+>>model_layers_12_self_attn_k_proj ===> node.args[3]:8
+ >> rank:4 ----------------------------------------------->> >> model_layers_12_self_attn_k_proj ===> node.args[3]:2 >> rank:2 ----------------------------------------------->model_layers_9_self_attn_q_proj ==> node.args[3]:32
+
+
+
+rank: 4, #### last layer id:15>>>model_layers_12_self_attn_v_proj ===> node.args[3]:8rank: 2, #### last layer id:8
+
+ >> rank:0 -----------------------------------------------
+ >> rank:4 ----------------------------------------------- >> rank:3 ----------------------------------------------->>> >>>model_layers_12_self_attn_v_proj ===> node.args[3]:2 >> rank:1 -----------------------------------------------> >model_layers_9_self_attn_q_proj ==> node.args[3]:8
+ >> rank:2 -----------------------------------------------
+
+
+
+
+rank: 0, #### last layer id:8
+rank: 3, #### last layer id:8rank: 1, #### last layer id:8>model_layers_13_self_attn_q_proj ==> node.args[3]:32>>model_layers_9_self_attn_k_proj ===> node.args[3]:8
+>>>> self.tpl.tp_mesh.size(): 4
+ >> rank:5 -----------------------------------------------
+
+
+ >> rank:0 ----------------------------------------------->>>> self.tpl.tp_mesh.size(): 4
+ >> rank:3 -----------------------------------------------
+ >> rank:1 -----------------------------------------------> >model_layers_13_self_attn_q_proj ==> node.args[3]:8
+
+>> >> model_layers_9_self_attn_k_proj ===> node.args[3]:2
+rank: 5, #### last layer id:15
+
+
+
+>>model_layers_13_self_attn_k_proj ===> node.args[3]:8>>>model_layers_9_self_attn_v_proj ===> node.args[3]:8 >> rank:5 -----------------------------------------------
+>>>> self.tpl.tp_mesh.size(): 4>model_layers_9_self_attn_q_proj ==> node.args[3]:32
+>>>> self.tpl.tp_mesh.size(): 4
+>>>> self.tpl.tp_mesh.size(): 4
+>> >> model_layers_13_self_attn_k_proj ===> node.args[3]:2
+
+>>> >>>model_layers_9_self_attn_v_proj ===> node.args[3]:2
+
+>model_layers_0_self_attn_q_proj ==> node.args[3]:32
+>>>model_layers_13_self_attn_v_proj ===> node.args[3]:8
+
+>>> >>>model_layers_13_self_attn_v_proj ===> node.args[3]:2> >model_layers_9_self_attn_q_proj ==> node.args[3]:8>model_layers_10_self_attn_q_proj ==> node.args[3]:32
+
+
+>>model_layers_9_self_attn_k_proj ===> node.args[3]:8>model_layers_14_self_attn_q_proj ==> node.args[3]:32
+> >model_layers_10_self_attn_q_proj ==> node.args[3]:8
+>model_layers_0_self_attn_q_proj ==> node.args[3]:32>>>> self.tpl.tp_mesh.size(): 4
+> >model_layers_0_self_attn_q_proj ==> node.args[3]:8>> >> model_layers_9_self_attn_k_proj ===> node.args[3]:2
+> >model_layers_14_self_attn_q_proj ==> node.args[3]:8>model_layers_0_self_attn_q_proj ==> node.args[3]:32
+>model_layers_0_self_attn_q_proj ==> node.args[3]:32>>model_layers_10_self_attn_k_proj ===> node.args[3]:8
+
+
+>>>model_layers_9_self_attn_v_proj ===> node.args[3]:8
+
+
+>>model_layers_0_self_attn_k_proj ===> node.args[3]:8> >model_layers_0_self_attn_q_proj ==> node.args[3]:8>>model_layers_14_self_attn_k_proj ===> node.args[3]:8
+
+>> >> model_layers_10_self_attn_k_proj ===> node.args[3]:2
+
+>>model_layers_0_self_attn_k_proj ===> node.args[3]:8>>> >>>model_layers_9_self_attn_v_proj ===> node.args[3]:2
+>> >> model_layers_0_self_attn_k_proj ===> node.args[3]:2
+>> >> model_layers_14_self_attn_k_proj ===> node.args[3]:2
+> >model_layers_0_self_attn_q_proj ==> node.args[3]:8>>>model_layers_10_self_attn_v_proj ===> node.args[3]:8
+
+>>>model_layers_0_self_attn_v_proj ===> node.args[3]:8>> >> model_layers_0_self_attn_k_proj ===> node.args[3]:2
+> >model_layers_0_self_attn_q_proj ==> node.args[3]:8
+>>>model_layers_14_self_attn_v_proj ===> node.args[3]:8
+
+>model_layers_10_self_attn_q_proj ==> node.args[3]:32>>model_layers_0_self_attn_k_proj ===> node.args[3]:8
+
+>>> >>>model_layers_10_self_attn_v_proj ===> node.args[3]:2>>>model_layers_0_self_attn_v_proj ===> node.args[3]:8>>> >>>model_layers_0_self_attn_v_proj ===> node.args[3]:2
+
+>>model_layers_0_self_attn_k_proj ===> node.args[3]:8
+>>> >>>model_layers_14_self_attn_v_proj ===> node.args[3]:2
+
+
+>>> >>>model_layers_0_self_attn_v_proj ===> node.args[3]:2>model_layers_9_self_attn_q_proj ==> node.args[3]:32> >model_layers_10_self_attn_q_proj ==> node.args[3]:8>> >> model_layers_0_self_attn_k_proj ===> node.args[3]:2
+>> >> model_layers_0_self_attn_k_proj ===> node.args[3]:2>model_layers_11_self_attn_q_proj ==> node.args[3]:32
+
+
+
+>model_layers_1_self_attn_q_proj ==> node.args[3]:32>>>model_layers_0_self_attn_v_proj ===> node.args[3]:8
+
+>model_layers_15_self_attn_q_proj ==> node.args[3]:32>>model_layers_10_self_attn_k_proj ===> node.args[3]:8
+
+>model_layers_1_self_attn_q_proj ==> node.args[3]:32>>>model_layers_0_self_attn_v_proj ===> node.args[3]:8
+> >model_layers_11_self_attn_q_proj ==> node.args[3]:8
+> >model_layers_1_self_attn_q_proj ==> node.args[3]:8
+>>> >>>model_layers_0_self_attn_v_proj ===> node.args[3]:2
+
+> >model_layers_15_self_attn_q_proj ==> node.args[3]:8
+>> >> model_layers_10_self_attn_k_proj ===> node.args[3]:2
+> >model_layers_1_self_attn_q_proj ==> node.args[3]:8>>model_layers_11_self_attn_k_proj ===> node.args[3]:8>>> >>>model_layers_0_self_attn_v_proj ===> node.args[3]:2
+>>model_layers_1_self_attn_k_proj ===> node.args[3]:8
+
+
+
+>>model_layers_15_self_attn_k_proj ===> node.args[3]:8>> >> model_layers_11_self_attn_k_proj ===> node.args[3]:2
+>model_layers_1_self_attn_q_proj ==> node.args[3]:32> >model_layers_9_self_attn_q_proj ==> node.args[3]:8>>>model_layers_10_self_attn_v_proj ===> node.args[3]:8>>model_layers_1_self_attn_k_proj ===> node.args[3]:8
+
+
+>> >> model_layers_1_self_attn_k_proj ===> node.args[3]:2
+>model_layers_1_self_attn_q_proj ==> node.args[3]:32
+
+>> >> model_layers_15_self_attn_k_proj ===> node.args[3]:2>>>model_layers_11_self_attn_v_proj ===> node.args[3]:8
+>>model_layers_9_self_attn_k_proj ===> node.args[3]:8
+> >model_layers_1_self_attn_q_proj ==> node.args[3]:8>>> >>>model_layers_10_self_attn_v_proj ===> node.args[3]:2
+>> >> model_layers_1_self_attn_k_proj ===> node.args[3]:2
+>>>model_layers_1_self_attn_v_proj ===> node.args[3]:8
+
+> >model_layers_1_self_attn_q_proj ==> node.args[3]:8>>model_layers_1_self_attn_k_proj ===> node.args[3]:8
+>>>model_layers_15_self_attn_v_proj ===> node.args[3]:8
+
+>>> >>>model_layers_11_self_attn_v_proj ===> node.args[3]:2
+>> >> model_layers_9_self_attn_k_proj ===> node.args[3]:2
+
+>>>model_layers_1_self_attn_v_proj ===> node.args[3]:8
+>>> >>>model_layers_1_self_attn_v_proj ===> node.args[3]:2>>model_layers_1_self_attn_k_proj ===> node.args[3]:8
+>model_layers_11_self_attn_q_proj ==> node.args[3]:32>> >> model_layers_1_self_attn_k_proj ===> node.args[3]:2>>> >>>model_layers_15_self_attn_v_proj ===> node.args[3]:2
+
+
+>model_layers_12_self_attn_q_proj ==> node.args[3]:32>>>model_layers_9_self_attn_v_proj ===> node.args[3]:8
+
+
+>>> >>>model_layers_1_self_attn_v_proj ===> node.args[3]:2
+
+>> >> model_layers_1_self_attn_k_proj ===> node.args[3]:2>>>model_layers_1_self_attn_v_proj ===> node.args[3]:8>>> >>>model_layers_9_self_attn_v_proj ===> node.args[3]:2> >model_layers_11_self_attn_q_proj ==> node.args[3]:8>model_layers_2_self_attn_q_proj ==> node.args[3]:32
+> >model_layers_12_self_attn_q_proj ==> node.args[3]:8
+
+
+
+
+
+>>>model_layers_1_self_attn_v_proj ===> node.args[3]:8>>> >>>model_layers_1_self_attn_v_proj ===> node.args[3]:2>>model_layers_11_self_attn_k_proj ===> node.args[3]:8>model_layers_2_self_attn_q_proj ==> node.args[3]:32>>model_layers_12_self_attn_k_proj ===> node.args[3]:8
+>model_layers_10_self_attn_q_proj ==> node.args[3]:32> >model_layers_2_self_attn_q_proj ==> node.args[3]:8
+
+
+
+
+>>> >>>model_layers_1_self_attn_v_proj ===> node.args[3]:2
+> >model_layers_10_self_attn_q_proj ==> node.args[3]:8>>model_layers_2_self_attn_k_proj ===> node.args[3]:8>> >> model_layers_11_self_attn_k_proj ===> node.args[3]:2> >model_layers_2_self_attn_q_proj ==> node.args[3]:8>> >> model_layers_12_self_attn_k_proj ===> node.args[3]:2
+
+>model_layers_2_self_attn_q_proj ==> node.args[3]:32
+
+
+
+>>model_layers_10_self_attn_k_proj ===> node.args[3]:8
+>>>model_layers_11_self_attn_v_proj ===> node.args[3]:8>> >> model_layers_2_self_attn_k_proj ===> node.args[3]:2>>model_layers_2_self_attn_k_proj ===> node.args[3]:8>>>model_layers_12_self_attn_v_proj ===> node.args[3]:8>model_layers_2_self_attn_q_proj ==> node.args[3]:32
+
+
+> >model_layers_2_self_attn_q_proj ==> node.args[3]:8
+
+
+>> >> model_layers_10_self_attn_k_proj ===> node.args[3]:2>>> >>>model_layers_11_self_attn_v_proj ===> node.args[3]:2>>>model_layers_2_self_attn_v_proj ===> node.args[3]:8
+>> >> model_layers_2_self_attn_k_proj ===> node.args[3]:2>>> >>>model_layers_12_self_attn_v_proj ===> node.args[3]:2
+
+> >model_layers_2_self_attn_q_proj ==> node.args[3]:8
+>>model_layers_2_self_attn_k_proj ===> node.args[3]:8
+
+>>>model_layers_10_self_attn_v_proj ===> node.args[3]:8
+
+>>> >>>model_layers_2_self_attn_v_proj ===> node.args[3]:2>>>model_layers_2_self_attn_v_proj ===> node.args[3]:8>model_layers_12_self_attn_q_proj ==> node.args[3]:32
+>>model_layers_2_self_attn_k_proj ===> node.args[3]:8>model_layers_13_self_attn_q_proj ==> node.args[3]:32>>> >>>model_layers_10_self_attn_v_proj ===> node.args[3]:2
+
+>> >> model_layers_2_self_attn_k_proj ===> node.args[3]:2
+
+
+
+
+>>> >>>model_layers_2_self_attn_v_proj ===> node.args[3]:2> >model_layers_12_self_attn_q_proj ==> node.args[3]:8>model_layers_3_self_attn_q_proj ==> node.args[3]:32>> >> model_layers_2_self_attn_k_proj ===> node.args[3]:2> >model_layers_13_self_attn_q_proj ==> node.args[3]:8>>>model_layers_2_self_attn_v_proj ===> node.args[3]:8
+
+
+
+
+>model_layers_11_self_attn_q_proj ==> node.args[3]:32
+>>model_layers_12_self_attn_k_proj ===> node.args[3]:8> >model_layers_3_self_attn_q_proj ==> node.args[3]:8>>>model_layers_2_self_attn_v_proj ===> node.args[3]:8>>model_layers_13_self_attn_k_proj ===> node.args[3]:8>model_layers_3_self_attn_q_proj ==> node.args[3]:32
+
+>>> >>>model_layers_2_self_attn_v_proj ===> node.args[3]:2
+
+
+
+
+>> >> model_layers_12_self_attn_k_proj ===> node.args[3]:2> >model_layers_11_self_attn_q_proj ==> node.args[3]:8>>model_layers_3_self_attn_k_proj ===> node.args[3]:8>>> >>>model_layers_2_self_attn_v_proj ===> node.args[3]:2>> >> model_layers_13_self_attn_k_proj ===> node.args[3]:2
+> >model_layers_3_self_attn_q_proj ==> node.args[3]:8
+
+
+
+>model_layers_3_self_attn_q_proj ==> node.args[3]:32>>>model_layers_12_self_attn_v_proj ===> node.args[3]:8
+>>model_layers_11_self_attn_k_proj ===> node.args[3]:8>> >> model_layers_3_self_attn_k_proj ===> node.args[3]:2>>>model_layers_13_self_attn_v_proj ===> node.args[3]:8
+
+>>model_layers_3_self_attn_k_proj ===> node.args[3]:8> >model_layers_3_self_attn_q_proj ==> node.args[3]:8
+>model_layers_3_self_attn_q_proj ==> node.args[3]:32
+
+
+>>> >>>model_layers_12_self_attn_v_proj ===> node.args[3]:2
+
+>> >> model_layers_11_self_attn_k_proj ===> node.args[3]:2>>>model_layers_3_self_attn_v_proj ===> node.args[3]:8>>> >>>model_layers_13_self_attn_v_proj ===> node.args[3]:2
+>> >> model_layers_3_self_attn_k_proj ===> node.args[3]:2>>model_layers_3_self_attn_k_proj ===> node.args[3]:8
+
+> >model_layers_3_self_attn_q_proj ==> node.args[3]:8
+
+
+>>>model_layers_11_self_attn_v_proj ===> node.args[3]:8>model_layers_14_self_attn_q_proj ==> node.args[3]:32
+>>> >>>model_layers_3_self_attn_v_proj ===> node.args[3]:2>model_layers_13_self_attn_q_proj ==> node.args[3]:32>>>model_layers_3_self_attn_v_proj ===> node.args[3]:8
+
+>> >> model_layers_3_self_attn_k_proj ===> node.args[3]:2>>model_layers_3_self_attn_k_proj ===> node.args[3]:8
+
+
+>>> >>>model_layers_11_self_attn_v_proj ===> node.args[3]:2> >model_layers_13_self_attn_q_proj ==> node.args[3]:8
+> >model_layers_14_self_attn_q_proj ==> node.args[3]:8
+
+>>> >>>model_layers_3_self_attn_v_proj ===> node.args[3]:2
+>model_layers_4_self_attn_q_proj ==> node.args[3]:32>>>model_layers_3_self_attn_v_proj ===> node.args[3]:8
+>> >> model_layers_3_self_attn_k_proj ===> node.args[3]:2
+>>model_layers_13_self_attn_k_proj ===> node.args[3]:8
+>model_layers_12_self_attn_q_proj ==> node.args[3]:32
+>>model_layers_14_self_attn_k_proj ===> node.args[3]:8
+
+
+> >model_layers_4_self_attn_q_proj ==> node.args[3]:8
+>>> >>>model_layers_3_self_attn_v_proj ===> node.args[3]:2>model_layers_4_self_attn_q_proj ==> node.args[3]:32>>>model_layers_3_self_attn_v_proj ===> node.args[3]:8>> >> model_layers_13_self_attn_k_proj ===> node.args[3]:2
+> >model_layers_12_self_attn_q_proj ==> node.args[3]:8
+>> >> model_layers_14_self_attn_k_proj ===> node.args[3]:2
+
+
+>>model_layers_4_self_attn_k_proj ===> node.args[3]:8
+
+> >model_layers_4_self_attn_q_proj ==> node.args[3]:8>>>model_layers_13_self_attn_v_proj ===> node.args[3]:8>>> >>>model_layers_3_self_attn_v_proj ===> node.args[3]:2
+>model_layers_4_self_attn_q_proj ==> node.args[3]:32>>model_layers_12_self_attn_k_proj ===> node.args[3]:8>>>model_layers_14_self_attn_v_proj ===> node.args[3]:8
+
+
+
+>> >> model_layers_4_self_attn_k_proj ===> node.args[3]:2
+
+>>model_layers_4_self_attn_k_proj ===> node.args[3]:8>> >> model_layers_12_self_attn_k_proj ===> node.args[3]:2>>> >>>model_layers_13_self_attn_v_proj ===> node.args[3]:2
+> >model_layers_4_self_attn_q_proj ==> node.args[3]:8
+>>> >>>model_layers_14_self_attn_v_proj ===> node.args[3]:2
+>model_layers_4_self_attn_q_proj ==> node.args[3]:32
+>>>model_layers_4_self_attn_v_proj ===> node.args[3]:8
+
+>> >> model_layers_4_self_attn_k_proj ===> node.args[3]:2>>>model_layers_12_self_attn_v_proj ===> node.args[3]:8
+
+>>model_layers_4_self_attn_k_proj ===> node.args[3]:8
+
+>model_layers_14_self_attn_q_proj ==> node.args[3]:32>model_layers_15_self_attn_q_proj ==> node.args[3]:32
+> >model_layers_4_self_attn_q_proj ==> node.args[3]:8>>> >>>model_layers_4_self_attn_v_proj ===> node.args[3]:2>>>model_layers_4_self_attn_v_proj ===> node.args[3]:8
+>>> >>>model_layers_12_self_attn_v_proj ===> node.args[3]:2
+
+>> >> model_layers_4_self_attn_k_proj ===> node.args[3]:2
+
+
+> >model_layers_14_self_attn_q_proj ==> node.args[3]:8>>model_layers_4_self_attn_k_proj ===> node.args[3]:8> >model_layers_15_self_attn_q_proj ==> node.args[3]:8
+>>> >>>model_layers_4_self_attn_v_proj ===> node.args[3]:2
+
+
+>model_layers_13_self_attn_q_proj ==> node.args[3]:32>model_layers_5_self_attn_q_proj ==> node.args[3]:32>>>model_layers_4_self_attn_v_proj ===> node.args[3]:8
+>>model_layers_14_self_attn_k_proj ===> node.args[3]:8>>model_layers_15_self_attn_k_proj ===> node.args[3]:8>> >> model_layers_4_self_attn_k_proj ===> node.args[3]:2
+
+
+
+
+
+>> >> model_layers_14_self_attn_k_proj ===> node.args[3]:2> >model_layers_13_self_attn_q_proj ==> node.args[3]:8>model_layers_5_self_attn_q_proj ==> node.args[3]:32> >model_layers_5_self_attn_q_proj ==> node.args[3]:8>>> >>>model_layers_4_self_attn_v_proj ===> node.args[3]:2>>>model_layers_4_self_attn_v_proj ===> node.args[3]:8>> >> model_layers_15_self_attn_k_proj ===> node.args[3]:2
+
+
+
+
+
+
+>>>model_layers_14_self_attn_v_proj ===> node.args[3]:8>>model_layers_13_self_attn_k_proj ===> node.args[3]:8>>model_layers_5_self_attn_k_proj ===> node.args[3]:8> >model_layers_5_self_attn_q_proj ==> node.args[3]:8>model_layers_5_self_attn_q_proj ==> node.args[3]:32>>>model_layers_15_self_attn_v_proj ===> node.args[3]:8>>> >>>model_layers_4_self_attn_v_proj ===> node.args[3]:2
+
+
+
+
+
+
+>>> >>>model_layers_14_self_attn_v_proj ===> node.args[3]:2>> >> model_layers_13_self_attn_k_proj ===> node.args[3]:2>>model_layers_5_self_attn_k_proj ===> node.args[3]:8>> >> model_layers_5_self_attn_k_proj ===> node.args[3]:2>>> >>>model_layers_15_self_attn_v_proj ===> node.args[3]:2> >model_layers_5_self_attn_q_proj ==> node.args[3]:8
+
+
+
+
+>model_layers_5_self_attn_q_proj ==> node.args[3]:32
+>>>model_layers_13_self_attn_v_proj ===> node.args[3]:8>>>model_layers_5_self_attn_v_proj ===> node.args[3]:8>> >> model_layers_5_self_attn_k_proj ===> node.args[3]:2
+>>model_layers_5_self_attn_k_proj ===> node.args[3]:8>model_layers_15_self_attn_q_proj ==> node.args[3]:32
+
+
+
+
+> >model_layers_5_self_attn_q_proj ==> node.args[3]:8>>> >>>model_layers_13_self_attn_v_proj ===> node.args[3]:2>>> >>>model_layers_5_self_attn_v_proj ===> node.args[3]:2>>>model_layers_5_self_attn_v_proj ===> node.args[3]:8>> >> model_layers_5_self_attn_k_proj ===> node.args[3]:2
+
+> >model_layers_15_self_attn_q_proj ==> node.args[3]:8
+
+
+>>model_layers_5_self_attn_k_proj ===> node.args[3]:8
+>model_layers_14_self_attn_q_proj ==> node.args[3]:32>>> >>>model_layers_5_self_attn_v_proj ===> node.args[3]:2>>>model_layers_5_self_attn_v_proj ===> node.args[3]:8
+>>model_layers_15_self_attn_k_proj ===> node.args[3]:8
+
+>model_layers_6_self_attn_q_proj ==> node.args[3]:32
+
+>> >> model_layers_5_self_attn_k_proj ===> node.args[3]:2> >model_layers_14_self_attn_q_proj ==> node.args[3]:8
+>>> >>>model_layers_5_self_attn_v_proj ===> node.args[3]:2
+> >model_layers_6_self_attn_q_proj ==> node.args[3]:8>> >> model_layers_15_self_attn_k_proj ===> node.args[3]:2
+>model_layers_6_self_attn_q_proj ==> node.args[3]:32
+>>>model_layers_5_self_attn_v_proj ===> node.args[3]:8
+
+>>model_layers_14_self_attn_k_proj ===> node.args[3]:8
+
+>>model_layers_6_self_attn_k_proj ===> node.args[3]:8>>>model_layers_15_self_attn_v_proj ===> node.args[3]:8
+
+>model_layers_6_self_attn_q_proj ==> node.args[3]:32> >model_layers_6_self_attn_q_proj ==> node.args[3]:8>>> >>>model_layers_5_self_attn_v_proj ===> node.args[3]:2
+>> >> model_layers_14_self_attn_k_proj ===> node.args[3]:2
+>> >> model_layers_6_self_attn_k_proj ===> node.args[3]:2
+
+
+>>> >>>model_layers_15_self_attn_v_proj ===> node.args[3]:2
+> >model_layers_6_self_attn_q_proj ==> node.args[3]:8>>model_layers_6_self_attn_k_proj ===> node.args[3]:8>>>model_layers_14_self_attn_v_proj ===> node.args[3]:8
+>>>model_layers_6_self_attn_v_proj ===> node.args[3]:8
+
+
+>model_layers_6_self_attn_q_proj ==> node.args[3]:32
+>>model_layers_6_self_attn_k_proj ===> node.args[3]:8>> >> model_layers_6_self_attn_k_proj ===> node.args[3]:2
+>>> >>>model_layers_14_self_attn_v_proj ===> node.args[3]:2
+>>> >>>model_layers_6_self_attn_v_proj ===> node.args[3]:2
+
+> >model_layers_6_self_attn_q_proj ==> node.args[3]:8
+>> >> model_layers_6_self_attn_k_proj ===> node.args[3]:2>>>model_layers_6_self_attn_v_proj ===> node.args[3]:8
+
+>model_layers_15_self_attn_q_proj ==> node.args[3]:32
+>>model_layers_6_self_attn_k_proj ===> node.args[3]:8>>>model_layers_6_self_attn_v_proj ===> node.args[3]:8
+>model_layers_7_self_attn_q_proj ==> node.args[3]:32
+>>> >>>model_layers_6_self_attn_v_proj ===> node.args[3]:2
+
+> >model_layers_15_self_attn_q_proj ==> node.args[3]:8
+>> >> model_layers_6_self_attn_k_proj ===> node.args[3]:2>>> >>>model_layers_6_self_attn_v_proj ===> node.args[3]:2
+> >model_layers_7_self_attn_q_proj ==> node.args[3]:8
+
+>>model_layers_15_self_attn_k_proj ===> node.args[3]:8
+>>>model_layers_6_self_attn_v_proj ===> node.args[3]:8>model_layers_7_self_attn_q_proj ==> node.args[3]:32
+>>model_layers_7_self_attn_k_proj ===> node.args[3]:8
+
+
+>model_layers_7_self_attn_q_proj ==> node.args[3]:32>> >> model_layers_15_self_attn_k_proj ===> node.args[3]:2>>> >>>model_layers_6_self_attn_v_proj ===> node.args[3]:2> >model_layers_7_self_attn_q_proj ==> node.args[3]:8
+>> >> model_layers_7_self_attn_k_proj ===> node.args[3]:2
+
+
+
+> >model_layers_7_self_attn_q_proj ==> node.args[3]:8>>>model_layers_15_self_attn_v_proj ===> node.args[3]:8>>model_layers_7_self_attn_k_proj ===> node.args[3]:8>>>model_layers_7_self_attn_v_proj ===> node.args[3]:8
+
+
+
+>model_layers_7_self_attn_q_proj ==> node.args[3]:32>>model_layers_7_self_attn_k_proj ===> node.args[3]:8>>> >>>model_layers_15_self_attn_v_proj ===> node.args[3]:2>> >> model_layers_7_self_attn_k_proj ===> node.args[3]:2
+>>> >>>model_layers_7_self_attn_v_proj ===> node.args[3]:2
+
+
+
+> >model_layers_7_self_attn_q_proj ==> node.args[3]:8>> >> model_layers_7_self_attn_k_proj ===> node.args[3]:2>>>model_layers_7_self_attn_v_proj ===> node.args[3]:8
+
+
+>>model_layers_7_self_attn_k_proj ===> node.args[3]:8>>>model_layers_7_self_attn_v_proj ===> node.args[3]:8>model_layers_8_self_attn_q_proj ==> node.args[3]:32
+>>> >>>model_layers_7_self_attn_v_proj ===> node.args[3]:2
+
+
+>> >> model_layers_7_self_attn_k_proj ===> node.args[3]:2>>> >>>model_layers_7_self_attn_v_proj ===> node.args[3]:2
+> >model_layers_8_self_attn_q_proj ==> node.args[3]:8
+>>>model_layers_7_self_attn_v_proj ===> node.args[3]:8
+>model_layers_8_self_attn_q_proj ==> node.args[3]:32
+>>model_layers_8_self_attn_k_proj ===> node.args[3]:8
+
+>>> >>>model_layers_7_self_attn_v_proj ===> node.args[3]:2>model_layers_8_self_attn_q_proj ==> node.args[3]:32> >model_layers_8_self_attn_q_proj ==> node.args[3]:8
+>> >> model_layers_8_self_attn_k_proj ===> node.args[3]:2
+
+
+>>model_layers_8_self_attn_k_proj ===> node.args[3]:8> >model_layers_8_self_attn_q_proj ==> node.args[3]:8>>>model_layers_8_self_attn_v_proj ===> node.args[3]:8
+
+>model_layers_8_self_attn_q_proj ==> node.args[3]:32
+>>model_layers_8_self_attn_k_proj ===> node.args[3]:8>> >> model_layers_8_self_attn_k_proj ===> node.args[3]:2
+
+>>> >>>model_layers_8_self_attn_v_proj ===> node.args[3]:2
+
+> >model_layers_8_self_attn_q_proj ==> node.args[3]:8>>>model_layers_8_self_attn_v_proj ===> node.args[3]:8>> >> model_layers_8_self_attn_k_proj ===> node.args[3]:2
+
+
+>>model_layers_8_self_attn_k_proj ===> node.args[3]:8>>> >>>model_layers_8_self_attn_v_proj ===> node.args[3]:2>>>model_layers_8_self_attn_v_proj ===> node.args[3]:8
+
+
+>> >> model_layers_8_self_attn_k_proj ===> node.args[3]:2>>> >>>model_layers_8_self_attn_v_proj ===> node.args[3]:2
+
+>>>model_layers_8_self_attn_v_proj ===> node.args[3]:8
+>>> >>>model_layers_8_self_attn_v_proj ===> node.args[3]:2
+ *********** rank:7 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ *********** rank:4 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ *********** rank:5 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ *********** rank:6 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ *********** rank:2 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ *********** rank:1 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ *********** rank:0 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ rank=0 ...
+ *********** rank:3 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+data_size=10334
+nbatches=323
+/opt/conda/lib/python3.11/site-packages/torch/autograd/graph.py:825: UserWarning: Attempting to run cuBLAS, but there was no current CUDA context! Attempting to set the primary context... (Triggered internally at ../aten/src/ATen/cuda/CublasHandlePool.cpp:135.)
+  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 1
+  layer[9]: total=193.283ms, ops=16, avg/op=12.080ms
+  layer[10]: total=5.611ms, ops=16, avg/op=0.351ms
+  layer[11]: total=5.337ms, ops=16, avg/op=0.334ms
+  layer[12]: total=5.299ms, ops=16, avg/op=0.331ms
+  layer[13]: total=5.311ms, ops=16, avg/op=0.332ms
+  layer[14]: total=5.283ms, ops=16, avg/op=0.330ms
+  layer[15]: total=5.613ms, ops=16, avg/op=0.351ms
+  layer[lm_head]: total=72.024ms, ops=2, avg/op=36.012ms
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 1
+  layer[embed]: total=47.374ms, ops=2, avg/op=23.687ms
+  layer[0]: total=31.734ms, ops=16, avg/op=1.983ms
+  layer[1]: total=5.533ms, ops=16, avg/op=0.346ms
+  layer[2]: total=5.126ms, ops=16, avg/op=0.320ms
+  layer[3]: total=5.173ms, ops=16, avg/op=0.323ms
+  layer[4]: total=5.607ms, ops=16, avg/op=0.350ms
+  layer[5]: total=5.310ms, ops=16, avg/op=0.332ms
+  layer[6]: total=5.097ms, ops=16, avg/op=0.319ms
+  layer[7]: total=5.094ms, ops=16, avg/op=0.318ms
+  layer[8]: total=5.083ms, ops=16, avg/op=0.318ms
+| epoch   1 |     1/  323 batches | lr 0.00 | ms/batch 3312.78 | loss 25.06 | ppl 76428560190.76
+| epoch   1 |     1/  323 batches | lr 0.00 | ms/batch 2973.86 | loss 25.06 | ppl 76428560190.76
+| epoch   1 |     1/  323 batches | lr 0.00 | ms/batch 3262.76 | loss 25.06 | ppl 76428560190.76
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 2
+  layer[9]: total=16.540ms, ops=16, avg/op=1.034ms
+  layer[10]: total=6.225ms, ops=16, avg/op=0.389ms
+  layer[11]: total=6.160ms, ops=16, avg/op=0.385ms
+  layer[12]: total=6.154ms, ops=16, avg/op=0.385ms
+  layer[13]: total=6.155ms, ops=16, avg/op=0.385ms
+  layer[14]: total=6.156ms, ops=16, avg/op=0.385ms
+  layer[15]: total=6.164ms, ops=16, avg/op=0.385ms
+  layer[lm_head]: total=92.215ms, ops=2, avg/op=46.108ms
+| epoch   1 |     1/  323 batches | lr 0.00 | ms/batch 2567.64 | loss 25.06 | ppl 76428560190.76
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 2
+  layer[embed]: total=0.229ms, ops=2, avg/op=0.115ms
+  layer[0]: total=15.390ms, ops=16, avg/op=0.962ms
+  layer[1]: total=6.280ms, ops=16, avg/op=0.393ms
+  layer[2]: total=6.282ms, ops=16, avg/op=0.393ms
+  layer[3]: total=6.288ms, ops=16, avg/op=0.393ms
+  layer[4]: total=6.283ms, ops=16, avg/op=0.393ms
+  layer[5]: total=6.282ms, ops=16, avg/op=0.393ms
+  layer[6]: total=6.290ms, ops=16, avg/op=0.393ms
+  layer[7]: total=6.303ms, ops=16, avg/op=0.394ms
+  layer[8]: total=6.314ms, ops=16, avg/op=0.395ms
+| epoch   1 |     2/  323 batches | lr 0.00 | ms/batch 857.55 | loss 12.40 | ppl 241902.33
+| epoch   1 |     2/  323 batches | lr 0.00 | ms/batch 840.51 | loss 12.40 | ppl 241902.33
+| epoch   1 |     2/  323 batches | lr 0.00 | ms/batch 842.99 | loss 12.40 | ppl 241902.33
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 3
+  layer[9]: total=7.995ms, ops=16, avg/op=0.500ms
+  layer[10]: total=6.138ms, ops=16, avg/op=0.384ms
+  layer[11]: total=6.365ms, ops=16, avg/op=0.398ms
+  layer[12]: total=6.136ms, ops=16, avg/op=0.383ms
+  layer[13]: total=6.736ms, ops=16, avg/op=0.421ms
+  layer[14]: total=6.341ms, ops=16, avg/op=0.396ms
+  layer[15]: total=6.143ms, ops=16, avg/op=0.384ms
+  layer[lm_head]: total=92.131ms, ops=2, avg/op=46.066ms
+| epoch   1 |     2/  323 batches | lr 0.00 | ms/batch 846.92 | loss 12.40 | ppl 241902.33
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 3
+  layer[embed]: total=0.246ms, ops=2, avg/op=0.123ms
+  layer[0]: total=7.981ms, ops=16, avg/op=0.499ms
+  layer[1]: total=6.236ms, ops=16, avg/op=0.390ms
+  layer[2]: total=6.240ms, ops=16, avg/op=0.390ms
+  layer[3]: total=6.235ms, ops=16, avg/op=0.390ms
+  layer[4]: total=6.223ms, ops=16, avg/op=0.389ms
+  layer[5]: total=6.228ms, ops=16, avg/op=0.389ms
+  layer[6]: total=6.222ms, ops=16, avg/op=0.389ms
+  layer[7]: total=6.227ms, ops=16, avg/op=0.389ms
+  layer[8]: total=6.261ms, ops=16, avg/op=0.391ms
+| epoch   1 |     3/  323 batches | lr 0.00 | ms/batch 869.31 | loss 13.02 | ppl 449416.39
+| epoch   1 |     3/  323 batches | lr 0.00 | ms/batch 871.56 | loss 13.02 | ppl 449416.39
+| epoch   1 |     3/  323 batches | lr 0.00 | ms/batch 880.08 | loss 13.02 | ppl 449416.39
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 4
+  layer[9]: total=16.775ms, ops=16, avg/op=1.048ms
+  layer[10]: total=6.538ms, ops=16, avg/op=0.409ms
+  layer[11]: total=6.519ms, ops=16, avg/op=0.407ms
+  layer[12]: total=6.525ms, ops=16, avg/op=0.408ms
+  layer[13]: total=6.524ms, ops=16, avg/op=0.408ms
+  layer[14]: total=6.528ms, ops=16, avg/op=0.408ms
+  layer[15]: total=6.527ms, ops=16, avg/op=0.408ms
+  layer[lm_head]: total=99.777ms, ops=2, avg/op=49.888ms
+| epoch   1 |     3/  323 batches | lr 0.00 | ms/batch 874.64 | loss 13.02 | ppl 449416.39
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 4
+  layer[embed]: total=0.267ms, ops=2, avg/op=0.134ms
+  layer[0]: total=14.636ms, ops=16, avg/op=0.915ms
+  layer[1]: total=6.644ms, ops=16, avg/op=0.415ms
+  layer[2]: total=6.647ms, ops=16, avg/op=0.415ms
+  layer[3]: total=6.635ms, ops=16, avg/op=0.415ms
+  layer[4]: total=6.623ms, ops=16, avg/op=0.414ms
+  layer[5]: total=6.638ms, ops=16, avg/op=0.415ms
+  layer[6]: total=6.630ms, ops=16, avg/op=0.414ms
+  layer[7]: total=6.652ms, ops=16, avg/op=0.416ms
+  layer[8]: total=6.650ms, ops=16, avg/op=0.416ms
+| epoch   1 |     4/  323 batches | lr 0.00 | ms/batch 926.86 | loss 13.53 | ppl 752117.44
+| epoch   1 |     4/  323 batches | lr 0.00 | ms/batch 937.49 | loss 13.53 | ppl 752117.44
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 5
+  layer[9]: total=16.894ms, ops=16, avg/op=1.056ms
+  layer[10]: total=6.613ms, ops=16, avg/op=0.413ms
+  layer[11]: total=6.621ms, ops=16, avg/op=0.414ms
+  layer[12]: total=6.624ms, ops=16, avg/op=0.414ms
+  layer[13]: total=6.620ms, ops=16, avg/op=0.414ms
+  layer[14]: total=6.629ms, ops=16, avg/op=0.414ms
+  layer[15]: total=6.619ms, ops=16, avg/op=0.414ms
+  layer[lm_head]: total=105.700ms, ops=2, avg/op=52.850ms
+| epoch   1 |     4/  323 batches | lr 0.00 | ms/batch 939.83 | loss 13.53 | ppl 752117.44
+| epoch   1 |     4/  323 batches | lr 0.00 | ms/batch 963.18 | loss 13.53 | ppl 752117.44
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 5
+  layer[embed]: total=0.201ms, ops=2, avg/op=0.100ms
+  layer[0]: total=15.827ms, ops=16, avg/op=0.989ms
+  layer[1]: total=6.924ms, ops=16, avg/op=0.433ms
+  layer[2]: total=6.753ms, ops=16, avg/op=0.422ms
+  layer[3]: total=6.748ms, ops=16, avg/op=0.422ms
+  layer[4]: total=6.702ms, ops=16, avg/op=0.419ms
+  layer[5]: total=6.716ms, ops=16, avg/op=0.420ms
+  layer[6]: total=6.739ms, ops=16, avg/op=0.421ms
+  layer[7]: total=6.729ms, ops=16, avg/op=0.421ms
+  layer[8]: total=6.737ms, ops=16, avg/op=0.421ms
+| epoch   1 |     5/  323 batches | lr 0.00 | ms/batch 864.07 | loss 13.34 | ppl 621170.10
+| epoch   1 |     5/  323 batches | lr 0.00 | ms/batch 876.47 | loss 13.34 | ppl 621170.10
+| epoch   1 |     5/  323 batches | lr 0.00 | ms/batch 834.34 | loss 13.34 | ppl 621170.10
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 6
+  layer[9]: total=16.592ms, ops=16, avg/op=1.037ms
+  layer[10]: total=6.449ms, ops=16, avg/op=0.403ms
+  layer[11]: total=6.455ms, ops=16, avg/op=0.403ms
+  layer[12]: total=6.454ms, ops=16, avg/op=0.403ms
+  layer[13]: total=6.447ms, ops=16, avg/op=0.403ms
+  layer[14]: total=6.436ms, ops=16, avg/op=0.402ms
+  layer[15]: total=6.440ms, ops=16, avg/op=0.403ms
+  layer[lm_head]: total=102.661ms, ops=2, avg/op=51.331ms
+| epoch   1 |     5/  323 batches | lr 0.00 | ms/batch 858.04 | loss 13.34 | ppl 621170.10
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 6
+  layer[embed]: total=0.185ms, ops=2, avg/op=0.093ms
+  layer[0]: total=16.363ms, ops=16, avg/op=1.023ms
+  layer[1]: total=6.586ms, ops=16, avg/op=0.412ms
+  layer[2]: total=6.607ms, ops=16, avg/op=0.413ms
+  layer[3]: total=6.563ms, ops=16, avg/op=0.410ms
+  layer[4]: total=6.718ms, ops=16, avg/op=0.420ms
+  layer[5]: total=6.547ms, ops=16, avg/op=0.409ms
+  layer[6]: total=6.558ms, ops=16, avg/op=0.410ms
+  layer[7]: total=6.564ms, ops=16, avg/op=0.410ms
+  layer[8]: total=6.571ms, ops=16, avg/op=0.411ms
+| epoch   1 |     6/  323 batches | lr 0.00 | ms/batch 814.93 | loss 13.58 | ppl 790438.59
+| epoch   1 |     6/  323 batches | lr 0.00 | ms/batch 816.55 | loss 13.58 | ppl 790438.59
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 7
+  layer[9]: total=16.407ms, ops=16, avg/op=1.025ms
+  layer[10]: total=6.263ms, ops=16, avg/op=0.391ms
+  layer[11]: total=6.128ms, ops=16, avg/op=0.383ms
+  layer[12]: total=6.127ms, ops=16, avg/op=0.383ms
+  layer[13]: total=6.132ms, ops=16, avg/op=0.383ms
+  layer[14]: total=6.133ms, ops=16, avg/op=0.383ms
+  layer[15]: total=6.137ms, ops=16, avg/op=0.384ms
+  layer[lm_head]: total=91.553ms, ops=2, avg/op=45.776ms
+| epoch   1 |     6/  323 batches | lr 0.00 | ms/batch 817.85 | loss 13.58 | ppl 790438.59
+| epoch   1 |     6/  323 batches | lr 0.00 | ms/batch 828.36 | loss 13.58 | ppl 790438.59
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 7
+  layer[embed]: total=0.252ms, ops=2, avg/op=0.126ms
+  layer[0]: total=16.903ms, ops=16, avg/op=1.056ms
+  layer[1]: total=6.230ms, ops=16, avg/op=0.389ms
+  layer[2]: total=6.238ms, ops=16, avg/op=0.390ms
+  layer[3]: total=6.426ms, ops=16, avg/op=0.402ms
+  layer[4]: total=6.228ms, ops=16, avg/op=0.389ms
+  layer[5]: total=6.227ms, ops=16, avg/op=0.389ms
+  layer[6]: total=6.235ms, ops=16, avg/op=0.390ms
+  layer[7]: total=6.228ms, ops=16, avg/op=0.389ms
+  layer[8]: total=6.222ms, ops=16, avg/op=0.389ms
+| epoch   1 |     7/  323 batches | lr 0.00 | ms/batch 768.54 | loss 13.47 | ppl 704372.50
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 8
+  layer[9]: total=16.060ms, ops=16, avg/op=1.004ms
+  layer[10]: total=5.792ms, ops=16, avg/op=0.362ms
+  layer[11]: total=5.538ms, ops=16, avg/op=0.346ms
+  layer[12]: total=5.792ms, ops=16, avg/op=0.362ms
+  layer[13]: total=5.545ms, ops=16, avg/op=0.347ms
+  layer[14]: total=5.545ms, ops=16, avg/op=0.347ms
+  layer[15]: total=5.541ms, ops=16, avg/op=0.346ms
+  layer[lm_head]: total=78.138ms, ops=2, avg/op=39.069ms
+| epoch   1 |     7/  323 batches | lr 0.00 | ms/batch 792.53 | loss 13.47 | ppl 704372.50
+| epoch   1 |     7/  323 batches | lr 0.00 | ms/batch 800.84 | loss 13.47 | ppl 704372.50
+| epoch   1 |     7/  323 batches | lr 0.00 | ms/batch 804.97 | loss 13.47 | ppl 704372.50
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 8
+  layer[embed]: total=0.317ms, ops=2, avg/op=0.159ms
+  layer[0]: total=13.883ms, ops=16, avg/op=0.868ms
+  layer[1]: total=5.591ms, ops=16, avg/op=0.349ms
+  layer[2]: total=5.580ms, ops=16, avg/op=0.349ms
+  layer[3]: total=5.594ms, ops=16, avg/op=0.350ms
+  layer[4]: total=5.600ms, ops=16, avg/op=0.350ms
+  layer[5]: total=5.603ms, ops=16, avg/op=0.350ms
+  layer[6]: total=5.622ms, ops=16, avg/op=0.351ms
+  layer[7]: total=5.614ms, ops=16, avg/op=0.351ms
+  layer[8]: total=5.619ms, ops=16, avg/op=0.351ms
+| epoch   1 |     8/  323 batches | lr 0.00 | ms/batch 929.40 | loss 13.26 | ppl 572337.40
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 9
+  layer[9]: total=14.476ms, ops=16, avg/op=0.905ms
+  layer[10]: total=6.603ms, ops=16, avg/op=0.413ms
+  layer[11]: total=6.600ms, ops=16, avg/op=0.413ms
+  layer[12]: total=6.611ms, ops=16, avg/op=0.413ms
+  layer[13]: total=6.611ms, ops=16, avg/op=0.413ms
+  layer[14]: total=6.609ms, ops=16, avg/op=0.413ms
+  layer[15]: total=6.612ms, ops=16, avg/op=0.413ms
+  layer[lm_head]: total=105.874ms, ops=2, avg/op=52.937ms
+| epoch   1 |     8/  323 batches | lr 0.00 | ms/batch 912.67 | loss 13.26 | ppl 572337.40
+| epoch   1 |     8/  323 batches | lr 0.00 | ms/batch 905.85 | loss 13.26 | ppl 572337.40
+| epoch   1 |     8/  323 batches | lr 0.00 | ms/batch 906.50 | loss 13.26 | ppl 572337.40
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 9
+  layer[embed]: total=0.270ms, ops=2, avg/op=0.135ms
+  layer[0]: total=26.726ms, ops=16, avg/op=1.670ms
+  layer[1]: total=7.016ms, ops=16, avg/op=0.439ms
+  layer[2]: total=6.697ms, ops=16, avg/op=0.419ms
+  layer[3]: total=6.726ms, ops=16, avg/op=0.420ms
+  layer[4]: total=6.707ms, ops=16, avg/op=0.419ms
+  layer[5]: total=6.715ms, ops=16, avg/op=0.420ms
+  layer[6]: total=6.718ms, ops=16, avg/op=0.420ms
+  layer[7]: total=6.716ms, ops=16, avg/op=0.420ms
+  layer[8]: total=6.705ms, ops=16, avg/op=0.419ms
+| epoch   1 |     9/  323 batches | lr 0.00 | ms/batch 870.93 | loss 13.20 | ppl 542501.75
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 10
+  layer[9]: total=8.285ms, ops=16, avg/op=0.518ms
+  layer[10]: total=6.634ms, ops=16, avg/op=0.415ms
+  layer[11]: total=6.621ms, ops=16, avg/op=0.414ms
+  layer[12]: total=6.604ms, ops=16, avg/op=0.413ms
+  layer[13]: total=6.608ms, ops=16, avg/op=0.413ms
+  layer[14]: total=6.615ms, ops=16, avg/op=0.413ms
+  layer[15]: total=6.619ms, ops=16, avg/op=0.414ms
+  layer[lm_head]: total=106.715ms, ops=2, avg/op=53.358ms
+| epoch   1 |     9/  323 batches | lr 0.00 | ms/batch 877.08 | loss 13.20 | ppl 542501.75
+| epoch   1 |     9/  323 batches | lr 0.00 | ms/batch 887.89 | loss 13.20 | ppl 542501.75
+| epoch   1 |     9/  323 batches | lr 0.00 | ms/batch 882.63 | loss 13.20 | ppl 542501.75
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 10
+  layer[embed]: total=0.169ms, ops=2, avg/op=0.084ms
+  layer[0]: total=8.421ms, ops=16, avg/op=0.526ms
+  layer[1]: total=6.733ms, ops=16, avg/op=0.421ms
+  layer[2]: total=6.697ms, ops=16, avg/op=0.419ms
+  layer[3]: total=6.729ms, ops=16, avg/op=0.421ms
+  layer[4]: total=6.705ms, ops=16, avg/op=0.419ms
+  layer[5]: total=6.726ms, ops=16, avg/op=0.420ms
+  layer[6]: total=6.747ms, ops=16, avg/op=0.422ms
+  layer[7]: total=6.740ms, ops=16, avg/op=0.421ms
+  layer[8]: total=6.739ms, ops=16, avg/op=0.421ms
+| epoch   1 |    10/  323 batches | lr 0.00 | ms/batch 919.77 | loss 13.03 | ppl 454741.51
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 11
+  layer[9]: total=16.545ms, ops=16, avg/op=1.034ms
+  layer[10]: total=6.608ms, ops=16, avg/op=0.413ms
+  layer[11]: total=6.600ms, ops=16, avg/op=0.412ms
+  layer[12]: total=6.600ms, ops=16, avg/op=0.413ms
+  layer[13]: total=6.605ms, ops=16, avg/op=0.413ms
+  layer[14]: total=6.601ms, ops=16, avg/op=0.413ms
+  layer[15]: total=6.605ms, ops=16, avg/op=0.413ms
+  layer[lm_head]: total=105.626ms, ops=2, avg/op=52.813ms
+| epoch   1 |    10/  323 batches | lr 0.00 | ms/batch 917.18 | loss 13.03 | ppl 454741.51
+| epoch   1 |    10/  323 batches | lr 0.00 | ms/batch 913.56 | loss 13.03 | ppl 454741.51
+| epoch   1 |    10/  323 batches | lr 0.00 | ms/batch 911.61 | loss 13.03 | ppl 454741.51
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 11
+  layer[embed]: total=0.237ms, ops=2, avg/op=0.118ms
+  layer[0]: total=18.688ms, ops=16, avg/op=1.168ms
+  layer[1]: total=7.015ms, ops=16, avg/op=0.438ms
+  layer[2]: total=6.701ms, ops=16, avg/op=0.419ms
+  layer[3]: total=6.712ms, ops=16, avg/op=0.419ms
+  layer[4]: total=7.207ms, ops=16, avg/op=0.450ms
+  layer[5]: total=6.705ms, ops=16, avg/op=0.419ms
+  layer[6]: total=6.710ms, ops=16, avg/op=0.419ms
+  layer[7]: total=6.702ms, ops=16, avg/op=0.419ms
+  layer[8]: total=6.736ms, ops=16, avg/op=0.421ms
+| epoch   1 |    11/  323 batches | lr 0.00 | ms/batch 884.58 | loss 12.70 | ppl 329169.80
+| epoch   1 |    11/  323 batches | lr 0.00 | ms/batch 885.50 | loss 12.70 | ppl 329169.80
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 12
+  layer[9]: total=8.305ms, ops=16, avg/op=0.519ms
+  layer[10]: total=6.609ms, ops=16, avg/op=0.413ms
+  layer[11]: total=6.595ms, ops=16, avg/op=0.412ms
+  layer[12]: total=6.599ms, ops=16, avg/op=0.412ms
+  layer[13]: total=6.604ms, ops=16, avg/op=0.413ms
+  layer[14]: total=6.600ms, ops=16, avg/op=0.412ms
+  layer[15]: total=6.607ms, ops=16, avg/op=0.413ms
+  layer[lm_head]: total=105.379ms, ops=2, avg/op=52.689ms
+| epoch   1 |    11/  323 batches | lr 0.00 | ms/batch 887.64 | loss 12.70 | ppl 329169.80
+| epoch   1 |    11/  323 batches | lr 0.00 | ms/batch 897.23 | loss 12.70 | ppl 329169.80
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 12
+  layer[embed]: total=0.176ms, ops=2, avg/op=0.088ms
+  layer[0]: total=8.534ms, ops=16, avg/op=0.533ms
+  layer[1]: total=6.717ms, ops=16, avg/op=0.420ms
+  layer[2]: total=6.722ms, ops=16, avg/op=0.420ms
+  layer[3]: total=6.706ms, ops=16, avg/op=0.419ms
+  layer[4]: total=6.698ms, ops=16, avg/op=0.419ms
+  layer[5]: total=6.698ms, ops=16, avg/op=0.419ms
+  layer[6]: total=6.698ms, ops=16, avg/op=0.419ms
+  layer[7]: total=6.735ms, ops=16, avg/op=0.421ms
+  layer[8]: total=6.728ms, ops=16, avg/op=0.421ms
+| epoch   1 |    12/  323 batches | lr 0.00 | ms/batch 822.12 | loss 12.23 | ppl 204094.30
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 13
+  layer[9]: total=7.855ms, ops=16, avg/op=0.491ms
+  layer[10]: total=6.144ms, ops=16, avg/op=0.384ms
+  layer[11]: total=6.374ms, ops=16, avg/op=0.398ms
+  layer[12]: total=6.141ms, ops=16, avg/op=0.384ms
+  layer[13]: total=6.329ms, ops=16, avg/op=0.396ms| epoch   1 |    12/  323 batches | lr 0.00 | ms/batch 813.69 | loss 12.23 | ppl 204094.30
+
+  layer[14]: total=6.350ms, ops=16, avg/op=0.397ms
+  layer[15]: total=6.130ms, ops=16, avg/op=0.383ms
+  layer[lm_head]: total=91.303ms, ops=2, avg/op=45.651ms
+| epoch   1 |    12/  323 batches | lr 0.00 | ms/batch 822.31 | loss 12.23 | ppl 204094.30
+| epoch   1 |    12/  323 batches | lr 0.00 | ms/batch 826.60 | loss 12.23 | ppl 204094.30
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 13
+  layer[embed]: total=0.241ms, ops=2, avg/op=0.121ms
+  layer[0]: total=8.671ms, ops=16, avg/op=0.542ms
+  layer[1]: total=6.274ms, ops=16, avg/op=0.392ms
+  layer[2]: total=6.417ms, ops=16, avg/op=0.401ms
+  layer[3]: total=6.217ms, ops=16, avg/op=0.389ms
+  layer[4]: total=6.213ms, ops=16, avg/op=0.388ms
+  layer[5]: total=6.231ms, ops=16, avg/op=0.389ms
+  layer[6]: total=6.254ms, ops=16, avg/op=0.391ms
+  layer[7]: total=6.249ms, ops=16, avg/op=0.391ms
+  layer[8]: total=6.248ms, ops=16, avg/op=0.391ms
+| epoch   1 |    13/  323 batches | lr 0.00 | ms/batch 772.40 | loss 12.24 | ppl 207489.50
+| epoch   1 |    13/  323 batches | lr 0.00 | ms/batch 774.94 | loss 12.24 | ppl 207489.50
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 14
+  layer[9]: total=16.160ms, ops=16, avg/op=1.010ms
+  layer[10]: total=5.797ms, ops=16, avg/op=0.362ms
+  layer[11]: total=5.542ms, ops=16, avg/op=0.346ms
+  layer[12]: total=5.542ms, ops=16, avg/op=0.346ms
+  layer[13]: total=5.558ms, ops=16, avg/op=0.347ms
+  layer[14]: total=5.549ms, ops=16, avg/op=0.347ms
+  layer[15]: total=5.557ms, ops=16, avg/op=0.347ms
+  layer[lm_head]: total=78.590ms, ops=2, avg/op=39.295ms
+| epoch   1 |    13/  323 batches | lr 0.00 | ms/batch 774.57 | loss 12.24 | ppl 207489.50
+| epoch   1 |    13/  323 batches | lr 0.00 | ms/batch 777.96 | loss 12.24 | ppl 207489.50
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 14
+  layer[embed]: total=0.220ms, ops=2, avg/op=0.110ms
+  layer[0]: total=14.155ms, ops=16, avg/op=0.885ms
+  layer[1]: total=5.586ms, ops=16, avg/op=0.349ms
+  layer[2]: total=5.601ms, ops=16, avg/op=0.350ms
+  layer[3]: total=5.609ms, ops=16, avg/op=0.351ms
+  layer[4]: total=5.596ms, ops=16, avg/op=0.350ms
+  layer[5]: total=5.596ms, ops=16, avg/op=0.350ms
+  layer[6]: total=5.601ms, ops=16, avg/op=0.350ms
+  layer[7]: total=5.587ms, ops=16, avg/op=0.349ms
+  layer[8]: total=5.600ms, ops=16, avg/op=0.350ms
+| epoch   1 |    14/  323 batches | lr 0.00 | ms/batch 853.83 | loss 12.42 | ppl 247644.20
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 15
+  layer[9]: total=8.314ms, ops=16, avg/op=0.520ms
+  layer[10]: total=6.527ms, ops=16, avg/op=0.408ms
+  layer[11]: total=6.515ms, ops=16, avg/op=0.407ms
+  layer[12]: total=6.520ms, ops=16, avg/op=0.407ms
+  layer[13]: total=6.510ms, ops=16, avg/op=0.407ms
+  layer[14]: total=6.515ms, ops=16, avg/op=0.407ms
+  layer[15]: total=6.520ms, ops=16, avg/op=0.407ms
+  layer[lm_head]: total=99.009ms, ops=2, avg/op=49.505ms
+| epoch   1 |    14/  323 batches | lr 0.00 | ms/batch 861.69 | loss 12.42 | ppl 247644.20
+| epoch   1 |    14/  323 batches | lr 0.00 | ms/batch 854.70 | loss 12.42 | ppl 247644.20
+| epoch   1 |    14/  323 batches | lr 0.00 | ms/batch 864.32 | loss 12.42 | ppl 247644.20
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 15
+  layer[embed]: total=0.207ms, ops=2, avg/op=0.103ms
+  layer[0]: total=8.785ms, ops=16, avg/op=0.549ms
+  layer[1]: total=6.675ms, ops=16, avg/op=0.417ms
+  layer[2]: total=6.670ms, ops=16, avg/op=0.417ms
+  layer[3]: total=6.664ms, ops=16, avg/op=0.417ms
+  layer[4]: total=6.658ms, ops=16, avg/op=0.416ms
+  layer[5]: total=6.658ms, ops=16, avg/op=0.416ms
+  layer[6]: total=6.701ms, ops=16, avg/op=0.419ms
+  layer[7]: total=6.676ms, ops=16, avg/op=0.417ms
+  layer[8]: total=6.669ms, ops=16, avg/op=0.417ms
+| epoch   1 |    15/  323 batches | lr 0.00 | ms/batch 849.77 | loss 12.54 | ppl 280476.64
+| epoch   1 |    15/  323 batches | lr 0.00 | ms/batch 851.16 | loss 12.54 | ppl 280476.64
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 16
+  layer[9]: total=8.579ms, ops=16, avg/op=0.536ms
+  layer[10]: total=6.541ms, ops=16, avg/op=0.409ms
+  layer[11]: total=6.540ms, ops=16, avg/op=0.409ms
+  layer[12]: total=6.527ms, ops=16, avg/op=0.408ms
+  layer[13]: total=6.523ms, ops=16, avg/op=0.408ms
+  layer[14]: total=6.531ms, ops=16, avg/op=0.408ms
+  layer[15]: total=6.534ms, ops=16, avg/op=0.408ms
+  layer[lm_head]: total=99.337ms, ops=2, avg/op=49.669ms
+| epoch   1 |    15/  323 batches | lr 0.00 | ms/batch 866.11 | loss 12.54 | ppl 280476.64
+| epoch   1 |    15/  323 batches | lr 0.00 | ms/batch 878.32 | loss 12.54 | ppl 280476.64
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 16
+  layer[embed]: total=0.179ms, ops=2, avg/op=0.090ms
+  layer[0]: total=8.434ms, ops=16, avg/op=0.527ms
+  layer[1]: total=6.674ms, ops=16, avg/op=0.417ms
+  layer[2]: total=6.672ms, ops=16, avg/op=0.417ms
+  layer[3]: total=6.662ms, ops=16, avg/op=0.416ms
+  layer[4]: total=6.626ms, ops=16, avg/op=0.414ms
+  layer[5]: total=6.649ms, ops=16, avg/op=0.416ms
+  layer[6]: total=6.654ms, ops=16, avg/op=0.416ms
+  layer[7]: total=6.647ms, ops=16, avg/op=0.415ms
+  layer[8]: total=6.662ms, ops=16, avg/op=0.416ms
+| epoch   1 |    16/  323 batches | lr 0.00 | ms/batch 790.30 | loss 12.62 | ppl 301569.99
+| epoch   1 |    16/  323 batches | lr 0.00 | ms/batch 813.48 | loss 12.62 | ppl 301569.99
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 17
+  layer[9]: total=15.929ms, ops=16, avg/op=0.996ms
+  layer[10]: total=5.711ms, ops=16, avg/op=0.357ms
+  layer[11]: total=5.713ms, ops=16, avg/op=0.357ms
+  layer[12]: total=5.710ms, ops=16, avg/op=0.357ms
+  layer[13]: total=5.707ms, ops=16, avg/op=0.357ms
+  layer[14]: total=5.699ms, ops=16, avg/op=0.356ms
+  layer[15]: total=5.696ms, ops=16, avg/op=0.356ms
+  layer[lm_head]: total=85.396ms, ops=2, avg/op=42.698ms
+| epoch   1 |    16/  323 batches | lr 0.00 | ms/batch 806.79 | loss 12.62 | ppl 301569.99
+| epoch   1 |    16/  323 batches | lr 0.00 | ms/batch 821.88 | loss 12.62 | ppl 301569.99
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 17
+  layer[embed]: total=0.201ms, ops=2, avg/op=0.100ms
+  layer[0]: total=14.191ms, ops=16, avg/op=0.887ms
+  layer[1]: total=5.851ms, ops=16, avg/op=0.366ms
+  layer[2]: total=5.785ms, ops=16, avg/op=0.362ms
+  layer[3]: total=5.779ms, ops=16, avg/op=0.361ms
+  layer[4]: total=5.765ms, ops=16, avg/op=0.360ms
+  layer[5]: total=5.769ms, ops=16, avg/op=0.361ms
+  layer[6]: total=5.775ms, ops=16, avg/op=0.361ms
+  layer[7]: total=5.774ms, ops=16, avg/op=0.361ms
+  layer[8]: total=5.786ms, ops=16, avg/op=0.362ms
+| epoch   1 |    17/  323 batches | lr 0.00 | ms/batch 824.28 | loss 12.79 | ppl 358201.27
+| epoch   1 |    17/  323 batches | lr 0.00 | ms/batch 833.94 | loss 12.79 | ppl 358201.27
+| epoch   1 |    17/  323 batches | lr 0.00 | ms/batch 827.04 | loss 12.79 | ppl 358201.27
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 18
+  layer[9]: total=15.993ms, ops=16, avg/op=1.000ms
+  layer[10]: total=6.273ms, ops=16, avg/op=0.392ms
+  layer[11]: total=6.161ms, ops=16, avg/op=0.385ms
+  layer[12]: total=6.120ms, ops=16, avg/op=0.383ms
+  layer[13]: total=6.116ms, ops=16, avg/op=0.382ms
+  layer[14]: total=6.115ms, ops=16, avg/op=0.382ms
+  layer[15]: total=6.115ms, ops=16, avg/op=0.382ms
+  layer[lm_head]: total=91.389ms, ops=2, avg/op=45.694ms
+| epoch   1 |    17/  323 batches | lr 0.00 | ms/batch 834.67 | loss 12.79 | ppl 358201.27
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 18
+  layer[embed]: total=0.191ms, ops=2, avg/op=0.096ms
+  layer[0]: total=17.256ms, ops=16, avg/op=1.079ms
+  layer[1]: total=6.194ms, ops=16, avg/op=0.387ms
+  layer[2]: total=6.197ms, ops=16, avg/op=0.387ms
+  layer[3]: total=6.209ms, ops=16, avg/op=0.388ms
+  layer[4]: total=6.206ms, ops=16, avg/op=0.388ms
+  layer[5]: total=6.207ms, ops=16, avg/op=0.388ms
+  layer[6]: total=6.209ms, ops=16, avg/op=0.388ms
+  layer[7]: total=6.224ms, ops=16, avg/op=0.389ms
+  layer[8]: total=6.218ms, ops=16, avg/op=0.389ms
+| epoch   1 |    18/  323 batches | lr 0.00 | ms/batch 786.19 | loss 12.94 | ppl 414571.96
+| epoch   1 |    18/  323 batches | lr 0.00 | ms/batch 786.02 | loss 12.94 | ppl 414571.96
+| epoch   1 |    18/  323 batches | lr 0.00 | ms/batch 786.13 | loss 12.94 | ppl 414571.96
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 19
+  layer[9]: total=16.173ms, ops=16, avg/op=1.011ms
+  layer[10]: total=5.955ms, ops=16, avg/op=0.372ms
+  layer[11]: total=5.687ms, ops=16, avg/op=0.355ms
+  layer[12]: total=5.692ms, ops=16, avg/op=0.356ms
+  layer[13]: total=5.687ms, ops=16, avg/op=0.355ms
+  layer[14]: total=5.685ms, ops=16, avg/op=0.355ms
+  layer[15]: total=5.686ms, ops=16, avg/op=0.355ms
+  layer[lm_head]: total=85.402ms, ops=2, avg/op=42.701ms
+| epoch   1 |    18/  323 batches | lr 0.00 | ms/batch 780.51 | loss 12.94 | ppl 414571.96
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 19
+  layer[embed]: total=0.231ms, ops=2, avg/op=0.116ms
+  layer[0]: total=20.289ms, ops=16, avg/op=1.268ms
+  layer[1]: total=5.931ms, ops=16, avg/op=0.371ms
+  layer[2]: total=5.743ms, ops=16, avg/op=0.359ms
+  layer[3]: total=5.764ms, ops=16, avg/op=0.360ms
+  layer[4]: total=5.763ms, ops=16, avg/op=0.360ms
+  layer[5]: total=5.748ms, ops=16, avg/op=0.359ms
+  layer[6]: total=5.751ms, ops=16, avg/op=0.359ms
+  layer[7]: total=5.748ms, ops=16, avg/op=0.359ms
+  layer[8]: total=5.753ms, ops=16, avg/op=0.360ms
+| epoch   1 |    19/  323 batches | lr 0.00 | ms/batch 859.76 | loss 13.48 | ppl 718310.22
+| epoch   1 |    19/  323 batches | lr 0.00 | ms/batch 871.29 | loss 13.48 | ppl 718310.22
+[rank:4 stage:1] transformer-block(module) forward time (no send/recv) - step 20| epoch   1 |    19/  323 batches | lr 0.00 | ms/batch 870.44 | loss 13.48 | ppl 718310.22
+
+  layer[9]: total=14.898ms, ops=16, avg/op=0.931ms
+  layer[10]: total=6.538ms, ops=16, avg/op=0.409ms
+  layer[11]: total=6.546ms, ops=16, avg/op=0.409ms
+  layer[12]: total=6.539ms, ops=16, avg/op=0.409ms
+  layer[13]: total=6.533ms, ops=16, avg/op=0.408ms
+  layer[14]: total=6.539ms, ops=16, avg/op=0.409ms
+  layer[15]: total=6.531ms, ops=16, avg/op=0.408ms
+  layer[lm_head]: total=100.086ms, ops=2, avg/op=50.043ms
+| epoch   1 |    19/  323 batches | lr 0.00 | ms/batch 869.52 | loss 13.48 | ppl 718310.22
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 20
+  layer[embed]: total=0.233ms, ops=2, avg/op=0.117ms
+  layer[0]: total=16.986ms, ops=16, avg/op=1.062ms
+  layer[1]: total=6.652ms, ops=16, avg/op=0.416ms
+  layer[2]: total=6.629ms, ops=16, avg/op=0.414ms
+  layer[3]: total=6.640ms, ops=16, avg/op=0.415ms
+  layer[4]: total=6.643ms, ops=16, avg/op=0.415ms
+  layer[5]: total=6.644ms, ops=16, avg/op=0.415ms
+  layer[6]: total=6.644ms, ops=16, avg/op=0.415ms
+  layer[7]: total=6.640ms, ops=16, avg/op=0.415ms
+  layer[8]: total=6.635ms, ops=16, avg/op=0.415ms
+| epoch   1 |    20/  323 batches | lr 0.00 | ms/batch 794.97 | loss 12.74 | ppl 339899.70
+| epoch   1 |    20/  323 batches | lr 0.00 | ms/batch 797.76 | loss 12.74 | ppl 339899.70
+| epoch   1 |    20/  323 batches | lr 0.00 | ms/batch 789.25 | loss 12.74 | ppl 339899.70
+| epoch   1 |    20/  323 batches | lr 0.00 | ms/batch 789.71 | loss 12.74 | ppl 339899.70
+[rank:7, run completed ...
+[rank:6, run completed ...
+[rank:5, run completed ...
+[rank:4, run completed ...
+Time elapsed: 19.501 sec 
+[rank:0, run completed ...
+[rank:3, run completed ...
+[rank:1, run completed ...
+[rank:2, run completed ...
+[rank0]:[W1224 11:24:07.464221119 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+[rank4]:[W1224 11:24:08.584811742 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+[rank2]:[W1224 11:24:09.230879574 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+[rank1]:[W1224 11:24:09.235552965 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+[rank3]:[W1224 11:24:09.245115468 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+[rank7]:[W1224 11:24:09.753205509 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+[rank6]:[W1224 11:24:09.755332252 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+[rank5]:[W1224 11:24:09.761204376 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())

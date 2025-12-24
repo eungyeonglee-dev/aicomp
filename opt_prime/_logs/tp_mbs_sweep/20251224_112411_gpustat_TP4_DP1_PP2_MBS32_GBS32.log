@@ -1,0 +1,308 @@
+===== 2025-12-24 11:24:11 =====
+s8             Wed Dec 24 11:24:12 2025  560.35.05
+[0] NVIDIA A40 | 47°C,   0 % |     0 / 46068 MB |
+[1] NVIDIA A40 | 51°C,   0 % |     0 / 46068 MB |
+[2] NVIDIA A40 | 48°C,   0 % |     0 / 46068 MB |
+[3] NVIDIA A40 | 45°C,   0 % |     0 / 46068 MB |
+[4] NVIDIA A40 | 48°C,   0 % |     0 / 46068 MB |
+[5] NVIDIA A40 | 51°C,   0 % |     0 / 46068 MB |
+[6] NVIDIA A40 | 51°C,   0 % |     0 / 46068 MB |
+[7] NVIDIA A40 | 54°C,   0 % |     0 / 46068 MB |
+
+===== 2025-12-24 11:24:13 =====
+s8             Wed Dec 24 11:24:14 2025  560.35.05
+[0] NVIDIA A40 | 45°C,   0 % |     0 / 46068 MB |
+[1] NVIDIA A40 | 49°C,   0 % |     0 / 46068 MB |
+[2] NVIDIA A40 | 46°C,   0 % |     0 / 46068 MB |
+[3] NVIDIA A40 | 43°C,   0 % |     0 / 46068 MB |
+[4] NVIDIA A40 | 46°C,   0 % |     0 / 46068 MB |
+[5] NVIDIA A40 | 49°C,   0 % |     0 / 46068 MB |
+[6] NVIDIA A40 | 49°C,   0 % |     0 / 46068 MB |
+[7] NVIDIA A40 | 52°C,   0 % |     0 / 46068 MB |
+
+===== 2025-12-24 11:24:15 =====
+s8             Wed Dec 24 11:24:16 2025  560.35.05
+[0] NVIDIA A40 | 45°C,   0 % |     0 / 46068 MB |
+[1] NVIDIA A40 | 48°C,   0 % |     0 / 46068 MB |
+[2] NVIDIA A40 | 45°C,   0 % |     0 / 46068 MB |
+[3] NVIDIA A40 | 42°C,   0 % |     0 / 46068 MB |
+[4] NVIDIA A40 | 46°C,   0 % |     0 / 46068 MB |
+[5] NVIDIA A40 | 48°C,   0 % |     0 / 46068 MB |
+[6] NVIDIA A40 | 48°C,   0 % |     0 / 46068 MB |
+[7] NVIDIA A40 | 51°C,   0 % |     0 / 46068 MB |
+
+===== 2025-12-24 11:24:17 =====
+s8             Wed Dec 24 11:24:18 2025  560.35.05
+[0] NVIDIA A40 | 44°C,   0 % |     0 / 46068 MB |
+[1] NVIDIA A40 | 48°C,   0 % |     0 / 46068 MB |
+[2] NVIDIA A40 | 45°C,   0 % |     0 / 46068 MB |
+[3] NVIDIA A40 | 42°C,   0 % |     0 / 46068 MB |
+[4] NVIDIA A40 | 45°C,   0 % |     0 / 46068 MB |
+[5] NVIDIA A40 | 47°C,   0 % |     0 / 46068 MB |
+[6] NVIDIA A40 | 48°C,   0 % |     0 / 46068 MB |
+[7] NVIDIA A40 | 51°C,   0 % |     0 / 46068 MB |
+
+===== 2025-12-24 11:24:19 =====
+s8             Wed Dec 24 11:24:20 2025  560.35.05
+[0] NVIDIA A40 | 44°C,   0 % |     3 / 46068 MB |
+[1] NVIDIA A40 | 49°C,   4 % |   315 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 46°C,   0 % |   315 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 43°C,   0 % |   315 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 46°C,   0 % |   315 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 48°C,   0 % |   315 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 49°C,   0 % |   315 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 51°C,   0 % |   315 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:21 =====
+s8             Wed Dec 24 11:24:22 2025  560.35.05
+[0] NVIDIA A40 | 46°C,  90 % |  3585 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 49°C,   0 % |   499 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 47°C, 100 % |   499 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 44°C, 100 % |   499 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 47°C, 100 % |   499 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 49°C, 100 % |   499 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 50°C, 100 % |   499 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 52°C, 100 % |   479 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:23 =====
+s8             Wed Dec 24 11:24:24 2025  560.35.05
+[0] NVIDIA A40 | 46°C, 100 % |  3585 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 50°C, 100 % |  3589 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 46°C,   0 % |   499 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 44°C, 100 % |   499 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 47°C, 100 % |   499 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 49°C, 100 % |   499 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 50°C, 100 % |   499 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 52°C, 100 % |   479 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:25 =====
+s8             Wed Dec 24 11:24:26 2025  560.35.05
+[0] NVIDIA A40 | 46°C, 100 % |  3585 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 50°C, 100 % |  3589 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 46°C,   4 % |  3589 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 43°C,  37 % |   499 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 47°C, 100 % |   499 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 49°C, 100 % |   499 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 50°C, 100 % |   499 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 52°C, 100 % |   479 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:27 =====
+s8             Wed Dec 24 11:24:28 2025  560.35.05
+[0] NVIDIA A40 | 46°C, 100 % |  3585 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 50°C, 100 % |  3589 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 47°C, 100 % |  3589 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 43°C,   9 % |  3589 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 46°C,  30 % |   499 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 49°C, 100 % |   499 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 50°C, 100 % |   499 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 52°C, 100 % |   479 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:29 =====
+s8             Wed Dec 24 11:24:30 2025  560.35.05
+[0] NVIDIA A40 | 46°C, 100 % |  3585 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 50°C, 100 % |  3589 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 47°C, 100 % |  3589 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 44°C, 100 % |  3589 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 45°C,  35 % |  3137 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 49°C, 100 % |   499 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 49°C, 100 % |   499 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 52°C, 100 % |   479 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:31 =====
+s8             Wed Dec 24 11:24:32 2025  560.35.05
+[0] NVIDIA A40 | 46°C, 100 % |  3585 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 50°C, 100 % |  3589 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 47°C, 100 % |  3589 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 44°C, 100 % |  3589 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 46°C, 100 % |  3137 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 48°C,   4 % |   775 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 49°C, 100 % |   499 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 52°C, 100 % |   479 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:33 =====
+s8             Wed Dec 24 11:24:34 2025  560.35.05
+[0] NVIDIA A40 | 46°C, 100 % |  3585 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 50°C, 100 % |  3589 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 47°C, 100 % |  3589 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 44°C, 100 % |  3589 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 46°C, 100 % |  3137 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 48°C,  84 % |  3137 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 49°C,   0 % |   499 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 52°C, 100 % |   479 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:36 =====
+s8             Wed Dec 24 11:24:37 2025  560.35.05
+[0] NVIDIA A40 | 46°C, 100 % |  3585 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 50°C, 100 % |  3589 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 47°C, 100 % |  3589 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 44°C, 100 % |  3589 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 46°C, 100 % |  3137 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 48°C, 100 % |  3137 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 48°C,   9 % |  3137 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 52°C, 100 % |   479 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:38 =====
+s8             Wed Dec 24 11:24:39 2025  560.35.05
+[0] NVIDIA A40 | 46°C, 100 % |  3585 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 50°C, 100 % |  3589 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 47°C, 100 % |  3589 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 44°C, 100 % |  3589 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 46°C, 100 % |  3137 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 48°C, 100 % |  3137 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 49°C, 100 % |  3137 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 50°C,  58 % |  3117 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:40 =====
+s8             Wed Dec 24 11:24:41 2025  560.35.05
+[0] NVIDIA A40 | 46°C,   0 % |  3823 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 49°C,  10 % |  3957 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 46°C,  39 % |  3963 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 44°C,  97 % |  3963 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 46°C, 100 % |  3479 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 48°C,  55 % |  3487 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 48°C,   0 % |  3487 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 50°C,   0 % |  3467 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:42 =====
+s8             Wed Dec 24 11:24:43 2025  560.35.05
+[0] NVIDIA A40 | 45°C,   0 % |  3951 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 49°C,   0 % |  3963 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 46°C,   0 % |  3963 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 43°C,   0 % |  3963 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 44°C,   0 % |  3479 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 47°C,   0 % |  3487 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 47°C,   0 % |  3487 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 50°C,   0 % |  3467 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:44 =====
+s8             Wed Dec 24 11:24:45 2025  560.35.05
+[0] NVIDIA A40 | 45°C,   0 % |  3951 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 48°C,   0 % |  3963 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 45°C,   0 % |  3963 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 42°C,   0 % |  3963 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 44°C,   0 % |  3479 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 46°C,   0 % |  3487 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 47°C,   0 % |  3487 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 50°C,   0 % |  3467 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:46 =====
+s8             Wed Dec 24 11:24:47 2025  560.35.05
+[0] NVIDIA A40 | 45°C,   0 % |  5129 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 49°C,   0 % |  5141 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 46°C,   0 % |  5141 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 43°C,   0 % |  5195 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 48°C,  58 % | 10015 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 50°C,  25 % |  4995 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 50°C,  81 % |  4953 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 52°C,  99 % |  4911 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:48 =====
+s8             Wed Dec 24 11:24:49 2025  560.35.05
+[0] NVIDIA A40 | 48°C,  93 % |  5617 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 51°C,  99 % |  5687 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 48°C, 100 % |  5643 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 46°C, 100 % |  5799 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 49°C, 100 % |  7567 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 51°C, 100 % |  7469 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 55°C,  79 % |  9371 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 57°C,  96 % | 16613 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:50 =====
+s8             Wed Dec 24 11:24:51 2025  560.35.05
+[0] NVIDIA A40 | 48°C, 100 % |  7021 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 51°C, 100 % |  6989 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 52°C,  93 % |  7941 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 50°C,  90 % |  6987 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 52°C,  79 % |  9193 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 57°C,  96 % | 10977 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 58°C,  99 % | 14699 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 59°C, 100 % | 14529 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:52 =====
+s8             Wed Dec 24 11:24:53 2025  560.35.05
+[0] NVIDIA A40 | 52°C,  93 % |  6785 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 54°C,  92 % |  6819 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 50°C,  99 % |  6819 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 46°C, 100 % |  5817 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 56°C, 100 % | 11979 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 55°C,  99 % | 11923 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 54°C,  87 % |  6999 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 55°C,  46 % |  6979 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:54 =====
+s8             Wed Dec 24 11:24:55 2025  560.35.05
+[0] NVIDIA A40 | 49°C, 100 % |  6785 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 52°C, 100 % |  6819 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 49°C, 100 % |  6851 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 46°C, 100 % |  6819 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 52°C,  65 % |  7415 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 54°C,  57 % |  6999 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 56°C,  96 % |  8895 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 60°C,  96 % |  8875 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:56 =====
+s8             Wed Dec 24 11:24:57 2025  560.35.05
+[0] NVIDIA A40 | 49°C, 100 % |  7787 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 52°C, 100 % |  6819 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 53°C, 100 % |  7821 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 52°C,  98 % |  6819 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 54°C,  40 % |  7399 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 58°C, 100 % | 12075 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 60°C,  96 % | 12075 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 61°C,  97 % | 12055 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:24:58 =====
+s8             Wed Dec 24 11:24:59 2025  560.35.05
+[0] NVIDIA A40 | 52°C,  82 % |  6023 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 54°C,  99 % |  6117 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 50°C,  99 % |  6819 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 47°C, 100 % |  5937 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 57°C, 100 % | 14495 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 58°C,  88 % | 14299 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 56°C,  43 % |  6779 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 57°C,  38 % |  6759 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:25:00 =====
+s8             Wed Dec 24 11:25:02 2025  560.35.05
+[0] NVIDIA A40 | 50°C,  99 % |  6785 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 53°C, 100 % |  6819 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 50°C, 100 % |  6819 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 51°C, 100 % |  6819 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 53°C,  42 % |  6913 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 55°C,  85 % |  6779 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 58°C,  95 % |  8439 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 61°C,  96 % | 13399 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:25:03 =====
+s8             Wed Dec 24 11:25:04 2025  560.35.05
+[0] NVIDIA A40 | 49°C, 100 % |  6785 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 56°C, 100 % |  6819 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 52°C,  92 % |  5977 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 52°C,  30 % |  6799 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 55°C,  95 % | 10327 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 59°C,  95 % | 14107 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 61°C,  95 % | 14107 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 62°C,  91 % | 14087 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:25:05 =====
+s8             Wed Dec 24 11:25:06 2025  560.35.05
+[0] NVIDIA A40 | 51°C,  93 % |  6815 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 53°C,  69 % |  5777 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 50°C,   0 % |  6793 / 46068 MB | root(?M) root(?M)
+[3] NVIDIA A40 | 47°C,   0 % |  5792 / 46068 MB | root(?M) root(?M)
+[4] NVIDIA A40 | 50°C,   0 % |  6865 / 46068 MB | root(?M)
+[5] NVIDIA A40 | 53°C,   0 % |  6779 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 53°C,   0 % |  6779 / 46068 MB | root(?M)
+[7] NVIDIA A40 | 55°C,   0 % |  6759 / 46068 MB | root(?M)
+
+===== 2025-12-24 11:25:07 =====
+s8             Wed Dec 24 11:25:09 2025  560.35.05
+[0] NVIDIA A40 | 47°C,  81 % |   269 / 46068 MB | root(?M)
+[1] NVIDIA A40 | 51°C,  50 % |   269 / 46068 MB | root(?M)
+[2] NVIDIA A40 | 48°C,  35 % |   269 / 46068 MB | root(?M)
+[3] NVIDIA A40 | 45°C,   0 % |   269 / 46068 MB | root(?M)
+[4] NVIDIA A40 | 49°C,   0 % |     3 / 46068 MB |
+[5] NVIDIA A40 | 51°C,   0 % |  6333 / 46068 MB | root(?M)
+[6] NVIDIA A40 | 52°C,  81 % |     3 / 46068 MB |
+[7] NVIDIA A40 | 54°C,   0 % |     0 / 46068 MB |
+

@@ -1,0 +1,5 @@
+[commit-watcher] waiting for sweep completion markers in _logs/tp_mbs_sweep...
+[commit-watcher] timeout waiting for sweeps (waited=21600s). Proceeding to commit whatever logs exist.
+Already on 'feature/ir-layer-profiling'
+M	opt_prime/examples/pp_train_llama4.py
+M	opt_prime/run_tp_mbs_sweep.sh

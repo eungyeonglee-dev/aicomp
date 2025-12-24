@@ -17,6 +17,8 @@ from opt_prime.comm import Comm
 from opt_prime.IR import IR, IR_Anal
 from opt_prime.schedule import ScheduleGPipe 
 from opt_prime.schedule import Schedule1F1B 
+from opt_prime.layer_profiler import LayerTimeProfiler
+from opt_prime.fx_node_profiler import FxNodeTimeProfiler
 
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -218,6 +220,10 @@ class Topology:
         print(f"rank:{self.rank}, get_first_rank: {self.get_first_rank()}")
         print(f"rank:{self.rank}, get_last_rank: {self.get_last_rank()}")
 
+    def is_stage_leader(self) -> bool:
+        # stage2rank[stage] contains ranks for this stage across (dp,tp). Pick the first as leader.
+        return self.rank == self.stage2rank[self.stage][0]
+
 
 
 
@@ -335,7 +341,32 @@ def print_cpu_memory_usage(str, print_flag = False):
 
 class Optimus_p:
 
-    def __init__(self, module:nn.Module, num_mb, use_gpu=False, pp_size=1, dp_size=1, tp_size=1, preserve_output=False, activation_ckpt=False, force_free_mem=False, display_mem=False, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze: IR_Anal = IR_Anal.PARALLEL, use_padding=True, pre_barrier=None, checkpoint=False, ckpt_dir_postfix: Optional[str]= None, prt_shape=False, swap_use_disk=False):
+    def __init__(
+        self,
+        module: nn.Module,
+        num_mb,
+        use_gpu=False,
+        pp_size=1,
+        dp_size=1,
+        tp_size=1,
+        preserve_output=False,
+        activation_ckpt=False,
+        force_free_mem=False,
+        display_mem=False,
+        swap_opt_in_fwdbwd=False,
+        swap_model_in_optstep=False,
+        ir_analyze: IR_Anal = IR_Anal.PARALLEL,
+        use_padding=True,
+        pre_barrier=None,
+        checkpoint=False,
+        ckpt_dir_postfix: Optional[str] = None,
+        prt_shape=False,
+        swap_use_disk=False,
+        profile_layer_time: bool = False,
+        profile_layer_time_steps: int = 0,
+        profile_fx_node_time: bool = False,
+        profile_fx_node_time_steps: int = 0,
+    ):
 
         #self.model_ir = []
         self.num_mb = num_mb
@@ -599,6 +630,16 @@ class Optimus_p:
 
         self.display_mem = display_mem
 
+        # Profiling flags must exist before prepare_{dp,tp}_group() is called.
+        # (dp_size > 1 triggers prepare_dp_group() early in __init__.)
+        self.profile_layer_time = profile_layer_time
+        self.profile_layer_time_steps = profile_layer_time_steps
+        self.profile_fx_node_time = profile_fx_node_time
+        self.profile_fx_node_time_steps = profile_fx_node_time_steps
+        self.global_step = 0
+        self.layer_time_profiler: Optional[LayerTimeProfiler] = None
+        self.fx_node_profiler: Optional[FxNodeTimeProfiler] = None
+
         if tp_size > 1:
             self.prepare_tp_group()
 
@@ -653,6 +694,37 @@ class Optimus_p:
 
         self.swap_use_disk = swap_use_disk
 
+        if self.profile_layer_time:
+            device_index = self.tpl.local_rank if self.use_gpu else None
+            self.layer_time_profiler = LayerTimeProfiler(
+                enabled=True,
+                device_index=device_index,
+                # Profile all ops under each transformer block, then group by block index.
+                # Example module names inside the split GraphModule look like:
+                #   model_layers_12_self_attn_q_proj, model_layers_12_mlp_up_proj, ...
+                # Also include embedding / lm_head so we can time them as "embed" / "lm_head" groups.
+                match_name_regex=r"^(model_layers_\d+(_.*)?|.*embed_tokens.*|lm_head(_.*)?)$",
+                group_name_regex=r"model_layers_(\d+)",
+            )
+            # Hook the *partition* submodule only (what Schedule executes), so comm time is not included.
+            # If DP is enabled, run_info.submod is DDP-wrapped; attach hooks to the underlying module.
+            submod_for_hooks = (
+                self.run_info.submod.module
+                if isinstance(self.run_info.submod, DistributedDataParallel)
+                else self.run_info.submod
+            )
+            self.layer_time_profiler.attach(submod_for_hooks)
+
+        if self.profile_fx_node_time:
+            # FX node profiling requires running the GraphModule node-by-node (fx.Interpreter).
+            # In DDP mode, bypassing DDP.forward would break comm hooks, so we disable DDP when profiling FX nodes.
+            device_index = self.tpl.local_rank if self.use_gpu else None
+            self.fx_node_profiler = FxNodeTimeProfiler(
+                enabled=True,
+                device_index=device_index,
+                group_name_regex=r"model_layers_(\d+)",
+            )
+
 
     def prepare_labels(self, labels):
         if self.tpl.is_first_stage():
@@ -702,7 +774,22 @@ class Optimus_p:
     def prepare_dataloader(self, datasets, batch_size):
         if self.tpl.dp_size > 1:
             dp_rank = (self.get_rank() // self.tpl.tp_size) % self.tpl.dp_size
-            return DataLoader(datasets, batch_size=batch_size, num_workers=4, sampler=DistributedSampler(datasets, shuffle=True, num_replicas=self.tpl.dp_size, rank=dp_rank))
+            # return DataLoader(datasets, batch_size=batch_size, num_workers=4, sampler=DistributedSampler(datasets, shuffle=True, num_replicas=self.tpl.dp_size, rank=dp_rank))
+            # `batch_size` is treated as GLOBAL batch size (GBS).
+            # With DistributedSampler, each DP rank already gets different samples; we must also scale
+            # the per-rank DataLoader batch size so that total batch across DP ranks equals GBS.
+            assert (
+                batch_size % self.tpl.dp_size == 0
+            ), f"Global batch_size({batch_size}) must be divisible by dp_size({self.tpl.dp_size})"
+            local_batch_size = batch_size // self.tpl.dp_size
+            return DataLoader(
+                datasets,
+                batch_size=local_batch_size,
+                num_workers=4,
+                sampler=DistributedSampler(
+                    datasets, shuffle=True, num_replicas=self.tpl.dp_size, rank=dp_rank
+                ),
+            )            
         else:
             return DataLoader(datasets, batch_size=batch_size, num_workers=4)
 
@@ -721,6 +808,34 @@ class Optimus_p:
         self.schedule = SCHEDULE[mode](self)
 
         self.schedule.run(data, labels)
+
+        # step-level reporting
+        self.global_step += 1
+        if self.layer_time_profiler is not None and self.profile_layer_time_steps > 0:
+            if self.global_step <= self.profile_layer_time_steps and self.tpl.is_stage_leader():
+                group_lines = self.layer_time_profiler.report_group_lines()
+                if group_lines:
+                    print(
+                        f"[rank:{self.get_rank()} stage:{self.tpl.stage}] "
+                        f"transformer-block(module) forward time (no send/recv) - step {self.global_step}"
+                    )
+                    for ln in group_lines:
+                        print(f"  {ln}")
+            self.layer_time_profiler.reset_stats()
+
+        if self.fx_node_profiler is not None and self.profile_fx_node_time_steps > 0:
+            if self.global_step <= self.profile_fx_node_time_steps and self.tpl.is_stage_leader():
+                header = self.fx_node_profiler.report_debug_header()
+                group_lines = self.fx_node_profiler.report_group_lines()
+                if group_lines:
+                    print(
+                        f"[rank:{self.get_rank()} stage:{self.tpl.stage}] "
+                        f"transformer-block(FX nodes) forward time (no send/recv) - step {self.global_step} "
+                        f"({header})"
+                    )
+                    for ln in group_lines:
+                        print(f"  {ln}")
+            self.fx_node_profiler.reset_stats()
         
 
     def parameters(self):
@@ -758,6 +873,12 @@ class Optimus_p:
     #        else:
     #            dist.new_group(dp_group)
     #
+        if self.profile_fx_node_time:
+            # FX node profiling runs via fx.Interpreter, so we keep the raw GraphModule to avoid DDP wrapper issues.
+            if self.tpl.is_stage_leader():
+                print(f"[rank:{self.get_rank()} stage:{self.tpl.stage}] NOTE: skipping DDP wrapping during FX-node profiling")
+            return
+
         self.run_info.submod = DistributedDataParallel(self.run_info.submod, find_unused_parameters=True, device_mesh=self.tpl.dp_mesh)
 
     def check_tp_post(self, arg0):

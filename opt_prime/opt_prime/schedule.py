@@ -381,7 +381,15 @@ class Schedule:
         args = fx.graph.map_arg(self.optimus.run_info.node.args, extract_tensor_args)
         kwargs = fx.graph.map_arg(self.optimus.run_info.node.kwargs, extract_tensor_args)
 
-        if isinstance(self.optimus.run_info.submod, DistributedDataParallel):
+        if self.optimus.layer_time_profiler is not None:
+            # Mark current context so hooks can attribute events to this micro-batch.
+            self.optimus.layer_time_profiler.set_current(phase="fwd", mb_idx=mb_idx)
+
+        # FX node profiling path (case B): interpret GraphModule node-by-node
+        if self.optimus.fx_node_profiler is not None:
+            result = self.optimus.fx_node_profiler.run(self.optimus.run_info.submod, *args, **kwargs)
+            self.optimus.fx_node_profiler.flush()
+        elif isinstance(self.optimus.run_info.submod, DistributedDataParallel):
             with self.optimus.run_info.submod.no_sync():
                 #logging.info(f" [FWD] DDP no_sync ... rank:{self.optimus.tpl.rank}, mb_idx:{mb_idx}")
                 #result = self.optimus.run_info.submod(*args, **kwargs)
@@ -389,6 +397,11 @@ class Schedule:
             #result = self.optimus.run_info.submod(*args, **kwargs)
         else:
             result = self.optimus.run_info.submod(*args, **kwargs)
+
+        if self.optimus.layer_time_profiler is not None:
+            # Flush once per micro-batch so we don't synchronize per layer.
+            self.optimus.layer_time_profiler.flush_current()
+            self.optimus.layer_time_profiler.clear_current()
 
         self.optimus.run_info.flat_args[mb_idx][self.optimus.run_info.name] = flat_args
         self.optimus.run_info.env[mb_idx][self.optimus.run_info.name] = result

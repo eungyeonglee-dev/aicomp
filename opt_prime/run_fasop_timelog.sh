@@ -1,0 +1,1 @@
+docker exec optimus-prime bash -lc 'cd /workspace/aicomp/opt_prime && echo "Run steptime"; bash get_fasop_steptimelog.sh; echo "done"'

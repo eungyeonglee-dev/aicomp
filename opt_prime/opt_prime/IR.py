@@ -40,6 +40,7 @@ import logging
 import os
 import gc
 from enum import Enum
+from typing import Dict, Tuple
 
 from transformers.utils.fx import _SUPPORTED_MODELS
 

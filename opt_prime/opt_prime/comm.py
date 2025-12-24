@@ -53,6 +53,41 @@ class Comm:
             self.setup_ctrl_group()
 
 
+    def _send_tensor(self, tensor, dst, tag=None):
+        # Extract tensor info
+        numel = tensor.numel()
+        elements_size = tensor.element_size()
+        total_bytes = numel * elements_size
+        dtype = tensor.dtype
+        shape = list(tensor.size())
+        
+        if total_bytes < 1024:
+            size_str = f"{total_bytes}B"
+        else:
+            size_str = f"{total_bytes/(1024*1024)}MB"
+        
+        self.print(f"[Send] Rank:{self.rank} -> {dst} | tag: {tag} | shape: {list(shape)} | type: {dtype} | size: {size_str}")
+
+        dist.send(tensor, dst)
+
+    def _receive_tensor(self, tensor, src, tag=None):
+        # receive tensor
+        dist.recv(tensor, src)
+
+        # Extract tensor info
+        numel = tensor.numel()
+        elements_size = tensor.element_size()
+        total_bytes = numel * elements_size
+        dtype = tensor.dtype
+        shape = list(tensor.size())
+        
+        if total_bytes < 1024:
+            size_str = f"{total_bytes}B"
+        else:
+            size_str = f"{total_bytes/(1024*1024)}MB"
+        
+        self.print(f"[Recv] Rank:{self.rank} <- {src} | tag : {tag} | shape: {shape} | type: {dtype} | size: {size_str}")
+
     def init_comm(self, use_gpu):
         torch.manual_seed(42)
 
@@ -192,41 +227,84 @@ class Comm:
         return self.ds_id2type[type_data.item()]
 
     def receive_tensor(self, from_rank, device):
+
+        ENABLE_LOGGING=True
+        log_info = {}
         dimension = torch.tensor([0], dtype=torch.long, device=device)
+        # self._receive_tensor(dimension, from_rank, tag="dimension")
         dist.recv(dimension, from_rank)
-        #logging.debug(f" >>>>> recv_tensor, dimension:{dimension} from rank:{from_rank}")
+        if ENABLE_LOGGING:
+            log_info["dimension"] = dimension.item()
 
         shape = torch.tensor([0] * dimension.item(), dtype=torch.long, device=device)
+        # self._receive_tensor(shape, from_rank, tag="shape")
         dist.recv(shape, from_rank)
-        #logging.debug(f" >>>>> recv_tensor, shaple:{shape} from rank:{from_rank}")
         shape = tuple(shape.tolist())
-
+        if ENABLE_LOGGING:
+            log_info["shape"] = list(shape)
+        
         ttype = torch.tensor([0], dtype=torch.long, device=device)
+        # self._receive_tensor(ttype, from_rank, tag="ttype")
         dist.recv(ttype, from_rank)
-        #logging.debug(f" >>>>> recv_tensor, ttype:{ttype} from rank:{from_rank}")
-
         ttype = self.tensor_id2type[ttype.item()]
-
+        if ENABLE_LOGGING:
+            log_info["dtype"] = str(ttype).replace('torch','')
+        
         obj = torch.zeros(size=shape, dtype=ttype, device=device)
+        # self._receive_tensor(obj, from_rank, tag="obj")
         dist.recv(obj, from_rank)
-        #logging.debug(f" >>>>> recv_tensor, obj:{obj} from rank:{from_rank}")
-
+        if ENABLE_LOGGING:
+            import functools
+            import operator
+            if len(shape) > 0:
+                num_elements = functools.reduce(operator.mul, shape, 1)
+            else:
+                num_elements = 1
+            try:
+                dummy_size = torch.tensor([], dtype=ttype).element_size()
+            except:
+                dummy_size = 4
+            
+            total_byte = num_elements * dummy_size
+            if total_byte < 1024:
+                size_str = f"{total_byte}B"
+            else:
+                size_str = f"{total_byte/(1024*1024)}MB"
+            print(f"[Rank:{self.rank} <- {from_rank}]",
+                    f"Dim: {log_info.get('dimension',0):<1} | ",
+                    f"Shape: {str(log_info.get('shape',[])):<20} | ",
+                    f"Type: {log_info.get('dtype','N/A'):<8} | ",
+                    f"Size: {size_str:>10}")
+        
         return obj
 
     def send_tensor(self, obj, to_rank, device):
+        ENABLE_LOGGING=True
+        log_info = {}
+        
         if isinstance(obj, torch.Tensor):
             obj_size = obj.size()
             dimension = torch.tensor(len(obj_size), dtype=torch.long, device=device) # ex. 2
-            logging.debug(f" >>>>> send_tensor, obj.size():{obj_size}, len:{len(obj_size)}, dimension:{dimension}")
+            # logging.debug(f" >>>>> send_tensor, obj.size():{obj_size}, len:{len(obj_size)}, dimension:{dimension}")
+        
+        if ENABLE_LOGGING:
+            log_info["dimension"] = len(obj_size)
         dist.send(dimension, to_rank)
+        # self._send_tensor(dimension, to_rank, tag="dimension")
 
         if isinstance(obj, torch.Tensor):
             shape = torch.tensor(list(obj_size), dtype=torch.long, device=device) # ex. [54, 5120]
+        if ENABLE_LOGGING:
+            log_info["shape"] = list(obj_size)
         dist.send(shape, to_rank)
+        # self._send_tensor(shape, to_rank, tag="shape")
 
         ttype = self.tensor_type2id[obj.dtype]
         ttype = torch.tensor(ttype, dtype=torch.long, device=device)
+        if ENABLE_LOGGING:
+            log_info["dtype"] = str(obj.dtype).replace('torch','')
         dist.send(ttype, to_rank)
+        # self._send_tensor(ttype, to_rank, tag="ttype")
         #logging.debug(f" >>>>> send_tensor, ttype:{ttype}")
 
         if not obj.is_contiguous():
@@ -235,7 +313,23 @@ class Comm:
 
         obj = obj.to(device)
         dist.send(obj, to_rank)
+        # self._send_tensor(obj, to_rank, tag="obj")
         #logging.debug(f" >>>>> send_tensor, obj:{obj}")
+        if ENABLE_LOGGING:
+            numel = obj.numel()
+            element_size = obj.element_size()
+            total_bytes = numel * element_size
+
+            if total_bytes < 1024:
+                size_str = f"{total_bytes}B"
+            else:
+                size_str = f"{total_bytes/(1024*1024)}MB"
+            
+            print(f"[Rank:{self.rank} -> {to_rank}]",
+                    f"Dim: {log_info.get('dimension',0):<1} | ",
+                    f"Shape: {str(log_info.get('shape',[])):<20} | ",
+                    f"Type: {log_info.get('dtype','N/A'):<8} | ",
+                    f"Size: {size_str:>10}")
 
     def receive_list(self, from_rank, device):
         length = torch.tensor([0], dtype=torch.long, device=device)

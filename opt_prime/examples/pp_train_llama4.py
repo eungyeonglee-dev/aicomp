@@ -21,6 +21,7 @@ import sys
 import math
 import time
 import re
+import hashlib
 from packaging import version
 
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -60,6 +61,13 @@ parser.add_argument('--profile-cut', type=bool, default=False, help='"False": no
 parser.add_argument('--profile-step', type=int, default=20, help='the number of steps to profile')
 parser.add_argument('--log-level', type=int, default=0, help='log-level')
 parser.add_argument('--pipeline-parallel-schedule', type=str, default="1f1b", help='"1f1b" or "gpipe"')
+parser.add_argument('--debug-dataset', type=bool, default=False, help='Print proof that each rank holds the same dataset list in memory')
+parser.add_argument('--debug-dataset-k', type=int, default=3, help='How many dataset samples to print per rank for --debug-dataset')
+parser.add_argument('--debug-dataset-hash-k', type=int, default=200, help='How many dataset samples to hash per rank for --debug-dataset')
+parser.add_argument('--debug-batch', type=bool, default=False, help='Print proof of per-rank batch size and effective global batch (stage0 only)')
+parser.add_argument('--debug-batch-steps', type=int, default=1, help='How many steps to print for --debug-batch (starting from step 0)')
+parser.add_argument('--debug-batch-raw', type=bool, default=False, help='Print proof of raw batch CONTENTS returned by DataLoader after sharding (shows dp sharding)')
+parser.add_argument('--debug-batch-raw-k', type=int, default=2, help='How many raw samples from the batch to print per rank for --debug-batch-raw')
 
 args = parser.parse_args()
 
@@ -73,6 +81,13 @@ gas = int(batch_size / (micro_batch_size * dp_degree)) # gas means gradient accu
 profile_mode = args.profile_mode
 profile_cut = args.profile_cut
 profile_step = args.profile_step
+debug_dataset = args.debug_dataset
+debug_dataset_k = args.debug_dataset_k
+debug_dataset_hash_k = args.debug_dataset_hash_k
+debug_batch = args.debug_batch
+debug_batch_steps = args.debug_batch_steps
+debug_batch_raw = args.debug_batch_raw
+debug_batch_raw_k = args.debug_batch_raw_k
 rank=int(os.environ['RANK'])
 world_size=int(os.environ['WORLD_SIZE'])
 pp_schedule = args.pipeline_parallel_schedule
@@ -154,14 +169,129 @@ print0(f"data_size={data_size}")
 nbatches = len(dataloader)
 print0(f"nbatches={nbatches}")
 
+# ---------------------------------------------------------------------------
+# Debug/proof: show that each process holds the same full dataset list in memory
+# (this is normal in many training scripts; DP sharding is done by the sampler).
+# ---------------------------------------------------------------------------
+def _dataset_digest(items):
+    h = hashlib.sha1()
+    for s in items:
+        # normalize to bytes; include separator to avoid ambiguity
+        h.update(s.encode("utf-8", errors="ignore"))
+        h.update(b"\n")
+    return h.hexdigest()
+
+if debug_dataset and dist.is_initialized():
+    k = max(0, int(debug_dataset_k))
+    hk = max(0, int(debug_dataset_hash_k))
+    snap = datasets[:k]
+    digest = _dataset_digest(datasets[:hk])
+    payload = {
+        "rank": rank,
+        "world_size": world_size,
+        "len_dataset": len(datasets),
+        "hash_first_k": hk,
+        "sha1": digest,
+        "samples": snap,
+    }
+    gathered = [None for _ in range(world_size)]
+    dist.all_gather_object(gathered, payload)
+    if rank == 0:
+        print("===== DEBUG_DATASET: per-rank dataset snapshot proof =====")
+        for p in gathered:
+            print(
+                f"[rank:{p['rank']}] len={p['len_dataset']} sha1(first {p['hash_first_k']})={p['sha1']}"
+            )
+            for i, s in enumerate(p["samples"]):
+                print(f"  sample[{i}]: {repr(s)[:200]}")
+        print("===== /DEBUG_DATASET =====")
+
 epochs = 1 # The number of epochs
 def train():
     optimus_p.train() # turn on the train mode
 
     total_loss = 0
     start_time = time.time()    
+    debug_batch_printed = 0
+    debug_batch_raw_printed = 0
     for i, batch in enumerate(dataloader):
         data, labels = None, None
+
+        # -------------------------------------------------------------------
+        # Debug/proof: per-rank batch size and effective global batch
+        # - local per-rank batch = len(batch) from DataLoader
+        # - only first pipeline stage uses batch to build input_ids
+        #   so effective global batch used = sum local_bs over stage 0 ranks.
+        # -------------------------------------------------------------------
+        if debug_batch and debug_batch_printed < int(debug_batch_steps) and dist.is_initialized():
+            local_bs = len(batch) if hasattr(batch, "__len__") else None
+            payload = {
+                "rank": rank,
+                "stage": getattr(optimus_p.tpl, "stage", None),
+                "is_first_stage": bool(optimus_p.is_first_stage()),
+                "local_bs": local_bs,
+            }
+            gathered = [None for _ in range(world_size)]
+            dist.all_gather_object(gathered, payload)
+            if rank == 0:
+                first_stage_ranks = set(optimus_p.tpl.stage2rank[0])
+                eff_global_bs = 0
+                stage_sums = {}
+                for p in gathered:
+                    st = p["stage"]
+                    lbs = p["local_bs"] if p["local_bs"] is not None else 0
+                    stage_sums[st] = stage_sums.get(st, 0) + lbs
+                    if p["rank"] in first_stage_ranks and p["local_bs"] is not None:
+                        eff_global_bs += p["local_bs"]
+
+                print("===== DEBUG_BATCH: per-rank batch size proof =====")
+                print(f"[step:{i}] expected GBS(arg --batch-size)={batch_size} dp={dp_degree} pp={pp_degree} tp={tp_degree}")
+                print(f"[step:{i}] effective_global_batch_used_by_stage0(sum over stage0 ranks)={eff_global_bs}")
+                print(f"[step:{i}] per-stage sum of len(batch) (note: non-stage0 ranks iterate the loader but do not use it)={stage_sums}")
+                for p in gathered:
+                    print(
+                        f"[rank:{p['rank']}] stage={p['stage']} first_stage={p['is_first_stage']} local_bs(len(batch))={p['local_bs']}"
+                    )
+                print("===== /DEBUG_BATCH =====")
+            debug_batch_printed += 1
+
+        # -------------------------------------------------------------------
+        # Debug/proof: raw batch CONTENTS after prepare_dataloader()+sampler sharding
+        # This is what you want to "see with eyes":
+        #  - batch is a list[str] returned by the DataLoader iterator
+        #  - if DP sharding works, different dp ranks (within the same PP stage)
+        #    will typically see different strings at step 0.
+        #
+        # NOTE: In this codebase, *all* ranks iterate the DataLoader, even non-first PP stages.
+        # Those ranks will also show batches, but they are not used for tokenization.
+        # If stage0 and stage1 have the same dp_rank mapping, they can show identical batches.
+        # -------------------------------------------------------------------
+        if debug_batch_raw and debug_batch_raw_printed < int(debug_batch_steps) and dist.is_initialized():
+            k = max(0, int(debug_batch_raw_k))
+            raw_samples = [str(x) for x in batch[:k]]
+            raw_digest = _dataset_digest([str(x) for x in batch])
+            payload = {
+                "rank": rank,
+                "stage": getattr(optimus_p.tpl, "stage", None),
+                "is_first_stage": bool(optimus_p.is_first_stage()),
+                "local_bs": len(batch) if hasattr(batch, "__len__") else None,
+                "sha1_batch": raw_digest,
+                "samples": raw_samples,
+            }
+            gathered = [None for _ in range(world_size)]
+            dist.all_gather_object(gathered, payload)
+            if rank == 0:
+                print("===== DEBUG_BATCH_RAW: raw batch contents after sampler =====")
+                print(f"[step:{i}] expected GBS={batch_size} dp={dp_degree} pp={pp_degree} tp={tp_degree}")
+                for p in gathered:
+                    print(
+                        f"[rank:{p['rank']}] stage={p['stage']} first_stage={p['is_first_stage']} "
+                        f"local_bs={p['local_bs']} sha1(batch)={p['sha1_batch']}"
+                    )
+                    for j, s in enumerate(p["samples"]):
+                        print(f"  sample[{j}]: {repr(s)[:200]}")
+                print("===== /DEBUG_BATCH_RAW =====")
+            debug_batch_raw_printed += 1
         # prepare input and label
         if optimus_p.is_first_stage():
             tokens =  tokenizer(batch, padding=True, truncation=True, max_length=1024,return_tensors="pt")

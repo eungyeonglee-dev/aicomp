@@ -702,22 +702,22 @@ class Optimus_p:
     def prepare_dataloader(self, datasets, batch_size):
         if self.tpl.dp_size > 1:
             dp_rank = (self.get_rank() // self.tpl.tp_size) % self.tpl.dp_size
-            # return DataLoader(datasets, batch_size=batch_size, num_workers=4, sampler=DistributedSampler(datasets, shuffle=True, num_replicas=self.tpl.dp_size, rank=dp_rank))
+            return DataLoader(datasets, batch_size=batch_size, num_workers=4, sampler=DistributedSampler(datasets, shuffle=True, num_replicas=self.tpl.dp_size, rank=dp_rank))
                         # `batch_size` is treated as GLOBAL batch size (GBS).
             # With DistributedSampler, each DP rank already gets different samples; we must also scale
             # the per-rank DataLoader batch size so that total batch across DP ranks equals GBS.
-            assert (
-                batch_size % self.tpl.dp_size == 0
-            ), f"Global batch_size({batch_size}) must be divisible by dp_size({self.tpl.dp_size})"
-            local_batch_size = batch_size // self.tpl.dp_size
-            return DataLoader(
-                datasets,
-                batch_size=local_batch_size,
-                num_workers=4,
-                sampler=DistributedSampler(
-                    datasets, shuffle=True, num_replicas=self.tpl.dp_size, rank=dp_rank
-                ),
-            )
+            # assert (
+            #     batch_size % self.tpl.dp_size == 0
+            # ), f"Global batch_size({batch_size}) must be divisible by dp_size({self.tpl.dp_size})"
+            # local_batch_size = batch_size // self.tpl.dp_size
+            # return DataLoader(
+            #     datasets,
+            #     batch_size=local_batch_size,
+            #     num_workers=4,
+            #     sampler=DistributedSampler(
+            #         datasets, shuffle=True, num_replicas=self.tpl.dp_size, rank=dp_rank
+            #     ),
+            # )
         else:
             return DataLoader(datasets, batch_size=batch_size, num_workers=4)
 

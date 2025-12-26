@@ -1,0 +1,324 @@
+W1226 09:08:36.264000 64354 site-packages/torch/distributed/run.py:793] 
+W1226 09:08:36.264000 64354 site-packages/torch/distributed/run.py:793] *****************************************
+W1226 09:08:36.264000 64354 site-packages/torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W1226 09:08:36.264000 64354 site-packages/torch/distributed/run.py:793] *****************************************
+[rank:1] torch version 2.3.1 or higher --> OK
+[rank:1] transformers version 4.46.2 or higher --> OK
+[rank:3] torch version 2.3.1 or higher --> OK
+[rank:3] transformers version 4.46.2 or higher --> OK
+[rank:4] torch version 2.3.1 or higher --> OK
+[rank:4] transformers version 4.46.2 or higher --> OK
+[rank:6] torch version 2.3.1 or higher --> OK
+[rank:6] transformers version 4.46.2 or higher --> OK
+[rank:5] torch version 2.3.1 or higher --> OK[rank:2] torch version 2.3.1 or higher --> OK
+
+[rank:5] transformers version 4.46.2 or higher --> OK[rank:2] transformers version 4.46.2 or higher --> OK
+
+[rank:7] torch version 2.3.1 or higher --> OK
+[rank:7] transformers version 4.46.2 or higher --> OK
+[rank:0] torch version 2.3.1 or higher --> OK
+[rank:0] transformers version 4.46.2 or higher --> OK
+GPU mode is used.
+GPU mode is used.
+GPU mode is used.
+> Total parameters in model: 1,235,814,400
+> World size: 8
+> IR: IR_Anal.SEQUENTIAL
+> GAS: 2
+> GBS: 32
+> MBS: 4
+> TP: 1
+> DP: 4
+> PP: 2
+GPU mode is used.
+GPU mode is used.
+Available GPUs per server: 8
+GPU mode is used.
+GPU mode is used.
+GPU mode is used.
+> [rank:5] pp group:DeviceMesh('cuda', [1, 5], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [5], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [4, 5, 6, 7], mesh_dim_names=('dp',))
+> [rank:1] pp group:DeviceMesh('cuda', [1, 5], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [1], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [0, 1, 2, 3], mesh_dim_names=('dp',))
+> [rank:2] pp group:DeviceMesh('cuda', [2, 6], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [2], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [0, 1, 2, 3], mesh_dim_names=('dp',))
+> World Size: 8
+> Pipeline Parallel Size: 2
+> Data Parallel Size: 4
+>> ir_analyze: IR_Anal.SEQUENTIAL
+> [rank:0] pp group:DeviceMesh('cuda', [0, 4], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [0], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [0, 1, 2, 3], mesh_dim_names=('dp',))
+ ----------------------------------
+stage2rank = {0: [0, 1, 2, 3], 1: [4, 5, 6, 7]}
+ ----------------------------------
+> [rank:4] pp group:DeviceMesh('cuda', [0, 4], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [4], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [4, 5, 6, 7], mesh_dim_names=('dp',))
+>>> Using GPU ... cuda:0
+>> model class name: LlamaForCausalLM
+>> split method: simple
+SEQUENTIAL mode >> [rank:0, local_world_size:8]
+> [rank:7] pp group:DeviceMesh('cuda', [3, 7], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [7], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [4, 5, 6, 7], mesh_dim_names=('dp',))
+> [rank:3] pp group:DeviceMesh('cuda', [3, 7], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [3], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [0, 1, 2, 3], mesh_dim_names=('dp',))
+> [rank:6] pp group:DeviceMesh('cuda', [2, 6], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [6], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [4, 5, 6, 7], mesh_dim_names=('dp',))
+length:1618, modcnt:130, num_stage:2, segment:65
+ ------------------------------------------------------------
+  rank:0,  first metadata_range: [(0, 'model_layers_7_mlp_down_proj'), (1, 'lm_head')]
+ ------------------------------------------------------------
+>>> Using GPU ... cuda:5
+>> model class name: LlamaForCausalLM
+>> split method: simple
+SEQUENTIAL mode >> [rank:5, local_world_size:8]
+[rank5]:[W1226 09:08:45.313776374 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 5]  using GPU 5 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+>>> Using GPU ... cuda:1
+>> model class name: LlamaForCausalLM
+>> split method: simple
+SEQUENTIAL mode >> [rank:1, local_world_size:8]
+[rank1]:[W1226 09:08:45.397823755 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 1]  using GPU 1 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+>>> Using GPU ... cuda:2
+>> model class name: LlamaForCausalLM
+>> split method: simple
+SEQUENTIAL mode >> [rank:2, local_world_size:8]
+[rank2]:[W1226 09:08:45.447724839 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 2]  using GPU 2 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+>>> Using GPU ... cuda:4
+>> model class name: LlamaForCausalLM
+>> split method: simple
+SEQUENTIAL mode >> [rank:4, local_world_size:8]
+[rank4]:[W1226 09:08:45.704443164 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 4]  using GPU 4 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+>>> Using GPU ... cuda:7
+>> model class name: LlamaForCausalLM
+>> split method: simple
+SEQUENTIAL mode >> [rank:7, local_world_size:8]
+[rank7]:[W1226 09:08:45.720162882 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 7]  using GPU 7 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+>>> Using GPU ... cuda:6
+>> model class name: LlamaForCausalLM
+>> split method: simple
+SEQUENTIAL mode >> [rank:6, local_world_size:8]
+[rank6]:[W1226 09:08:45.731261002 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 6]  using GPU 6 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+>>> Using GPU ... cuda:3
+>> model class name: LlamaForCausalLM
+>> split method: simple
+SEQUENTIAL mode >> [rank:3, local_world_size:8]
+[rank3]:[W1226 09:08:45.738575395 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 3]  using GPU 3 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+ ------------------------------------------------------------
+  rank:0,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+>> ------------------ FX graph --------------------------------
+n.op:placeholder, n.name:input_ids, n.target:input_ids, n.args:(), n.all_input_nodes:[]
+n.op:call_module, n.name:submod_0, n.target:submod_0, n.args:(input_ids,), n.all_input_nodes:[input_ids]
+n.op:call_function, n.name:getitem, n.target:<built-in function getitem>, n.args:(submod_0, 0), n.all_input_nodes:[submod_0]
+n.op:call_function, n.name:getitem_1, n.target:<built-in function getitem>, n.args:(submod_0, 1), n.all_input_nodes:[submod_0]
+n.op:call_function, n.name:getitem_2, n.target:<built-in function getitem>, n.args:(submod_0, 2), n.all_input_nodes:[submod_0]
+n.op:call_function, n.name:getitem_3, n.target:<built-in function getitem>, n.args:(submod_0, 3), n.all_input_nodes:[submod_0]
+n.op:call_function, n.name:getitem_4, n.target:<built-in function getitem>, n.args:(submod_0, 4), n.all_input_nodes:[submod_0]
+n.op:call_module, n.name:submod_1, n.target:submod_1, n.args:(getitem, getitem_1, getitem_2, getitem_3, getitem_4), n.all_input_nodes:[getitem, getitem_1, getitem_2, getitem_3, getitem_4]
+n.op:output, n.name:output, n.target:output, n.args:({'logits': submod_1},), n.all_input_nodes:[submod_1]
+>> ------------------------------------------------------------
+ ### Rank:0, name:submod_0, move submod_0 to cuda:0
+ # rank = 0, metadata_range:[(0, 'submod_0'), (1, 'submod_1')]
+-- node.op:placeholder, node.name:input_ids, node.target:input_ids, node.args:(), node.all_input_nodes:[]
+-- node.op:call_module, node.name:submod_0, node.target:submod_0, node.args:(input_ids,), node.all_input_nodes:[input_ids]
+-- node.op:call_function, node.name:getitem, node.target:<built-in function getitem>, node.args:(submod_0, 0), node.all_input_nodes:[submod_0]
+-- node.op:call_function, node.name:getitem_1, node.target:<built-in function getitem>, node.args:(submod_0, 1), node.all_input_nodes:[submod_0]
+-- node.op:call_function, node.name:getitem_2, node.target:<built-in function getitem>, node.args:(submod_0, 2), node.all_input_nodes:[submod_0]
+-- node.op:call_function, node.name:getitem_3, node.target:<built-in function getitem>, node.args:(submod_0, 3), node.all_input_nodes:[submod_0]
+-- node.op:call_function, node.name:getitem_4, node.target:<built-in function getitem>, node.args:(submod_0, 4), node.all_input_nodes:[submod_0]
+-- node.op:call_module, node.name:submod_1, node.target:submod_1, node.args:(getitem, getitem_1, getitem_2, getitem_3, getitem_4), node.all_input_nodes:[getitem, getitem_1, getitem_2, getitem_3, getitem_4]
+-- node.op:output, node.name:output, node.target:output, node.args:({'logits': submod_1},), node.all_input_nodes:[submod_1]
+ ========= getitem_dic =========
+ --- key:getitem, values:('submod_0', 0)
+ --- key:getitem_1, values:('submod_0', 1)
+ --- key:getitem_2, values:('submod_0', 2)
+ --- key:getitem_3, values:('submod_0', 3)
+ --- key:getitem_4, values:('submod_0', 4)
+ ===============================
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:0, clean_module_memory ...
+[rank:0, local_rank:0] SEQUENTIAL MODE PROCESSING ...
+[rank0]:[W1226 09:08:46.735448823 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 0]  using GPU 0 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+length:1618, modcnt:130, num_stage:2, segment:65
+ ------------------------------------------------------------
+  rank:1,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+ ### Rank:1, name:submod_0, move submod_0 to cuda:1
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:1, clean_module_memory ...
+[rank:1, local_rank:1] SEQUENTIAL MODE PROCESSING ...
+length:1618, modcnt:130, num_stage:2, segment:65
+ ------------------------------------------------------------
+  rank:2,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+ ### Rank:2, name:submod_0, move submod_0 to cuda:2
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:2, clean_module_memory ...
+[rank:2, local_rank:2] SEQUENTIAL MODE PROCESSING ...
+length:1618, modcnt:130, num_stage:2, segment:65
+ ------------------------------------------------------------
+  rank:3,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+ ### Rank:3, name:submod_0, move submod_0 to cuda:3
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:3, clean_module_memory ...
+[rank:3, local_rank:3] SEQUENTIAL MODE PROCESSING ...
+length:1618, modcnt:130, num_stage:2, segment:65
+ ------------------------------------------------------------
+  rank:4,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+ ### Rank:4, name:submod_1, move submod_1 to cuda:4
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:4, clean_module_memory ...
+[rank:4, local_rank:4] SEQUENTIAL MODE PROCESSING ...
+length:1618, modcnt:130, num_stage:2, segment:65
+ ------------------------------------------------------------
+  rank:5,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+ ### Rank:5, name:submod_1, move submod_1 to cuda:5
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:5, clean_module_memory ...
+[rank:5, local_rank:5] SEQUENTIAL MODE PROCESSING ...
+length:1618, modcnt:130, num_stage:2, segment:65
+ ------------------------------------------------------------
+  rank:6,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+ ### Rank:6, name:submod_1, move submod_1 to cuda:6
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:6, clean_module_memory ...
+[rank:6, local_rank:6] SEQUENTIAL MODE PROCESSING ...
+length:1618, modcnt:130, num_stage:2, segment:65
+ ------------------------------------------------------------
+  rank:7,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+ ### Rank:7, name:submod_1, move submod_1 to cuda:7
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:7, clean_module_memory ...
+[rank:7, local_rank:7] SEQUENTIAL MODE PROCESSING ...
+ *********** rank:6 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ rank=6 ...
+/opt/conda/lib/python3.11/site-packages/transformers/optimization.py:591: FutureWarning: This implementation of AdamW is deprecated and will be removed in a future version. Use the PyTorch implementation torch.optim.AdamW instead, or set `no_deprecation_warning=True` to disable this warning
+  warnings.warn(
+ *********** rank:7 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ rank=7 ...
+ *********** rank:4 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ rank=4 ...
+/opt/conda/lib/python3.11/site-packages/transformers/optimization.py:591: FutureWarning: This implementation of AdamW is deprecated and will be removed in a future version. Use the PyTorch implementation torch.optim.AdamW instead, or set `no_deprecation_warning=True` to disable this warning
+  warnings.warn(
+/opt/conda/lib/python3.11/site-packages/transformers/optimization.py:591: FutureWarning: This implementation of AdamW is deprecated and will be removed in a future version. Use the PyTorch implementation torch.optim.AdamW instead, or set `no_deprecation_warning=True` to disable this warning
+  warnings.warn(
+ *********** rank:3 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ rank=3 ...
+ *********** rank:5 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ rank=5 ...
+ *********** rank:0 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ rank=0 ...
+ *********** rank:1 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ rank=1 ...
+ *********** rank:2 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ rank=2 ...
+/opt/conda/lib/python3.11/site-packages/transformers/optimization.py:591: FutureWarning: This implementation of AdamW is deprecated and will be removed in a future version. Use the PyTorch implementation torch.optim.AdamW instead, or set `no_deprecation_warning=True` to disable this warning
+  warnings.warn(
+/opt/conda/lib/python3.11/site-packages/transformers/optimization.py:591: FutureWarning: This implementation of AdamW is deprecated and will be removed in a future version. Use the PyTorch implementation torch.optim.AdamW instead, or set `no_deprecation_warning=True` to disable this warning
+  warnings.warn(
+/opt/conda/lib/python3.11/site-packages/transformers/optimization.py:591: FutureWarning: This implementation of AdamW is deprecated and will be removed in a future version. Use the PyTorch implementation torch.optim.AdamW instead, or set `no_deprecation_warning=True` to disable this warning
+  warnings.warn(
+/opt/conda/lib/python3.11/site-packages/transformers/optimization.py:591: FutureWarning: This implementation of AdamW is deprecated and will be removed in a future version. Use the PyTorch implementation torch.optim.AdamW instead, or set `no_deprecation_warning=True` to disable this warning
+  warnings.warn(
+/opt/conda/lib/python3.11/site-packages/transformers/optimization.py:591: FutureWarning: This implementation of AdamW is deprecated and will be removed in a future version. Use the PyTorch implementation torch.optim.AdamW instead, or set `no_deprecation_warning=True` to disable this warning
+  warnings.warn(
+data_size=10334
+nbatches=323
+===== DEBUG_DATASET: per-rank dataset snapshot proof =====
+[rank:0] len=10334 sha1(first 200)=a5cb91d626fc63a84fb1c41dafcf5f4eb8a3a092
+  sample[0]: 'Beyoncé announced a hiatus from her music career in January 2010, heeding her mother\'s advice, "to live life, to be inspired by things again". During the break she and her father parted ways as busi
+[rank:1] len=10334 sha1(first 200)=a5cb91d626fc63a84fb1c41dafcf5f4eb8a3a092
+  sample[0]: 'Beyoncé announced a hiatus from her music career in January 2010, heeding her mother\'s advice, "to live life, to be inspired by things again". During the break she and her father parted ways as busi
+[rank:2] len=10334 sha1(first 200)=a5cb91d626fc63a84fb1c41dafcf5f4eb8a3a092
+  sample[0]: 'Beyoncé announced a hiatus from her music career in January 2010, heeding her mother\'s advice, "to live life, to be inspired by things again". During the break she and her father parted ways as busi
+[rank:3] len=10334 sha1(first 200)=a5cb91d626fc63a84fb1c41dafcf5f4eb8a3a092
+  sample[0]: 'Beyoncé announced a hiatus from her music career in January 2010, heeding her mother\'s advice, "to live life, to be inspired by things again". During the break she and her father parted ways as busi
+[rank:4] len=10334 sha1(first 200)=a5cb91d626fc63a84fb1c41dafcf5f4eb8a3a092
+  sample[0]: 'Beyoncé announced a hiatus from her music career in January 2010, heeding her mother\'s advice, "to live life, to be inspired by things again". During the break she and her father parted ways as busi
+[rank:5] len=10334 sha1(first 200)=a5cb91d626fc63a84fb1c41dafcf5f4eb8a3a092
+  sample[0]: 'Beyoncé announced a hiatus from her music career in January 2010, heeding her mother\'s advice, "to live life, to be inspired by things again". During the break she and her father parted ways as busi
+[rank:6] len=10334 sha1(first 200)=a5cb91d626fc63a84fb1c41dafcf5f4eb8a3a092
+  sample[0]: 'Beyoncé announced a hiatus from her music career in January 2010, heeding her mother\'s advice, "to live life, to be inspired by things again". During the break she and her father parted ways as busi
+[rank:7] len=10334 sha1(first 200)=a5cb91d626fc63a84fb1c41dafcf5f4eb8a3a092
+  sample[0]: 'Beyoncé announced a hiatus from her music career in January 2010, heeding her mother\'s advice, "to live life, to be inspired by things again". During the break she and her father parted ways as busi
+===== /DEBUG_DATASET =====
+===== DEBUG_BATCH: per-rank batch size proof =====
+[step:0] expected GBS(arg --batch-size)=32 dp=4 pp=2 tp=1
+[step:0] effective_global_batch_used_by_stage0(sum over stage0 ranks)=32
+[step:0] per-stage sum of len(batch) (note: non-stage0 ranks iterate the loader but do not use it)={0: 32, 1: 32}
+[rank:0] stage=0 first_stage=True local_bs(len(batch))=8
+[rank:1] stage=0 first_stage=True local_bs(len(batch))=8
+[rank:2] stage=0 first_stage=True local_bs(len(batch))=8
+[rank:3] stage=0 first_stage=True local_bs(len(batch))=8
+[rank:4] stage=1 first_stage=False local_bs(len(batch))=8
+[rank:5] stage=1 first_stage=False local_bs(len(batch))=8
+[rank:6] stage=1 first_stage=False local_bs(len(batch))=8
+[rank:7] stage=1 first_stage=False local_bs(len(batch))=8
+===== /DEBUG_BATCH =====
+===== DEBUG_BATCH_RAW: raw batch contents after sampler =====
+[step:0] expected GBS=32 dp=4 pp=2 tp=1
+[rank:0] stage=0 first_stage=True local_bs=8 sha1(batch)=071ad0b5eb1fc9e3f88653d81a46041ebe26cee7
+  sample[0]: 'In response to the demonstrations, an editorial in the People\'s Daily urged Chinese people to "express [their] patriotic enthusiasm calmly and rationally, and express patriotic aspiration in an orde
+  sample[1]: 'Most of the population (as of 2000[update]) speaks German (104,465 or 81.2%) as their first language, Italian is the second most common (5,062 or 3.9%) and French is the third (4,671 or 3.6%). There 
+[rank:1] stage=0 first_stage=True local_bs=8 sha1(batch)=d5d9b80bf547e9bf4384b7b1d4658ec5d61c220f
+  sample[0]: 'Between 64 and 104 major aftershocks, ranging in magnitude from 4.0 to 6.1, were recorded within 72 hours of the main quake. According to Chinese official counts, "by 12:00 CST, November 6, 2008 ther
+  sample[1]: 'The oldest brain to have been discovered was in Armenia in the Areni-1 cave complex. The brain, estimated to be over 5,000 years old, was found in the skull of a 12 to 14-year-old girl. Although the 
+[rank:2] stage=0 first_stage=True local_bs=8 sha1(batch)=f5520fdaa55057e97d5882d487744d387a0855f5
+  sample[0]: 'The Stonewall riots were a series of spontaneous, violent demonstrations by members of the gay community against a police raid that took place in the early morning hours of June 28, 1969, at the Ston
+  sample[1]: 'In 1059, the right of electing the pope was reserved to the principal clergy of Rome and the bishops of the seven suburbicarian sees. In the 12th century the practice of appointing ecclesiastics from
+[rank:3] stage=0 first_stage=True local_bs=8 sha1(batch)=659090e410a00cb5a660a2f8bc30f8cc32b8d203
+  sample[0]: 'Estonian language planners such as Ado Grenzstein (a journalist active in Estonia in the 1870s–90s) tried to use formation ex nihilo, Urschöpfung; i.e. they created new words out of nothing.'
+  sample[1]: 'Other subjects that lent themselves to visual depiction included the name of battles (e.g. Trafalgar), explorers, local notables, discoveries, sporting heroes and members of the royal family. Some pu
+[rank:4] stage=1 first_stage=False local_bs=8 sha1(batch)=071ad0b5eb1fc9e3f88653d81a46041ebe26cee7
+  sample[0]: 'In response to the demonstrations, an editorial in the People\'s Daily urged Chinese people to "express [their] patriotic enthusiasm calmly and rationally, and express patriotic aspiration in an orde
+  sample[1]: 'Most of the population (as of 2000[update]) speaks German (104,465 or 81.2%) as their first language, Italian is the second most common (5,062 or 3.9%) and French is the third (4,671 or 3.6%). There 
+[rank:5] stage=1 first_stage=False local_bs=8 sha1(batch)=d5d9b80bf547e9bf4384b7b1d4658ec5d61c220f
+  sample[0]: 'Between 64 and 104 major aftershocks, ranging in magnitude from 4.0 to 6.1, were recorded within 72 hours of the main quake. According to Chinese official counts, "by 12:00 CST, November 6, 2008 ther
+  sample[1]: 'The oldest brain to have been discovered was in Armenia in the Areni-1 cave complex. The brain, estimated to be over 5,000 years old, was found in the skull of a 12 to 14-year-old girl. Although the 
+[rank:6] stage=1 first_stage=False local_bs=8 sha1(batch)=f5520fdaa55057e97d5882d487744d387a0855f5
+  sample[0]: 'The Stonewall riots were a series of spontaneous, violent demonstrations by members of the gay community against a police raid that took place in the early morning hours of June 28, 1969, at the Ston
+  sample[1]: 'In 1059, the right of electing the pope was reserved to the principal clergy of Rome and the bishops of the seven suburbicarian sees. In the 12th century the practice of appointing ecclesiastics from
+[rank:7] stage=1 first_stage=False local_bs=8 sha1(batch)=659090e410a00cb5a660a2f8bc30f8cc32b8d203
+  sample[0]: 'Estonian language planners such as Ado Grenzstein (a journalist active in Estonia in the 1870s–90s) tried to use formation ex nihilo, Urschöpfung; i.e. they created new words out of nothing.'
+  sample[1]: 'Other subjects that lent themselves to visual depiction included the name of battles (e.g. Trafalgar), explorers, local notables, discoveries, sporting heroes and members of the royal family. Some pu
+===== /DEBUG_BATCH_RAW =====
+[rank7]:[W1226 09:09:10.701345391 reducer.cpp:1400] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
+[rank4]:[W1226 09:09:10.725077327 reducer.cpp:1400] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
+/opt/conda/lib/python3.11/site-packages/torch/autograd/graph.py:825: UserWarning: Attempting to run cuBLAS, but there was no current CUDA context! Attempting to set the primary context... (Triggered internally at ../aten/src/ATen/cuda/CublasHandlePool.cpp:135.)
+  return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[rank6]:[W1226 09:09:10.822010752 reducer.cpp:1400] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
+[rank5]:[W1226 09:09:11.873973510 reducer.cpp:1400] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
+[rank2]:[W1226 09:09:11.094215236 reducer.cpp:1400] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
+[rank3]:[W1226 09:09:11.095257496 reducer.cpp:1400] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
+[rank0]:[W1226 09:09:11.095719183 reducer.cpp:1400] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
+[rank1]:[W1226 09:09:11.098381119 reducer.cpp:1400] Warning: find_unused_parameters=True was specified in DDP constructor, but did not find any unused parameters in the forward pass. This flag results in an extra traversal of the autograd graph every iteration,  which can adversely affect performance. If your model indeed never has any unused parameters in the forward pass, consider turning this flag off. Note that this warning may be a false positive if your model has flow control causing later iterations to have unused parameters. (function operator())
+| epoch   1 |     1/  323 batches | lr 0.00 | ms/batch 2819.81 | loss 22.72 | ppl 7331954668.13
+| epoch   1 |     2/  323 batches | lr 0.00 | ms/batch 846.70 | loss  6.50 | ppl   664.47
+[rank:5, run completed ...
+[rank:6, run completed ...
+[rank:7, run completed ...
+[rank:4, run completed ...
+[rank:2, run completed ...
+[rank:3, run completed ...
+[rank:0, run completed ...
+[rank:1, run completed ...
+[rank0]:[W1226 09:09:13.618934202 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+[rank4]:[W1226 09:09:14.601989178 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+[rank2]:[W1226 09:09:14.767036548 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+[rank3]:[W1226 09:09:14.785387854 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+[rank1]:[W1226 09:09:14.846802224 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+[rank5]:[W1226 09:09:15.097881262 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+[rank7]:[W1226 09:09:15.107601735 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+[rank6]:[W1226 09:09:15.110569712 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())

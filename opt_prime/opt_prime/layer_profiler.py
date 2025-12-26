@@ -1,9 +1,18 @@
 import re
 import time
 from dataclasses import dataclass
-from typing import Dict, Iterable, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple
 
 import torch
+import torch.distributed as dist
+
+try:
+    # Used by TP/DTensor/functional collectives
+    from torch.distributed._functional_collectives import AsyncCollectiveTensor  # type: ignore
+    import torch.distributed._functional_collectives as _fc  # type: ignore
+except Exception:  # pragma: no cover
+    AsyncCollectiveTensor = None  # type: ignore
+    _fc = None  # type: ignore
 
 
 @dataclass
@@ -40,6 +49,7 @@ class LayerTimeProfiler:
 
         self._current_phase: Optional[str] = None
         self._current_mb: Optional[int] = None
+        self._module_stack: List[str] = []
 
         self._handles = []
 
@@ -51,11 +61,24 @@ class LayerTimeProfiler:
         self._pending_cuda: List[Tuple[str, _CudaEventPair]] = []
         self._pending_cpu: List[Tuple[str, int, int]] = []  # (name, start_ns, end_ns)
 
+        # pending communication kernel timings (CUDA events)
+        self._pending_comm_cuda: List[Tuple[str, _CudaEventPair]] = []
+        self._pending_comm_cpu: List[Tuple[str, int, int]] = []
+
         # aggregated
         self.total_ms: Dict[str, float] = {}
         self.count: Dict[str, int] = {}
         self.group_total_ms: Dict[str, float] = {}
         self.group_count: Dict[str, int] = {}
+
+        # communication (collective) time attributed to current module stack top
+        self.comm_total_ms: Dict[str, float] = {}
+        self.comm_count: Dict[str, int] = {}
+        self.comm_group_total_ms: Dict[str, float] = {}
+        self.comm_group_count: Dict[str, int] = {}
+
+    def _current_module_name(self) -> Optional[str]:
+        return self._module_stack[-1] if self._module_stack else None
 
     def _group_key(self, module_name: str) -> Optional[str]:
         # Common transformer-wide ops outside per-layer blocks
@@ -81,10 +104,12 @@ class LayerTimeProfiler:
             return
         self._current_phase = phase
         self._current_mb = mb_idx
+        _set_active_profiler(self)
 
     def clear_current(self) -> None:
         self._current_phase = None
         self._current_mb = None
+        _clear_active_profiler(self)
 
     def should_profile_module(self, module_name: str, module: torch.nn.Module) -> bool:
         if self._class_name_allow is not None:
@@ -111,6 +136,7 @@ class LayerTimeProfiler:
                     return
                 if self._current_phase != "fwd":
                     return
+                self._module_stack.append(_name)
 
                 key = (_name, self._current_phase, self._current_mb)
                 if self._is_cuda():
@@ -146,6 +172,10 @@ class LayerTimeProfiler:
                     end_ns = time.perf_counter_ns()
                     self._pending_cpu.append((_name, start_ns, end_ns))
 
+                # pop module stack (best-effort)
+                if self._module_stack:
+                    self._module_stack.pop()
+
             self._handles.append(mod.register_forward_pre_hook(_pre_hook))
             self._handles.append(mod.register_forward_hook(_post_hook))
 
@@ -176,6 +206,12 @@ class LayerTimeProfiler:
                     self.group_total_ms[gk] = self.group_total_ms.get(gk, 0.0) + float(ms)
                     self.group_count[gk] = self.group_count.get(gk, 0) + 1
             self._pending_cuda.clear()
+
+            # collectives
+            for name, pair in self._pending_comm_cuda:
+                ms = pair.start.elapsed_time(pair.end)
+                self._record_comm_ms_for(name, float(ms))
+            self._pending_comm_cuda.clear()
         else:
             for name, start_ns, end_ns in self._pending_cpu:
                 ms = (end_ns - start_ns) / 1_000_000.0
@@ -187,11 +223,22 @@ class LayerTimeProfiler:
                     self.group_count[gk] = self.group_count.get(gk, 0) + 1
             self._pending_cpu.clear()
 
+            for name, start_ns, end_ns in self._pending_comm_cpu:
+                ms = (end_ns - start_ns) / 1_000_000.0
+                self._record_comm_ms_for(name, float(ms))
+            self._pending_comm_cpu.clear()
+
     def reset_stats(self) -> None:
         self.total_ms.clear()
         self.count.clear()
         self.group_total_ms.clear()
         self.group_count.clear()
+        self.comm_total_ms.clear()
+        self.comm_count.clear()
+        self.comm_group_total_ms.clear()
+        self.comm_group_count.clear()
+        self._pending_comm_cuda.clear()
+        self._pending_comm_cpu.clear()
 
     def report_lines(self) -> List[str]:
         if not self.total_ms:
@@ -231,10 +278,221 @@ class LayerTimeProfiler:
 
         lines = []
         for key in sorted(self.group_total_ms.keys(), key=_group_sort_key):
-            total = self.group_total_ms[key]
-            cnt = self.group_count.get(key, 0)
-            avg = total / cnt if cnt else 0.0
-            lines.append(f"layer[{key}]: total={total:.3f}ms, ops={cnt}, avg/op={avg:.3f}ms")
+            compute_ms = self.group_total_ms.get(key, 0.0)
+            compute_ops = self.group_count.get(key, 0)
+            comm_ms = self.comm_group_total_ms.get(key, 0.0)
+            comm_ops = self.comm_group_count.get(key, 0)
+            total_ms = compute_ms + comm_ms
+            lines.append(
+                f"layer[{key}]: compute={compute_ms:.3f}ms (ops={compute_ops}), "
+                f"comm={comm_ms:.3f}ms (ops={comm_ops}), total={total_ms:.3f}ms"
+            )
         return lines
+
+    def enable_collective_profiling(self) -> None:
+        """
+        Patch common collectives so TP all-reduce/all-gather/reduce-scatter wait time is attributed
+        to the currently executing module (top of the module stack).
+        """
+        if not self.enabled:
+            return
+        _patch_collectives()
+
+    def _record_comm_ms(self, ms: float) -> None:
+        if not self.enabled:
+            return
+        if self._current_phase != "fwd":
+            return
+        name = self._current_module_name() or "__no_module__"
+        self._record_comm_ms_for(name, ms)
+
+    def _record_comm_ms_for(self, name: str, ms: float) -> None:
+        if not self.enabled:
+            return
+        if self._current_phase != "fwd":
+            return
+        self.comm_total_ms[name] = self.comm_total_ms.get(name, 0.0) + float(ms)
+        self.comm_count[name] = self.comm_count.get(name, 0) + 1
+        # If we couldn't attribute to a module, still expose comm under a stable group key.
+        gk = self._group_key(name) or ("tp_comm" if name == "__no_module__" else None)
+        if gk is not None:
+            self.comm_group_total_ms[gk] = self.comm_group_total_ms.get(gk, 0.0) + float(ms)
+            self.comm_group_count[gk] = self.comm_group_count.get(gk, 0) + 1
+
+
+# ---- global patching for collectives (best-effort, process-local) -----------------
+
+_ACTIVE_PROFILER: Optional[LayerTimeProfiler] = None
+_COLLECTIVES_PATCHED = False
+_ORIG_ASYNC_WAIT: Optional[Callable[..., Any]] = None
+_ORIG_DIST_ALL_REDUCE: Optional[Callable[..., Any]] = None
+_ORIG_FC_WAIT_TENSOR: Optional[Callable[..., Any]] = None
+_ORIG_C10D_WAIT_TENSOR: Optional[Callable[..., Any]] = None
+_ORIG_C10D_ALL_REDUCE: Optional[Callable[..., Any]] = None
+_ORIG_C10D_ALL_GATHER_INTO_TENSOR: Optional[Callable[..., Any]] = None
+_ORIG_C10D_REDUCE_SCATTER_TENSOR: Optional[Callable[..., Any]] = None
+
+
+def _set_active_profiler(p: LayerTimeProfiler) -> None:
+    global _ACTIVE_PROFILER
+    _ACTIVE_PROFILER = p
+
+
+def _clear_active_profiler(p: LayerTimeProfiler) -> None:
+    global _ACTIVE_PROFILER
+    if _ACTIVE_PROFILER is p:
+        _ACTIVE_PROFILER = None
+
+
+def _patch_collectives() -> None:
+    global _COLLECTIVES_PATCHED
+    global _ORIG_ASYNC_WAIT, _ORIG_DIST_ALL_REDUCE, _ORIG_FC_WAIT_TENSOR, _ORIG_C10D_WAIT_TENSOR
+    global _ORIG_C10D_ALL_REDUCE, _ORIG_C10D_ALL_GATHER_INTO_TENSOR, _ORIG_C10D_REDUCE_SCATTER_TENSOR
+    if _COLLECTIVES_PATCHED:
+        return
+
+    # Patch AsyncCollectiveTensor.wait (TP/DTensor path)
+    if AsyncCollectiveTensor is not None and hasattr(AsyncCollectiveTensor, "wait"):
+        _ORIG_ASYNC_WAIT = AsyncCollectiveTensor.wait  # type: ignore[attr-defined]
+
+        def _wait_wrapped(self, *args, **kwargs):  # type: ignore[no-redef]
+            t0 = time.perf_counter_ns()
+            out = _ORIG_ASYNC_WAIT(self, *args, **kwargs)  # type: ignore[misc]
+            t1 = time.perf_counter_ns()
+            ms = (t1 - t0) / 1_000_000.0
+            p = _ACTIVE_PROFILER
+            if p is not None:
+                p._record_comm_ms(ms)
+            return out
+
+        AsyncCollectiveTensor.wait = _wait_wrapped  # type: ignore[assignment]
+
+    # Patch torch.distributed._functional_collectives.wait_tensor (common TP path)
+    if _fc is not None and hasattr(_fc, "wait_tensor"):
+        _ORIG_FC_WAIT_TENSOR = _fc.wait_tensor  # type: ignore[attr-defined]
+
+        def _fc_wait_tensor_wrapped(*args, **kwargs):  # type: ignore[no-redef]
+            t0 = time.perf_counter_ns()
+            out = _ORIG_FC_WAIT_TENSOR(*args, **kwargs)  # type: ignore[misc]
+            t1 = time.perf_counter_ns()
+            ms = (t1 - t0) / 1_000_000.0
+            p = _ACTIVE_PROFILER
+            if p is not None:
+                p._record_comm_ms(ms)
+            return out
+
+        _fc.wait_tensor = _fc_wait_tensor_wrapped  # type: ignore[assignment]
+
+    # Patch torch.ops._c10d_functional.wait_tensor (lower-level functional op)
+    try:
+        ns = torch.ops._c10d_functional
+        if hasattr(ns, "wait_tensor"):
+            _ORIG_C10D_WAIT_TENSOR = ns.wait_tensor
+
+            def _c10d_wait_tensor_wrapped(*args, **kwargs):  # type: ignore[no-redef]
+                t0 = time.perf_counter_ns()
+                out = _ORIG_C10D_WAIT_TENSOR(*args, **kwargs)  # type: ignore[misc]
+                t1 = time.perf_counter_ns()
+                ms = (t1 - t0) / 1_000_000.0
+                p = _ACTIVE_PROFILER
+                if p is not None:
+                    p._record_comm_ms(ms)
+                return out
+
+            ns.wait_tensor = _c10d_wait_tensor_wrapped  # type: ignore[assignment]
+
+        # Patch collective *launch* ops to capture GPU kernel time even when there is no explicit wait_tensor().
+        if hasattr(ns, "all_reduce"):
+            _ORIG_C10D_ALL_REDUCE = ns.all_reduce
+
+            def _c10d_all_reduce_wrapped(*args, **kwargs):  # type: ignore[no-redef]
+                p = _ACTIVE_PROFILER
+                if p is None or not p.enabled:
+                    return _ORIG_C10D_ALL_REDUCE(*args, **kwargs)  # type: ignore[misc]
+                name = p._current_module_name() or "__no_module__"
+                if p._is_cuda():
+                    start_ev = torch.cuda.Event(enable_timing=True)
+                    end_ev = torch.cuda.Event(enable_timing=True)
+                    start_ev.record()
+                    out = _ORIG_C10D_ALL_REDUCE(*args, **kwargs)  # type: ignore[misc]
+                    end_ev.record()
+                    p._pending_comm_cuda.append((name, _CudaEventPair(start=start_ev, end=end_ev)))
+                    return out
+                t0 = time.perf_counter_ns()
+                out = _ORIG_C10D_ALL_REDUCE(*args, **kwargs)  # type: ignore[misc]
+                t1 = time.perf_counter_ns()
+                p._pending_comm_cpu.append((name, t0, t1))
+                return out
+
+            ns.all_reduce = _c10d_all_reduce_wrapped  # type: ignore[assignment]
+
+        if hasattr(ns, "all_gather_into_tensor"):
+            _ORIG_C10D_ALL_GATHER_INTO_TENSOR = ns.all_gather_into_tensor
+
+            def _c10d_all_gather_into_tensor_wrapped(*args, **kwargs):  # type: ignore[no-redef]
+                p = _ACTIVE_PROFILER
+                if p is None or not p.enabled:
+                    return _ORIG_C10D_ALL_GATHER_INTO_TENSOR(*args, **kwargs)  # type: ignore[misc]
+                name = p._current_module_name() or "__no_module__"
+                if p._is_cuda():
+                    start_ev = torch.cuda.Event(enable_timing=True)
+                    end_ev = torch.cuda.Event(enable_timing=True)
+                    start_ev.record()
+                    out = _ORIG_C10D_ALL_GATHER_INTO_TENSOR(*args, **kwargs)  # type: ignore[misc]
+                    end_ev.record()
+                    p._pending_comm_cuda.append((name, _CudaEventPair(start=start_ev, end=end_ev)))
+                    return out
+                t0 = time.perf_counter_ns()
+                out = _ORIG_C10D_ALL_GATHER_INTO_TENSOR(*args, **kwargs)  # type: ignore[misc]
+                t1 = time.perf_counter_ns()
+                p._pending_comm_cpu.append((name, t0, t1))
+                return out
+
+            ns.all_gather_into_tensor = _c10d_all_gather_into_tensor_wrapped  # type: ignore[assignment]
+
+        if hasattr(ns, "reduce_scatter_tensor"):
+            _ORIG_C10D_REDUCE_SCATTER_TENSOR = ns.reduce_scatter_tensor
+
+            def _c10d_reduce_scatter_tensor_wrapped(*args, **kwargs):  # type: ignore[no-redef]
+                p = _ACTIVE_PROFILER
+                if p is None or not p.enabled:
+                    return _ORIG_C10D_REDUCE_SCATTER_TENSOR(*args, **kwargs)  # type: ignore[misc]
+                name = p._current_module_name() or "__no_module__"
+                if p._is_cuda():
+                    start_ev = torch.cuda.Event(enable_timing=True)
+                    end_ev = torch.cuda.Event(enable_timing=True)
+                    start_ev.record()
+                    out = _ORIG_C10D_REDUCE_SCATTER_TENSOR(*args, **kwargs)  # type: ignore[misc]
+                    end_ev.record()
+                    p._pending_comm_cuda.append((name, _CudaEventPair(start=start_ev, end=end_ev)))
+                    return out
+                t0 = time.perf_counter_ns()
+                out = _ORIG_C10D_REDUCE_SCATTER_TENSOR(*args, **kwargs)  # type: ignore[misc]
+                t1 = time.perf_counter_ns()
+                p._pending_comm_cpu.append((name, t0, t1))
+                return out
+
+            ns.reduce_scatter_tensor = _c10d_reduce_scatter_tensor_wrapped  # type: ignore[assignment]
+    except Exception:
+        pass
+
+    # Patch dist.all_reduce (some TP/DP paths may call this directly; count only if profiler active)
+    if hasattr(dist, "all_reduce"):
+        _ORIG_DIST_ALL_REDUCE = dist.all_reduce
+
+        def _all_reduce_wrapped(*args, **kwargs):  # type: ignore[no-redef]
+            t0 = time.perf_counter_ns()
+            out = _ORIG_DIST_ALL_REDUCE(*args, **kwargs)  # type: ignore[misc]
+            t1 = time.perf_counter_ns()
+            ms = (t1 - t0) / 1_000_000.0
+            p = _ACTIVE_PROFILER
+            # Only attribute if we're inside a profiled forward-module context.
+            if p is not None and p._current_module_name() is not None:
+                p._record_comm_ms(ms)
+            return out
+
+        dist.all_reduce = _all_reduce_wrapped  # type: ignore[assignment]
+
+    _COLLECTIVES_PATCHED = True
 
 

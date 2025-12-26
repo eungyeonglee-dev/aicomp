@@ -714,6 +714,9 @@ class Optimus_p:
                 else self.run_info.submod
             )
             self.layer_time_profiler.attach(submod_for_hooks)
+            # For TP: include collective (all-reduce/all-gather/rs) wait time into per-layer accounting.
+            if self.tpl.tp_size > 1:
+                self.layer_time_profiler.enable_collective_profiling()
 
         if self.profile_fx_node_time:
             # FX node profiling requires running the GraphModule node-by-node (fx.Interpreter).

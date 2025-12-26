@@ -185,9 +185,13 @@ def train():
             loss = optimus_p.get_loss() 
         else:
             loss = None
+            
+        if tp_degree > 1:
+            pass
+        else:
+            torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5) # if tp > 1, don't use this line
+            optimus_p.optimizer.step()
 
-        torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5)
-        optimus_p.optimizer.step()
 
         if optimus_p.is_last_stage():
             loss = sum(loss) / optimus_p.num_mb

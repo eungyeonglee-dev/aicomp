@@ -21,6 +21,7 @@ import sys
 import math
 import time
 import re
+import nvtx
 from packaging import version
 
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -55,9 +56,9 @@ parser.add_argument('--tp-degree', type=int, default=1, help='tensor parallelism
 parser.add_argument('--dp-degree', type=int, default=2, help='data parallelism degree')
 parser.add_argument('--micro-batch-size', type=int, default=16, help='micro batch size')
 parser.add_argument('--batch-size', type=int, default=32, help='global batch size')
-parser.add_argument('--profile-mode', type=str, default="0", help='"0": normal, "1": nvtx, "2": pytorch profiler')
 parser.add_argument('--profile-cut', type=bool, default=False, help='"False": normal training, "True": profile only a few steps')
-parser.add_argument('--profile-step', type=int, default=20, help='the number of steps to profile')
+parser.add_argument('--profile-step', type=int, default=3, help='the number of steps to profile')
+parser.add_argument('--profile-start-step',type=int, default=50, help='the step to start profiling')
 parser.add_argument('--log-level', type=int, default=0, help='log-level')
 parser.add_argument('--pipeline-parallel-schedule', type=str, default="1f1b", help='"1f1b" or "gpipe"')
 
@@ -70,9 +71,9 @@ dp_degree = args.dp_degree
 micro_batch_size = args.micro_batch_size
 batch_size = args.batch_size # 32 = dp(2) * micro_batch_size(1) * #iterations(16)
 gas = int(batch_size / (micro_batch_size * dp_degree)) # gas means gradient accumulation steps. It equals the number of micro-batches in one batch.
-profile_mode = args.profile_mode
 profile_cut = args.profile_cut
 profile_step = args.profile_step
+profile_start_step = args.profile_start_step
 rank=int(os.environ['RANK'])
 world_size=int(os.environ['WORLD_SIZE'])
 pp_schedule = args.pipeline_parallel_schedule
@@ -137,11 +138,7 @@ print(f" rank={optimus_rank} ...")
 
 optimus_p.train()
 
-if tp_degree > 1:
-    # When using tensor parallelism, it is recommended to use AdamW optimizer from transformers
-    optimus_p.optimizer = transformers.AdamW(optimus_p.parameters(), lr=3e-5, foreach=False)
-else:
-    optimus_p.optimizer = transformers.AdamW(optimus_p.parameters(), lr=3e-5)
+optimus_p.optimizer = transformers.AdamW(optimus_p.parameters(), lr=3e-5)
 
 scheduler = torch.optim.lr_scheduler.StepLR(optimus_p.optimizer, 1.0, gamma=0.95)
 
@@ -157,49 +154,62 @@ print0(f"nbatches={nbatches}")
 epochs = 1 # The number of epochs
 def train():
     optimus_p.train() # turn on the train mode
-
     total_loss = 0
-    start_time = time.time()    
+    start_time = time.time()
     for i, batch in enumerate(dataloader):
-        data, labels = None, None
-        # prepare input and label
-        if optimus_p.is_first_stage():
-            tokens =  tokenizer(batch, padding=True, truncation=True, max_length=1024,return_tensors="pt")
-            data, labels = tokens.input_ids, tokens.input_ids
-        labels = optimus_p.move_labels2last_stage(labels)
-        optimus_p.optimizer.zero_grad()
-        optimus_p.run(data, labels, mode=pp_schedule)
+        if i == profile_start_step:
+            # torch.cuda.synchronize()
+            torch.cuda.profiler.start()
+                  
+        with torch.cuda.nvtx.range(f"rank-{optimus_p.get_rank()}_batch-{i}"):
+            data, labels = None, None
+            # prepare input and label            
+            with torch.cuda.nvtx.range("prep.tokenizer"):
+                if optimus_p.is_first_stage():
+                    tokens =  tokenizer(batch, padding=True, truncation=True, max_length=1024,return_tensors="pt")
+                    data, labels = tokens.input_ids, tokens.input_ids
+            # move data to the last stage
+            with torch.cuda.nvtx.range("comm.prepare_labels"):
+                labels = optimus_p.move_labels2last_stage(labels)
 
-        if optimus_p.is_last_stage():
-            loss = optimus_p.get_loss() 
-        else:
-            loss = None
-            
-        if tp_degree > 1:
-            pass
-        else:
-            torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5) # if tp > 1, don't use this line
+            with torch.cuda.nvtx.range("fwdbwd"):
+                optimus_p.optimizer.zero_grad()
+                optimus_p.run(data, labels, mode=pp_schedule)
+
+            with torch.cuda.nvtx.range("loss"):
+                if optimus_p.is_last_stage():
+                    loss = optimus_p.get_loss() 
+                else:
+                    loss = None
+
+            with torch.cuda.nvtx.range("clip.grad"):            
+                if tp_degree > 1:
+                    pass
+                else:
+                    torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5) # if tp > 1, don't use this line
         
-        optimus_p.optimizer.step()
+            with torch.cuda.nvtx.range("optimizer.step"):
+                optimus_p.optimizer.step()
 
-        if optimus_p.is_last_stage():
-            loss = sum(loss) / optimus_p.num_mb
-            total_loss += loss
-            log_interval = 1
-            if i % log_interval == 0 and i > 0:
-                cur_loss = total_loss / log_interval
-                elapsed = time.time() - start_time
-                if optimus_p.get_rank() % int(world_size/pp_degree) == 0:
-                    print('| epoch {:3d} | {:5d}/{:5d} batches | '
-                        'lr {:02.2f} | ms/batch {:5.2f} | '
-                        'loss {:5.2f} | ppl {:8.2f}'.format(
-                            epoch, i, nbatches, scheduler.get_lr()[0],
-                            elapsed * 1000 / log_interval,
-                            cur_loss, math.exp(cur_loss)))
+            if optimus_p.is_last_stage():
+                loss = sum(loss) / optimus_p.num_mb
+                total_loss += loss
+                log_interval = 1
+                if i % log_interval == 0 and i > 0:
+                    cur_loss = total_loss / log_interval
+                    elapsed = time.time() - start_time
+                    if optimus_p.get_rank() % int(world_size/pp_degree) == 0:
+                        print('| epoch {:3d} | {:5d}/{:5d} batches | '
+                            'lr {:02.2f} | ms/batch {:5.2f} | '
+                            'loss {:5.2f} | ppl {:8.2f}'.format(
+                                epoch, i, nbatches, scheduler.get_lr()[0],
+                                elapsed * 1000 / log_interval,
+                                cur_loss, math.exp(cur_loss)))
 
-                total_loss = 0
-                start_time = time.time()
-        if profile_cut and i > profile_step:
+                    total_loss = 0
+                    start_time = time.time()
+        
+        if profile_cut and i > profile_start_step + profile_step:
             break
 
 for epoch in range(1, epochs + 1):

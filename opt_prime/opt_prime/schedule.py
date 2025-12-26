@@ -4,6 +4,7 @@
 
 import torch
 import torch.nn as nn
+import nvtx
 
 from torch import Tensor, Size
 from torch import fx
@@ -381,14 +382,17 @@ class Schedule:
         args = fx.graph.map_arg(self.optimus.run_info.node.args, extract_tensor_args)
         kwargs = fx.graph.map_arg(self.optimus.run_info.node.kwargs, extract_tensor_args)
 
-        if isinstance(self.optimus.run_info.submod, DistributedDataParallel):
-            with self.optimus.run_info.submod.no_sync():
-                #logging.info(f" [FWD] DDP no_sync ... rank:{self.optimus.tpl.rank}, mb_idx:{mb_idx}")
+        # NVTX annotation for forward core with layer name
+        layer_name = self.optimus.run_info.name
+        with nvtx.annotate(f"fwd_{layer_name}_mb{mb_idx}", color="green"):
+            if isinstance(self.optimus.run_info.submod, DistributedDataParallel):
+                with self.optimus.run_info.submod.no_sync():
+                    #logging.info(f" [FWD] DDP no_sync ... rank:{self.optimus.tpl.rank}, mb_idx:{mb_idx}")
+                    #result = self.optimus.run_info.submod(*args, **kwargs)
+                    result = self.optimus.run_info.submod(*args, **kwargs)
                 #result = self.optimus.run_info.submod(*args, **kwargs)
+            else:
                 result = self.optimus.run_info.submod(*args, **kwargs)
-            #result = self.optimus.run_info.submod(*args, **kwargs)
-        else:
-            result = self.optimus.run_info.submod(*args, **kwargs)
 
         self.optimus.run_info.flat_args[mb_idx][self.optimus.run_info.name] = flat_args
         self.optimus.run_info.env[mb_idx][self.optimus.run_info.name] = result
@@ -575,17 +579,20 @@ class Schedule:
         num_nodes = self.get_num_nodes(node.name) 
         kwargs["valid_index"] = [i for i in range(num_nodes)]
 
-        if isinstance(self.optimus.run_info.submod, DistributedDataParallel):
-            if mb_idx == self.optimus.num_mb - 1:
-                #logging.info(f" DDP ... [node.name:{node.name}], [mb_idx:{mb_idx}], prepare_for_backward ...") 
-                self.optimus.run_info.submod.reducer.prepare_for_backward(list(torch.nn.parallel.distributed._find_tensors(kwargs['forward_output'])))
-                result = self.core_backward(*args, **kwargs)
-            
-            else:
-                with self.optimus.run_info.submod.no_sync():
+        # NVTX annotation for backward core with layer name
+        layer_name = self.optimus.run_info.name
+        with nvtx.annotate(f"bwd_{layer_name}_mb{mb_idx}", color="red"):
+            if isinstance(self.optimus.run_info.submod, DistributedDataParallel):
+                if mb_idx == self.optimus.num_mb - 1:
+                    #logging.info(f" DDP ... [node.name:{node.name}], [mb_idx:{mb_idx}], prepare_for_backward ...")
+                    self.optimus.run_info.submod.reducer.prepare_for_backward(list(torch.nn.parallel.distributed._find_tensors(kwargs['forward_output'])))
                     result = self.core_backward(*args, **kwargs)
-        else:
-            result = self.core_backward(*args, **kwargs)
+
+                else:
+                    with self.optimus.run_info.submod.no_sync():
+                        result = self.core_backward(*args, **kwargs)
+            else:
+                result = self.core_backward(*args, **kwargs)
 
 
         if self.optimus.force_free_mem == True:

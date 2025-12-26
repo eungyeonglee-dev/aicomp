@@ -5,6 +5,7 @@ import argparse
 import sys
 
 import torch.nn as nn
+import nvtx
 
 from torch.nn.parallel import DistributedDataParallel
 from torch.distributed.device_mesh import init_device_mesh
@@ -15,8 +16,8 @@ from torch.utils.data.distributed import DistributedSampler
 
 from opt_prime.comm import Comm
 from opt_prime.IR import IR, IR_Anal
-from opt_prime.schedule import ScheduleGPipe 
-from opt_prime.schedule import Schedule1F1B 
+from opt_prime.schedule import ScheduleGPipe
+from opt_prime.schedule import Schedule1F1B
 
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
@@ -854,6 +855,46 @@ class Optimus_p:
         self.run_info.submod.recompile()
         self.run_info.submod = parallelize_module(module=self.run_info.submod, device_mesh=self.tpl.tp_mesh, parallelize_plan=tp_plan)
 
+        # Add NVTX hooks for layer-level profiling (including TP all-reduce timing)
+        self._register_nvtx_hooks()
+
+    def _register_nvtx_hooks(self):
+        """Register forward/backward hooks for transformer block-level NVTX profiling.
+        Each transformer block includes self_attn and mlp with TP all-reduce.
+        """
+        self._nvtx_handles = {}
+
+        def make_pre_hook(layer_name, color):
+            def pre_hook(module, input):
+                self._nvtx_handles[layer_name] = nvtx.start_range(message=layer_name, color=color)
+            return pre_hook
+
+        def make_post_hook(layer_name):
+            def post_hook(module, input, output):
+                if layer_name in self._nvtx_handles:
+                    nvtx.end_range(self._nvtx_handles[layer_name])
+            return post_hook
+
+        for name, module in self.run_info.submod.named_modules():
+            # Hook on transformer layer blocks (model_layers_X)
+            # These are typically LlamaDecoderLayer or similar
+            class_name = module.__class__.__name__
+            if "DecoderLayer" in class_name or "TransformerBlock" in class_name:
+                module.register_forward_pre_hook(make_pre_hook(f"block_{name}", "blue"))
+                module.register_forward_hook(make_post_hook(f"block_{name}"))
+                if self.tpl.rank == 0:
+                    print(f"[NVTX] Registered hook for transformer block: {name}")
+
+            # Also hook individual TP linear layers for detailed all-reduce timing
+            elif isinstance(module, nn.Linear):
+                parts = name.split('_')
+                if len(parts) > 3 and parts[0] == "model" and parts[1] == "layers":
+                    # RowwiseParallel layers (o_proj, down_proj) include all-reduce
+                    if "o_proj" in name or "down_proj" in name:
+                        module.register_forward_pre_hook(make_pre_hook(f"tp_allreduce_{name}", "orange"))
+                        module.register_forward_hook(make_post_hook(f"tp_allreduce_{name}"))
+                        if self.tpl.rank == 0:
+                            print(f"[NVTX] Registered hook for TP layer (all-reduce): {name}")
 
     def get_output(self):
         if self.preserve_output == True and self.tpl.is_last_stage() == True:

@@ -162,10 +162,10 @@ class IR(object):
         self.model_ir.append(submods)
 
         if int(os.environ["RANK"]) == 0:
-            print(f">> ------------------ FX graph --------------------------------")
+            print(f"[rank:0] ------------------ FX graph --------------------------------")
             for n in self.model_ir[0].graph.nodes:
                 print(f"n.op:{n.op}, n.name:{n.name}, n.target:{n.target}, n.args:{n.args}, n.all_input_nodes:{n.all_input_nodes}")
-            print(f">> ------------------------------------------------------------")
+            print(f"[rank:0] ------------------------------------------------------------")
 
 
     def simple_split(self, module, num_stage):
@@ -786,5 +786,4 @@ class IR(object):
 
         gc.collect()
         torch.cuda.empty_cache()
-
 

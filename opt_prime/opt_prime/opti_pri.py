@@ -824,6 +824,9 @@ class Optimus_p:
                     )
                     for ln in group_lines:
                         print(f"  {ln}")
+            # Save last step's avg times before reset (for save_layer_profile)
+            if self.global_step == self.profile_layer_time_steps:
+                self._last_step_avg_times = self.layer_time_profiler.get_avg_times_dict()
             self.layer_time_profiler.reset_stats()
 
         if self.fx_node_profiler is not None and self.profile_fx_node_time_steps > 0:
@@ -1014,3 +1017,88 @@ class Optimus_p:
         self.optimizer.load_state_dict(ckpt['optimizer_state_dict'])
 
         print(f"Checkpoint loaded: {ckpt_path}")
+
+    def save_layer_profile(
+        self,
+        model_name: str,
+        gpu_type: str,
+        num_layers: int,
+        output_dir: str = ".",
+        add_name: Optional[str] = None,
+    ) -> Optional[str]:
+        """
+        Save layer profile as numpy array file (only for stage leader rank).
+
+        Format: [embed_time, layer0_time, layer1_time, ..., layerN_time, lm_head_time]
+        Each time is the average total time (compute + comm) per forward pass in ms.
+
+        Note: Call this after running profiling steps. Uses the last step's data.
+
+        Args:
+            model_name: Model name (e.g., 'llama-3.2-1b')
+            gpu_type: GPU type (e.g., 'A100', 'H100')
+            num_layers: Total number of transformer layers in the model
+            output_dir: Directory to save the numpy file
+            add_name: Additional name suffix for the file
+
+        Returns:
+            Path to the saved numpy file, or None if profiler not enabled
+        """
+        if self.layer_time_profiler is None:
+            print(f"[rank:{self.get_rank()}] Layer profiler not enabled, skipping save")
+            return None
+
+        # Only stage leader saves the profile
+        if not self.tpl.is_stage_leader():
+            return None
+
+        # Use last step's saved avg times (before reset_stats cleared the data)
+        avg_times = getattr(self, '_last_step_avg_times', None)
+        if avg_times is None:
+            print(f"[rank:{self.get_rank()}] No profiling data available, skipping save")
+            return None
+
+        import numpy as np
+
+        # Build profile array: [embed, layer0, layer1, ..., layerN-1, lm_head]
+        profile_array = []
+
+        # Embed time
+        embed_time = avg_times.get("embed", 0.0)
+        profile_array.append(embed_time)
+
+        # Layer times (0 to num_layers-1)
+        for i in range(num_layers):
+            layer_time = avg_times.get(str(i), 0.0)
+            profile_array.append(layer_time)
+
+        # lm_head time
+        lm_head_time = avg_times.get("lm_head", 0.0)
+        profile_array.append(lm_head_time)
+
+        # Create filename
+        add_suffix = f"_{add_name}" if add_name else ""
+        filename = f"{model_name}_{gpu_type}_tp{self.tpl.tp_size}_stage{self.tpl.stage}{add_suffix}.npy"
+        filepath = os.path.join(output_dir, filename)
+
+        # Ensure directory exists
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Save numpy array
+        np.save(filepath, np.array(profile_array, dtype=np.float32))
+
+        print(f"[rank:{self.get_rank()} stage:{self.tpl.stage}] Layer profile saved to: {filepath}")
+        return filepath
+
+    def get_layer_avg_times(self) -> Optional[Dict[str, float]]:
+        """
+        Get average times (compute + comm) per layer as a dictionary.
+
+        Returns:
+            Dictionary with keys like 'embed', '0', '1', ..., 'lm_head'
+            and values as average total time in ms per forward pass.
+            Returns None if profiler not enabled.
+        """
+        if self.layer_time_profiler is None:
+            return None
+        return self.layer_time_profiler.get_avg_times_dict()

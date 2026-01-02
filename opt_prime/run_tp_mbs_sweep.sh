@@ -37,8 +37,8 @@ SCHEDULE="${SCHEDULE:-1f1b}"
 LOG_SUBDIR="${LOG_SUBDIR:-_logs/tp_mbs_sweep}"
 
 # Space-separated lists (strings) -> arrays
-TP_LIST_STR="${TP_LIST:-1 2 4}"
-MBS_LIST_STR="${MBS_LIST:-1 2 4 8 16 32}"
+TP_LIST_STR="${TP_LIST:-2}"
+MBS_LIST_STR="${MBS_LIST:-1}"
 
 mkdir -p "$LOG_SUBDIR"
 

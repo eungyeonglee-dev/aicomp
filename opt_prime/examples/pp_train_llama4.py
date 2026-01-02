@@ -227,5 +227,15 @@ if optimus_p.get_rank() == 0:
 
     print('Time elapsed: %.3f sec ' % (elapsed_time))
 
+# Save layer profile as numpy file (only when profiling is enabled)
+if profile_cut:
+    optimus_p.save_layer_profile(
+        model_name="llama-3.2-1b",
+        gpu_type="A100",
+        num_layers=16,  # Llama-3.2-1B has 16 layers
+        output_dir="./_profiles",
+        add_name=f"mbs{micro_batch_size}"
+    )
+
 print(f"[rank:{optimus_p.get_rank()}, run completed ...")
 

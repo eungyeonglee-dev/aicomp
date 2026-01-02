@@ -14,6 +14,44 @@ except Exception:  # pragma: no cover
     AsyncCollectiveTensor = None  # type: ignore
     _fc = None  # type: ignore
 
+try:
+    from torch.distributed.tensor import DTensor  # type: ignore
+except Exception:  # pragma: no cover
+    DTensor = None  # type: ignore
+
+
+def _force_async_collective_wait(output: Any) -> Any:
+    """
+    Force DTensor/AsyncCollectiveTensor async collectives to complete.
+    This ensures TP all-reduce is included in layer timing measurements.
+    """
+    if output is None:
+        return output
+
+    # Handle AsyncCollectiveTensor directly
+    if AsyncCollectiveTensor is not None and isinstance(output, AsyncCollectiveTensor):
+        return output.wait()
+
+    # Handle DTensor (wraps AsyncCollectiveTensor internally)
+    if DTensor is not None and isinstance(output, DTensor):
+        # DTensor._local_tensor may be AsyncCollectiveTensor
+        local = output._local_tensor
+        if AsyncCollectiveTensor is not None and isinstance(local, AsyncCollectiveTensor):
+            local.wait()
+        return output
+
+    # Handle tuple/list of outputs (common in transformer blocks)
+    if isinstance(output, (tuple, list)):
+        result = [_force_async_collective_wait(o) for o in output]
+        return type(output)(result)
+
+    # Handle dict outputs
+    if isinstance(output, dict):
+        return {k: _force_async_collective_wait(v) for k, v in output.items()}
+
+    # Regular tensor or other type - no action needed
+    return output
+
 
 @dataclass
 class _CudaEventPair:
@@ -155,6 +193,10 @@ class LayerTimeProfiler:
                 if self._current_phase != "fwd":
                     return
 
+                # Force DTensor async collectives (all-reduce) to complete before measuring end time.
+                # This ensures TP communication time is included in the layer timing.
+                _output = _force_async_collective_wait(_output)
+
                 key = (_name, self._current_phase, self._current_mb)
                 if self._is_cuda():
                     stack = self._inflight_cuda.get(key)
@@ -283,11 +325,92 @@ class LayerTimeProfiler:
             comm_ms = self.comm_group_total_ms.get(key, 0.0)
             comm_ops = self.comm_group_count.get(key, 0)
             total_ms = compute_ms + comm_ms
+            # Calculate average per forward pass (compute_ops is the number of module forward calls)
+            avg_compute_ms = compute_ms / compute_ops if compute_ops > 0 else 0.0
+            avg_comm_ms = comm_ms / comm_ops if comm_ops > 0 else 0.0
+            avg_total_ms = total_ms / compute_ops if compute_ops > 0 else 0.0
             lines.append(
-                f"layer[{key}]: compute={compute_ms:.3f}ms (ops={compute_ops}), "
-                f"comm={comm_ms:.3f}ms (ops={comm_ops}), total={total_ms:.3f}ms"
+                f"layer[{key}]: compute={compute_ms:.3f}ms (avg={avg_compute_ms:.3f}ms), "
+                f"comm={comm_ms:.3f}ms (avg={avg_comm_ms:.3f}ms), "
+                f"total={total_ms:.3f}ms (avg={avg_total_ms:.3f}ms), ops={compute_ops}"
             )
         return lines
+
+    def get_avg_times_dict(self) -> Dict[str, float]:
+        """
+        Get average times (compute + comm) per layer as a dictionary.
+        Keys: 'embed', '0', '1', ..., 'lm_head'
+        Values: average total time in ms per forward pass
+        """
+        result = {}
+        for key in self.group_total_ms.keys():
+            compute_ms = self.group_total_ms.get(key, 0.0)
+            compute_ops = self.group_count.get(key, 0)
+            comm_ms = self.comm_group_total_ms.get(key, 0.0)
+            total_ms = compute_ms + comm_ms
+            avg_total_ms = total_ms / compute_ops if compute_ops > 0 else 0.0
+            result[key] = avg_total_ms
+        return result
+
+    def save_profile_numpy(
+        self,
+        model_name: str,
+        gpu_type: str,
+        tp_size: int,
+        num_layers: int,
+        output_dir: str = ".",
+        add_name: Optional[str] = None,
+    ) -> str:
+        """
+        Save layer profile as numpy array file.
+
+        Format: [embed_time, layer0_time, layer1_time, ..., layerN_time, lm_head_time]
+        Each time is the average total time (compute + comm) per forward pass in ms.
+
+        Args:
+            model_name: Model name (e.g., 'llama-3.2-1b')
+            gpu_type: GPU type (e.g., 'A100', 'H100')
+            tp_size: Tensor parallelism size
+            num_layers: Total number of transformer layers in the model
+            output_dir: Directory to save the numpy file
+            add_name: Additional name suffix for the file
+
+        Returns:
+            Path to the saved numpy file
+        """
+        import numpy as np
+        import os
+
+        avg_times = self.get_avg_times_dict()
+
+        # Build profile array: [embed, layer0, layer1, ..., layerN-1, lm_head]
+        profile_array = []
+
+        # Embed time
+        embed_time = avg_times.get("embed", 0.0)
+        profile_array.append(embed_time)
+
+        # Layer times (0 to num_layers-1)
+        for i in range(num_layers):
+            layer_time = avg_times.get(str(i), 0.0)
+            profile_array.append(layer_time)
+
+        # lm_head time
+        lm_head_time = avg_times.get("lm_head", 0.0)
+        profile_array.append(lm_head_time)
+
+        # Create filename
+        add_suffix = f"_{add_name}" if add_name else ""
+        filename = f"{model_name}_{gpu_type}_tp{tp_size}{add_suffix}.npy"
+        filepath = os.path.join(output_dir, filename)
+
+        # Ensure directory exists
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Save numpy array
+        np.save(filepath, np.array(profile_array, dtype=np.float32))
+
+        return filepath
 
     def enable_collective_profiling(self) -> None:
         """

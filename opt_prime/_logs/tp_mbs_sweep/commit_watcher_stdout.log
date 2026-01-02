@@ -3,3 +3,36 @@
 Already on 'feature/ir-layer-profiling'
 M	opt_prime/examples/pp_train_llama4.py
 M	opt_prime/run_tp_mbs_sweep.sh
+[feature/ir-layer-profiling 2129779] feat(ir-layer-profiling): add tp/mbs sweep logs
+ 30 files changed, 19504 insertions(+)
+ create mode 100755 opt_prime/_logs/tp_mbs_sweep/20251224_105911_TP1_DP1_PP8_MBS1_GBS32_log.txt
+ create mode 100755 opt_prime/_logs/tp_mbs_sweep/20251224_105911_gpustat_TP1_DP1_PP8_MBS1_GBS32.log
+ create mode 100755 opt_prime/_logs/tp_mbs_sweep/20251224_111155_TP2_DP1_PP4_MBS1_GBS32_log.txt
+ create mode 100755 opt_prime/_logs/tp_mbs_sweep/20251224_111155_gpustat_TP2_DP1_PP4_MBS1_GBS32.log
+ create mode 100755 opt_prime/_logs/tp_mbs_sweep/20251224_111323_TP2_DP1_PP4_MBS2_GBS32_log.txt
+ create mode 100755 opt_prime/_logs/tp_mbs_sweep/20251224_111323_gpustat_TP2_DP1_PP4_MBS2_GBS32.log
+ create mode 100755 opt_prime/_logs/tp_mbs_sweep/20251224_111427_TP2_DP1_PP4_MBS4_GBS32_log.txt
+ create mode 100755 opt_prime/_logs/tp_mbs_sweep/20251224_111427_gpustat_TP2_DP1_PP4_MBS4_GBS32.log
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_111520_TP2_DP1_PP4_MBS8_GBS32_log.txt
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_111520_gpustat_TP2_DP1_PP4_MBS8_GBS32.log
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_111613_TP2_DP1_PP4_MBS16_GBS32_log.txt
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_111613_gpustat_TP2_DP1_PP4_MBS16_GBS32.log
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_111704_TP2_DP1_PP4_MBS32_GBS32_log.txt
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_111704_gpustat_TP2_DP1_PP4_MBS32_GBS32.log
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_111800_TP4_DP1_PP2_MBS1_GBS32_log.txt
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_111800_gpustat_TP4_DP1_PP2_MBS1_GBS32.log
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_111955_TP4_DP1_PP2_MBS2_GBS32_log.txt
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_111955_gpustat_TP4_DP1_PP2_MBS2_GBS32.log
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_112112_TP4_DP1_PP2_MBS4_GBS32_log.txt
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_112112_gpustat_TP4_DP1_PP2_MBS4_GBS32.log
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_112215_TP4_DP1_PP2_MBS8_GBS32_log.txt
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_112215_gpustat_TP4_DP1_PP2_MBS8_GBS32.log
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_112313_TP4_DP1_PP2_MBS16_GBS32_log.txt
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_112313_gpustat_TP4_DP1_PP2_MBS16_GBS32.log
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_112411_TP4_DP1_PP2_MBS32_GBS32_log.txt
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/20251224_112411_gpustat_TP4_DP1_PP2_MBS32_GBS32.log
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/commit_watcher_stdout.log
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/scheduled_30min_stdout.log
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/scheduled_60min_stdout.log
+ create mode 100644 opt_prime/_logs/tp_mbs_sweep/scheduled_commit_stdout.log
+[commit-watcher] committed logs on feature/ir-layer-profiling

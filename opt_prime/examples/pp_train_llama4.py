@@ -139,7 +139,10 @@ optimus_p = Optimus_p(model, gas,
 print0(f" rank={optimus_p.get_rank()} ...")
 optimus_p.train()
 # Optimizer setting
-optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
+if tp_degree > 1:
+    optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5, foreach=False)
+else:
+    optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
 # Scheduler setting
 scheduler = torch.optim.lr_scheduler.StepLR(optimus_p.optimizer, 1.0, gamma=0.95)
 # Dataset setting
@@ -184,7 +187,11 @@ def train():
         else:
             loss = None
 
-        torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5)
+        if tp_degree > 1:
+            pass
+        else:
+            torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5)
+
         optimus_p.optimizer.step()
 
         if optimus_p.is_last_stage():

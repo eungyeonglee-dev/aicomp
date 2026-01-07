@@ -36,32 +36,15 @@ logging.basicConfig(level=logging.ERROR)
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--model_name", type=str, default="meta-llama/Llama-3.3-70B-Instruct")
+parser.add_argument("--model_name", type=str, default="meta-llama/Llama-3.2-1B")
+parser.add_argument("--use_cache", type=bool, default=False)
 parser.add_argument("--batch_size", type=int, default=32)
 parser.add_argument("--micro_batch_size", type=int, default=4)
 parser.add_argument("--pp_size", type=int, default=2)
 parser.add_argument("--tp_size", type=int, default=2)
 parser.add_argument("--dp_size", type=int, default=2)
 parser.add_argument("--run_id", type=str)
-parser.add_argument("--llama_access_token", type=str, required=True)
-parser.add_argument(
-    "--mode",
-    type=str,
-    default="train",
-    choices=["train", "graph"],
-    help='"graph": dump FX graph nodes with empty/meta weights (no training, no full checkpoint load).',
-)
-parser.add_argument(
-    "--graph_out",
-    type=str,
-    default=None,
-    help='Output path for graph dump (default: results/<model>_pp<PP>_fx_nodes.txt)',
-)
-parser.add_argument(
-    "--include_node_args",
-    action="store_true",
-    help="Include node.args and all_input_nodes in dump (can be very large).",
-)
+parser.add_argument("--llama_access_token", type=str, default=None)
 args, unknown = parser.parse_known_args()
 
 RESULT_DIR = "results"
@@ -104,14 +87,19 @@ def save_exit_code(exit_code: int, run_id: str, elapsed_time: float | None = Non
 EXIT_CODE=0
 ELAPSED_TIME = None
 
+def get_total_params(module: torch.nn.Module):
+    total_params = 0
+    for param in module.parameters():
+        total_params += param.numel()
+    return total_params
 
 ###
-rank = int(os.environ.get('RANK', '0'))
-local_rank = int(os.environ.get('LOCAL_RANK', '0'))
-world_size = int(os.environ.get('WORLD_SIZE', '1'))
-local_world_size = int(os.environ.get('LOCAL_WORLD_SIZE', str(world_size)))
-master_addr = os.getenv("MASTER_ADDR", "127.0.0.1")
-master_port = os.getenv("MASTER_PORT", "29500")
+rank = int(os.environ['RANK'])
+local_rank = int(os.environ['LOCAL_RANK'])
+world_size = int(os.environ['WORLD_SIZE'])
+local_world_size = int(os.environ['LOCAL_WORLD_SIZE'])
+master_addr = os.getenv("MASTER_ADDR")
+master_port = os.getenv("MASTER_PORT")
 
 
 init_method = "tcp://" + str(master_addr) + ":" + str(master_port)
@@ -122,77 +110,11 @@ dist.init_process_group("nccl", rank=rank, world_size=world_size, init_method=in
 group_gloo = dist.new_group(backend="gloo")
 ###
 
-def _dump_fx_graph_only(model_name: str, access_token: str, pp_size: int):
-    """Build model with empty weights and dump FX nodes after IR split (no checkpoint load)."""
-    if rank != 0:
-        # Only rank0 writes.
-        return
-
-    try:
-        from transformers import AutoConfig, AutoModelForCausalLM
-        from accelerate import init_empty_weights
-    except Exception as e:
-        raise RuntimeError(
-            "graph mode requires `transformers` and `accelerate` installed in this environment."
-        ) from e
-
-    out = args.graph_out
-    if out is None:
-        base = model_name.split("/")[-1]
-        out = os.path.join(RESULT_DIR, f"{base}_pp{pp_size}_fx_nodes.txt")
-
-    cfg = AutoConfig.from_pretrained(model_name, token=access_token)
-    if hasattr(cfg, "use_cache"):
-        cfg.use_cache = False
-
-    with init_empty_weights():
-        model = AutoModelForCausalLM.from_config(cfg)
-    try:
-        model.config.use_cache = False
-    except Exception:
-        pass
-
-    class _Tpl:
-        def __init__(self):
-            self.rank = 0
-            self.num_stage = pp_size
-
-    class _DummyOpt:
-        def __init__(self):
-            self.tpl = _Tpl()
-            self.model2type = {"hf": 50, "sy": 51, "vt": 52}
-        def is_first_stage(self):
-            return True
-        def get_rank(self):
-            return 0
-
-    ir = IR(model, _DummyOpt())
-    ir.retrieve_IR(model)
-    ir.split_IR(model, "simple", num_stage=pp_size)
-    root = ir.model_ir[0]
-
-    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
-    with open(out, "w", encoding="utf-8") as f:
-        f.write(f"model_name={model_name}\n")
-        f.write(f"pp_size={pp_size}\n")
-        f.write("---- FX nodes ----\n")
-        for n in root.graph.nodes:
-            if args.include_node_args:
-                f.write(
-                    f"n.op:{n.op}, n.name:{n.name}, n.target:{n.target}, n.args:{n.args}, n.all_input_nodes:{n.all_input_nodes}\n"
-                )
-            else:
-                f.write(f"n.op:{n.op}, n.name:{n.name}, n.target:{n.target}\n")
-        f.write("---- submodules ----\n")
-        for name, m in root.named_children():
-            f.write(f"{name}: {m.__class__.__name__}\n")
-
-    print(f"[rank:0][graph] wrote: {out}")
-
 
 try:
+    use_cache = args.use_cache
     access_token = args.llama_access_token
-    if access_token is None:
+    if not use_cache and access_token is None:
         raise ValueError("LLAMA_ACCESS_TOKEN environment variable is not set."
                         "       [Usage:] torchrun --nproc_per_node=<#_of_GPUs_per_node> --nnodes=<#_of_nodes> --node_rank=<current_node_rank> --master_addr=<IP_of_rank_0> --master_port=29500 pp_train_llama.py <llama_access_token>")
 
@@ -221,40 +143,59 @@ try:
         print(f"[rank:{int(os.environ['RANK'])}] current transformers version is {current_tf_version}.")
         raise ValueError('This program needs transformers version 4.46.2 or higher.')
 
+    tokenizer = None
+    model = None
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name, token=access_token)
+    if use_cache:
+        model_path = "/root/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/"
+        snapshot_id = os.listdir(model_path)
+        model_path = os.path.join(model_path, snapshot_id[0])
+        print(f"model_path: {model_path}")
+
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_path,
+            local_files_only=True
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            local_files_only=True,
+            use_cache=False,
+        )
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(args.model_name, token=access_token)
+        model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.3-70B-Instruct", token=access_token, use_cache=False)
+        
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = tokenizer.eos_token_id
 
-    def get_total_params(module: torch.nn.Module):
-        total_params = 0
-        for param in module.parameters():
-            total_params += param.numel()
-        return total_params
-
 
     ###
-
     batch_size = args.batch_size
     #micro_batch_size = int(os.environ["WORLD_SIZE"]) // 2 # TODO
     micro_batch_size = args.micro_batch_size
-
-    if args.mode == "graph":
-        _dump_fx_graph_only(args.model_name, access_token, args.pp_size)
-        EXIT_CODE = 0
-        save_exit_code(EXIT_CODE, args.run_id or "graph", None)
-        sys.exit(EXIT_CODE)
-
+    num_mb = batch_size // (micro_batch_size * args.dp_size)
     
     for i in range(local_world_size):
-        if local_rank == i:
-            model = AutoModelForCausalLM.from_pretrained(args.model_name, token=access_token, use_cache=False)
-
+        if local_rank == i:            
             if int(os.environ["RANK"]) == 0:
-                print('Total parameters in model: {:,}'.format(get_total_params(model)))
+                print('> Total parameters in model: {:,}'.format(get_total_params(model)))
+                print('> World size: {}'.format(world_size)) # world size
+                print('> IR: {}'.format(IR_Anal.PARALLEL)) # IR analysis mode
+                print('> GAS: {}'.format(num_mb)) # gradient accumulation steps(equals the number of micro-batch)
+                print('> GBS: {}'.format(batch_size))
+                print('> MBS: {}'.format(micro_batch_size)) # micro batch size
+                print('> TP: {}'.format(args.tp_size)) # tensor parallelism degree
+                print('> DP: {}'.format(args.dp_size)) # data parallelism degree
+                print('> PP: {}'.format(args.pp_size)) # pipeline parallelism degree
 
             #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, tp_size=2, activation_ckpt=True, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL) ## IR_Anal.PARALLEL
-            optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, pp_size=args.pp_size, tp_size=args.tp_size, dp_size=args.dp_size, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo) ## IR_Anal.PARALLEL
+            optimus_p = Optimus_p(model, 
+                                  num_mb, 
+                                  use_gpu=True, 
+                                  pp_size=args.pp_size, tp_size=args.tp_size, dp_size=args.dp_size, 
+                                  activation_ckpt=False, force_free_mem=True, display_mem=True, 
+                                  swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, 
+                                  ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo) ## IR_Anal.PARALLEL
             #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=2, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo) ## IR_Anal.PARALLEL
             print(f" rank={optimus_p.get_rank()} ...")
 
@@ -270,9 +211,13 @@ try:
 
     optimus_p.train()
 
-    optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5, foreach=False)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimus_p.optimizer, 1.0, gamma=0.95)
+    # When using tensor parallelism, it is recommended to use AdamW optimizer with foreach=False.
+    if args.tp_size > 1:
+        optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5, foreach=False)
+    else:
+        optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
 
+    scheduler = torch.optim.lr_scheduler.StepLR(optimus_p.optimizer, 1.0, gamma=0.95)
     datasets = load_dataset("squad").data["train"]["context"]
     datasets = [str(record) for record in datasets if len(str(record)) < 500]
     #dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
@@ -325,6 +270,12 @@ try:
             else:
                 loss = None
 
+            # tensor parallelism is not supported for clip_grad_norm_
+            if args.tp_size > 1:
+                pass
+            else:
+                torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5)
+
             print(">>> OPTIMUS STEP\n")
             optimus_p.optimizer.step()
 
@@ -332,15 +283,16 @@ try:
                 loss = sum(loss) / optimus_p.mbsize
                 total_loss += loss
                 log_interval = 10
-                if i % log_interval == 0 and i > 0:
+                if i % log_interval == 0 and i > 0: 
                     cur_loss = total_loss / log_interval
                     elapsed = time.time() - start_time
-                    print('| epoch {:3d} | {:5d}/{:5d} batches | '
-                        'lr {:02.2f} | ms/batch {:5.2f} | '
-                        'loss {:5.2f} | ppl {:8.2f}'.format(
-                            epoch, i, nbatches, scheduler.get_lr()[0],
-                            elapsed * 1000 / log_interval,
-                            cur_loss, math.exp(cur_loss)))
+                    if optimus_p.get_rank() % int(world_size/args.pp_size) == 0: # print log only for the first stage
+                        print('| epoch {:3d} | {:5d}/{:5d} batches | '
+                            'lr {:02.2f} | ms/batch {:5.2f} | '
+                            'loss {:5.2f} | ppl {:8.2f}'.format(
+                                epoch, i, nbatches, scheduler.get_lr()[0],
+                                elapsed * 1000 / log_interval,
+                                cur_loss, math.exp(cur_loss)))
 
                     total_loss = 0
                     start_time = time.time()

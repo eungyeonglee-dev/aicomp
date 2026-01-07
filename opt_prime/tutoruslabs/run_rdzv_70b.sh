@@ -7,7 +7,7 @@ export NCCL_ASYNC_ERROR_HANDLING=1
 #export TORCH_DIST_INIT_BARRIER=1
 
 unset NCCL_BLOCKING_WAIT
-export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=100
+export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=18000 # 5 hours
 
 export HF_DATASETS_OFFLINE=1
 export HF_HUB_OFFLINE=1
@@ -22,25 +22,27 @@ export HF_HUB_OFFLINE=1
 # "meta-llama/Llama-2-13b-chat-hf"
 # "meta-llama/Llama-3.3-70B-Instruct"
 
-# Required args
-if [ $# -lt 4 ]; then
-  echo "Usage: $0 <MODEL_NAME> <LLAMA_TOKEN> <NODE_RANK> <MASTER_ADDR> [NNODES] [NPROC_PER_NODE]"
-  echo "Example: $0 meta-llama/Llama-3.1-8B-Instruct hf_xxxxx 0 10.0.0.11 8 8"
-  exit 1
-fi
+MODEL_NAME="${1:-meta-llama/Llama-3.3-70B-Instruct}"
+NODE_RANK="${2:-0}"
+MASTER_ADDR="${3:-127.0.0.1}"
+NNODES="${4:-1}"
+NPROC_PER_NODE="${5:-8}"
+USE_CACHE="${6:-True}"
 
-MODEL_NAME="$1"
-LLAMA_TOKEN="$2"
-NODE_RANK="${3}"
-MASTER_ADDR="${4}"
-NNODES="${5:-8}"
-NPROC_PER_NODE="${6:-8}"
+# PP/TP/DP 값을 명령줄 인자 또는 환경변수로 받기
+# 명령줄 인자: $7=PP, $8=TP, $9=DP
+# 환경변수: PP_SIZE, TP_SIZE, DP_SIZE
+PP_SIZE="${7:-${PP_SIZE:-4}}"
+TP_SIZE="${8:-${TP_SIZE:-2}}"
+DP_SIZE="${9:-${DP_SIZE:-1}}"
 
 WORLD_SIZE=$(( NNODES * NPROC_PER_NODE ))
-MAX_TIME=3600
+MAX_TIME=18000
 
-BATCH_SIZES=(4096 2048 1024 512 256)
-MICRO_BATCH_SIZES=(4 8 16 32 64)
+# BATCH_SIZES=(64 32 16)
+# MICRO_BATCH_SIZES=(1 4 8 16 32 64)
+BATCH_SIZES=(2)
+MICRO_BATCH_SIZES=(1)
 
 RESULT_DIR="results"
 mkdir -p "$RESULT_DIR"
@@ -68,19 +70,38 @@ status_from_exit() {
 
 # PP/TP/DP 조합 생성
 COMBINATIONS=()
-for ((PP=2; PP<=WORLD_SIZE; PP*=2)); do
-  for ((TP=1; TP<=WORLD_SIZE; TP*=2)); do
-    for ((DP=1; DP<=WORLD_SIZE; DP*=2)); do
-      if [ $((PP * TP * DP)) -eq $WORLD_SIZE ]; then
-        COMBINATIONS+=("$PP $TP $DP")
-      fi
+
+# PP_SIZE, TP_SIZE, DP_SIZE가 모두 지정되어 있으면 해당 값 사용
+if [ -n "$PP_SIZE" ] && [ -n "$TP_SIZE" ] && [ -n "$DP_SIZE" ]; then
+  # 값 검증: PP * TP * DP == WORLD_SIZE
+  if [ $((PP_SIZE * TP_SIZE * DP_SIZE)) -eq $WORLD_SIZE ]; then
+    COMBINATIONS+=("$PP_SIZE $TP_SIZE $DP_SIZE")
+    echo "Using specified PP/TP/DP values: PP=$PP_SIZE, TP=$TP_SIZE, DP=$DP_SIZE"
+  else
+    echo "ERROR: PP($PP_SIZE) * TP($TP_SIZE) * DP($DP_SIZE) = $((PP_SIZE * TP_SIZE * DP_SIZE)) != WORLD_SIZE($WORLD_SIZE)"
+    echo "Please ensure PP * TP * DP equals WORLD_SIZE"
+    exit 1
+  fi
+else
+  # 지정되지 않았으면 기존 자동 생성 로직 사용
+  echo "Auto-generating PP/TP/DP combinations..."
+  for ((PP=2; PP<=WORLD_SIZE; PP*=2)); do
+    for ((TP=1; TP<=WORLD_SIZE; TP*=2)); do
+      for ((DP=1; DP<=WORLD_SIZE; DP*=2)); do
+        if [ $((PP * TP * DP)) -eq $WORLD_SIZE ]; then
+          COMBINATIONS+=("$PP $TP $DP")
+        fi
+      done
     done
   done
-done
-# 정렬: PP desc, TP desc, DP desc
-mapfile -t COMBINATIONS < <(
-  printf '%s\n' "${COMBINATIONS[@]}" | sort -k1,1nr -k2,2nr -k3,3nr
-)
+fi
+
+# 정렬: PP desc, TP desc, DP desc (여러 조합이 있을 때만)
+if [ ${#COMBINATIONS[@]} -gt 1 ]; then
+  mapfile -t COMBINATIONS < <(
+    printf '%s\n' "${COMBINATIONS[@]}" | sort -k1,1nr -k2,2nr -k3,3nr
+  )
+fi
 
 echo "======== Generated PP/TP/DP combinations ========"
 for COMBO in "${COMBINATIONS[@]}"; do
@@ -100,15 +121,23 @@ for BATCH in "${BATCH_SIZES[@]}"; do
       continue
     fi
 
+    NUM_MB=$(( BATCH / MICRO_BATCH ))
+
     for COMBO in "${COMBINATIONS[@]}"; do
       read PP TP DP <<<"$COMBO"
-      
+
+      # Deadlock 조건만 샘플링: num_mb < pp_size 인 경우만 실험
+      # if [ "$NUM_MB" -ge "$PP" ]; then
+      #   echo ">>> Skip: batch=$BATCH, micro_batch=$MICRO_BATCH, PP=$PP (num_mb=${NUM_MB} >= PP → 1F1B 가드 조건 아님.)"
+      #   continue
+      # fi
+
       RUN_ID="${MODEL_FILENAME}-${BATCH}-${MICRO_BATCH}-${PP}-${TP}-${DP}"
       
       COUNTER=$((COUNTER+1))
       RDZV_PORT=$((29500 + (COUNTER % 200)))
 
-      RDZV_TIMEOUT=300
+      RDZV_TIMEOUT=18000
 
       echo "================================================="
       echo "RUN_ID            : $RUN_ID"
@@ -141,7 +170,7 @@ for BATCH in "${BATCH_SIZES[@]}"; do
         --rdzv_id="${RUN_ID}" \
         --rdzv_conf="timeout=${RDZV_TIMEOUT}" \
         --max_restarts=0 \
-        pp_train_llama.py \
+        pp_train_llama_70b.py \
           --llama_access_token "$LLAMA_TOKEN" \
           --model_name "$MODEL_NAME" \
           --batch_size $BATCH \
@@ -149,7 +178,8 @@ for BATCH in "${BATCH_SIZES[@]}"; do
           --pp_size $PP \
           --tp_size $TP \
           --dp_size $DP \
-          --run_id "$RUN_ID"
+          --run_id "$RUN_ID" \
+          --use_cache $USE_CACHE
       EXIT_CODE=$?
       if [ "$EXIT_CODE" -eq 124 ]; then
         EXIT_CODE=50

@@ -1,0 +1,125 @@
+Using specified PP/TP/DP values: PP=4, TP=2, DP=1
+======== Generated PP/TP/DP combinations ========
+PP=4, TP=2, DP=1
+=================================================
+=================================================
+RUN_ID            : Llama-3.3-70B-Instruct-2-1-4-2-1
+Model             : meta-llama/Llama-3.3-70B-Instruct
+Batch/Micro       : 2 / 1
+PP/TP/DP          : 4 / 2 / 1
+Nodes x GPUs/node : 1 x 8 (WORLD_SIZE=8)
+RDZV              : c10d 127.0.0.1:29501 (timeout=18000s)
+=================================================
+[master] RUN_ID=Llama-3.3-70B-Instruct-2-1-4-2-1  batch/micro=2/1  PP/TP/DP=4/2/1
+W0107 04:19:22.077000 97 site-packages/torch/distributed/run.py:793] 
+W0107 04:19:22.077000 97 site-packages/torch/distributed/run.py:793] *****************************************
+W0107 04:19:22.077000 97 site-packages/torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0107 04:19:22.077000 97 site-packages/torch/distributed/run.py:793] *****************************************
+Traceback (most recent call last):
+Traceback (most recent call last):
+Traceback (most recent call last):
+  File "/workspace/aicomp/opt_prime/opt_prime/tutoruslabs/pp_train_llama_70b.py", line 30, in <module>
+Traceback (most recent call last):
+  File "/workspace/aicomp/opt_prime/opt_prime/tutoruslabs/pp_train_llama_70b.py", line 30, in <module>
+  File "/workspace/aicomp/opt_prime/opt_prime/tutoruslabs/pp_train_llama_70b.py", line 30, in <module>
+Traceback (most recent call last):
+  File "/workspace/aicomp/opt_prime/opt_prime/tutoruslabs/pp_train_llama_70b.py", line 30, in <module>
+Traceback (most recent call last):
+      File "/workspace/aicomp/opt_prime/opt_prime/tutoruslabs/pp_train_llama_70b.py", line 30, in <module>
+from opt_prime.opti_pri import Optimus_p  File "/workspace/aicomp/opt_prime/opt_prime/tutoruslabs/pp_train_llama_70b.py", line 30, in <module>
+    
+    from opt_prime.opti_pri import Optimus_pfrom opt_prime.opti_pri import Optimus_p
+
+ModuleNotFoundError    : No module named 'opt_prime'from opt_prime.opti_pri import Optimus_p
+    
+ModuleNotFoundErrorModuleNotFoundErrorfrom opt_prime.opti_pri import Optimus_p    from opt_prime.opti_pri import Optimus_p: : 
+ModuleNotFoundError
+No module named 'opt_prime'No module named 'opt_prime'Traceback (most recent call last):
+Traceback (most recent call last):
+: 
+ModuleNotFoundError
+No module named 'opt_prime': ModuleNotFoundError  File "/workspace/aicomp/opt_prime/opt_prime/tutoruslabs/pp_train_llama_70b.py", line 30, in <module>
+  File "/workspace/aicomp/opt_prime/opt_prime/tutoruslabs/pp_train_llama_70b.py", line 30, in <module>
+
+No module named 'opt_prime': 
+No module named 'opt_prime'
+    from opt_prime.opti_pri import Optimus_p    
+from opt_prime.opti_pri import Optimus_p
+ModuleNotFoundErrorModuleNotFoundError: : No module named 'opt_prime'No module named 'opt_prime'
+
+W0107 04:19:26.396000 97 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 148 closing signal SIGTERM
+E0107 04:19:26.400000 97 site-packages/torch/distributed/elastic/multiprocessing/api.py:869] failed (exitcode: 1) local_rank: 0 (pid: 143) of binary: /opt/conda/bin/python3.11
+Traceback (most recent call last):
+  File "/opt/conda/bin/torchrun", line 8, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 355, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/distributed/run.py", line 919, in main
+    run(args)
+  File "/opt/conda/lib/python3.11/site-packages/torch/distributed/run.py", line 910, in run
+    elastic_launch(
+  File "/opt/conda/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 138, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/distributed/launcher/api.py", line 269, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+pp_train_llama_70b.py FAILED
+------------------------------------------------------------
+Failures:
+[1]:
+  time      : 2026-01-07_04:19:26
+  host      : s4
+  rank      : 1 (local_rank: 1)
+  exitcode  : 1 (pid: 144)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[2]:
+  time      : 2026-01-07_04:19:26
+  host      : s4
+  rank      : 2 (local_rank: 2)
+  exitcode  : 1 (pid: 145)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[3]:
+  time      : 2026-01-07_04:19:26
+  host      : s4
+  rank      : 3 (local_rank: 3)
+  exitcode  : 1 (pid: 146)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[4]:
+  time      : 2026-01-07_04:19:26
+  host      : s4
+  rank      : 4 (local_rank: 4)
+  exitcode  : 1 (pid: 147)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[5]:
+  time      : 2026-01-07_04:19:26
+  host      : s4
+  rank      : 6 (local_rank: 6)
+  exitcode  : 1 (pid: 149)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+[6]:
+  time      : 2026-01-07_04:19:26
+  host      : s4
+  rank      : 7 (local_rank: 7)
+  exitcode  : 1 (pid: 150)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-01-07_04:19:26
+  host      : s4
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 143)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
+FAILED (exit=1) → recorded 'FAIL(1)'

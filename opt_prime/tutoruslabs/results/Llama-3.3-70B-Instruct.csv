@@ -1,0 +1,2 @@
+batch_size,micro_batch_size,pp_size,tp_size,dp_size,training_time(sec)
+2,1,4,2,1,FAIL(1)

@@ -40,7 +40,6 @@ import logging
 import os
 import gc
 from enum import Enum
-from typing import Dict, Tuple
 
 from transformers.utils.fx import _SUPPORTED_MODELS
 
@@ -48,19 +47,6 @@ from transformers.utils.fx import _SUPPORTED_MODELS
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 logging.basicConfig(level=logging.ERROR)
-
-def _env_rank0() -> bool:
-    """Best-effort rank==0 check.
-    IR was historically chatty on rank 0; some offline tools may run without torchrun env vars.
-    """
-    try:
-        return int(os.environ.get("RANK", "0")) == 0
-    except Exception:
-        return True
-
-def _ir_print_enabled() -> bool:
-    """Gate IR debug prints (FX graph / metadata ranges) without changing default behavior."""
-    return os.environ.get("OPTPRIME_PRINT_IR", "1") == "1"
 
 class IR_Anal(Enum):
     SINGLE = 1      # Experimental
@@ -95,7 +81,7 @@ class IR(object):
 
         self.optimus = optimus
 
-        self.special_nodes: Dict[str, Tuple[int, int]] = {}  # { node_name : (stage#, needed-by-stage#),}
+        self.special_nodes: Dict[str, Tuple[int, int]] = {}  # { node_name : {stage#, needed-by-stage#),}
 
 
     def retrieve_IR(self, model: nn.Module):
@@ -175,11 +161,11 @@ class IR(object):
 
         self.model_ir.append(submods)
 
-        if _env_rank0() and _ir_print_enabled():
-            print(f"[rank:0] ------------------ FX graph --------------------------------")
+        if int(os.environ["RANK"]) == 0:
+            print(f">> ------------------ FX graph --------------------------------")
             for n in self.model_ir[0].graph.nodes:
                 print(f"n.op:{n.op}, n.name:{n.name}, n.target:{n.target}, n.args:{n.args}, n.all_input_nodes:{n.all_input_nodes}")
-            print(f"[rank:0] ------------------------------------------------------------")
+            print(f">> ------------------------------------------------------------")
 
 
     def simple_split(self, module, num_stage):
@@ -243,7 +229,7 @@ class IR(object):
         if len(self.metadata_range) <  num_stage:
             self.metadata_range.append((k, n.name))
 
-        if _env_rank0() and _ir_print_enabled():
+        if int(os.environ["RANK"]) == 0:
             print(f" ------------------------------------------------------------")
             print(f"  rank:{self.optimus.tpl.rank},  first metadata_range: {self.metadata_range}")
             print(f" ------------------------------------------------------------")
@@ -800,4 +786,5 @@ class IR(object):
 
         gc.collect()
         torch.cuda.empty_cache()
+
 

@@ -14,32 +14,6 @@ logging.basicConfig(level=logging.ERROR)
 
 NoneType=type(None)
 
-def _comm_shape_debug_enabled() -> bool:
-    # Enable with: OPTPRIME_COMM_TENSOR_SHAPE=1
-    return os.environ.get("OPTPRIME_COMM_TENSOR_SHAPE", "0") == "1"
-
-def _comm_rank_filter_ok(rank: int) -> bool:
-    # Optional: limit prints to certain ranks. Example: OPTPRIME_COMM_TENSOR_SHAPE_RANKS="0,7"
-    s = os.environ.get("OPTPRIME_COMM_TENSOR_SHAPE_RANKS", "").strip()
-    if not s:
-        return True
-    try:
-        allow = {int(x.strip()) for x in s.split(",") if x.strip() != ""}
-        return rank in allow
-    except Exception:
-        # If misconfigured, don't block logs.
-        return True
-
-def _tensor_desc(t: torch.Tensor) -> str:
-    try:
-        nbytes = t.element_size() * t.numel()
-    except Exception:
-        nbytes = -1
-    return (
-        f"shape={tuple(t.shape)} dtype={t.dtype} device={t.device} "
-        f"contig={t.is_contiguous()} numel={t.numel()} bytes={nbytes}"
-    )
-
 
 class Comm:
 
@@ -92,19 +66,19 @@ class Comm:
         if use_gpu == True:
             gpu_cnt = torch.cuda.device_count()
             if self.local_rank == 0:
-                print(f"> Available GPUs per server: {gpu_cnt}")
+                print(f"Available GPUs per server: {gpu_cnt}")
             if self.local_rank + 1 > gpu_cnt:
-                logging.error(f"[error] This program cannot create more processes than the number of available GPUs:{gpu_cnt}")
+                logging.error(f"This program cannot create more processes than the number of available GPUs:{gpu_cnt}")
                 sys.exit(1)
 
             self.backend = "nccl"
-            print(f"[rank:{self.local_rank}] GPU mode is used.")
+            print(f"GPU mode is used.")
         else:
             self.backend = "gloo"
-            print("CPU mode is used.")
+            print(f"CPU mode is used.")
 
         if dist.is_initialized():
-            print(f"> Communication already initialized")
+            print(f"Communication already initialized")
             return
 
         init_method = "tcp://" + str(self.master_addr) + ":" + str(self.master_port)
@@ -120,10 +94,13 @@ class Comm:
 
         ds_type = self.ds_id2type[ds_type.item()]
         
+        #if str(ds_type) == "<class 'Tensor'>":
         if ds_type is Tensor:
             return self.receive_tensor(from_rank, device)
+        #elif str(ds_type) == "<class 'tuple'>":
         elif ds_type is tuple:
             return self.receive_tuple(from_rank, device)
+        #elif str(ds_type) == "<class 'list'>":
         elif ds_type is list:
             return self.receive_list(from_rank, device)
         elif ds_type is Size:
@@ -221,28 +198,18 @@ class Comm:
 
         shape = torch.tensor([0] * dimension.item(), dtype=torch.long, device=device)
         dist.recv(shape, from_rank)
+        #logging.debug(f" >>>>> recv_tensor, shaple:{shape} from rank:{from_rank}")
         shape = tuple(shape.tolist())
 
         ttype = torch.tensor([0], dtype=torch.long, device=device)
         dist.recv(ttype, from_rank)
-        ttype = self.tensor_id2type[ttype.item()]
+        #logging.debug(f" >>>>> recv_tensor, ttype:{ttype} from rank:{from_rank}")
 
-        if _comm_shape_debug_enabled() and _comm_rank_filter_ok(self.rank):
-            print(
-                f"[comm][rank{self.rank}] RECV meta from rank{from_rank}: "
-                f"dim={dimension.item()} shape={shape} dtype={ttype} device={device}",
-                flush=True,
-            )
+        ttype = self.tensor_id2type[ttype.item()]
 
         obj = torch.zeros(size=shape, dtype=ttype, device=device)
         dist.recv(obj, from_rank)
         #logging.debug(f" >>>>> recv_tensor, obj:{obj} from rank:{from_rank}")
-
-        if _comm_shape_debug_enabled() and _comm_rank_filter_ok(self.rank):
-            print(
-                f"[comm][rank{self.rank}] RECV payload from rank{from_rank}: {_tensor_desc(obj)}",
-                flush=True,
-            )
 
         return obj
 
@@ -260,26 +227,15 @@ class Comm:
         ttype = self.tensor_type2id[obj.dtype]
         ttype = torch.tensor(ttype, dtype=torch.long, device=device)
         dist.send(ttype, to_rank)
-
-        if _comm_shape_debug_enabled() and _comm_rank_filter_ok(self.rank):
-            print(
-                f"[comm][rank{self.rank}] SEND meta to rank{to_rank}: "
-                f"dim={len(obj_size)} shape={tuple(obj_size)} dtype={obj.dtype} device={device}",
-                flush=True,
-            )
+        #logging.debug(f" >>>>> send_tensor, ttype:{ttype}")
 
         if not obj.is_contiguous():
             obj = obj.contiguous()
+            #logging.debug(f" >>> obj made to be contiguous")
 
         obj = obj.to(device)
-
-        if _comm_shape_debug_enabled() and _comm_rank_filter_ok(self.rank):
-            print(
-                f"[comm][rank{self.rank}] SEND payload to rank{to_rank}: {_tensor_desc(obj)}",
-                flush=True,
-            )
-
         dist.send(obj, to_rank)
+        #logging.debug(f" >>>>> send_tensor, obj:{obj}")
 
     def receive_list(self, from_rank, device):
         length = torch.tensor([0], dtype=torch.long, device=device)

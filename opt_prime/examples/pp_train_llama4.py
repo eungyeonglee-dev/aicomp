@@ -225,6 +225,7 @@ def train():
             if profile_cut and i > profile_step:
                 break
     elif profile_mode == "0":
+        timers_to_log = timers_to_log + ['dp-gradient-allreduce', 'optimizer-step']
         for i, batch in enumerate(dataloader):
             data, labels = None, None
             # prepare input and label
@@ -277,6 +278,7 @@ def train():
 
                     total_loss = 0
                     start_time = time.time()
+            
             timers.log(timers_to_log)
 
             if args.log_level == 2:

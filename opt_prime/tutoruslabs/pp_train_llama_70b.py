@@ -145,9 +145,10 @@ try:
 
     tokenizer = None
     model = None
+    model_path = "/root/.cache/huggingface/hub/models--meta-llama--Llama-3.3-70B-Instruct/snapshots/"
 
     if use_cache:
-        model_path = "/root/.cache/huggingface/hub/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/"
+        
         snapshot_id = os.listdir(model_path)
         model_path = os.path.join(model_path, snapshot_id[0])
         print(f"model_path: {model_path}")
@@ -156,14 +157,10 @@ try:
             model_path,
             local_files_only=True
         )
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            local_files_only=True,
-            use_cache=False,
-        )
+
     else:
         tokenizer = AutoTokenizer.from_pretrained(args.model_name, token=access_token)
-        model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.3-70B-Instruct", token=access_token, use_cache=False)
+
         
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = tokenizer.eos_token_id
@@ -177,6 +174,15 @@ try:
     
     for i in range(local_world_size):
         if local_rank == i:            
+            if use_cache:
+                model = AutoModelForCausalLM.from_pretrained(
+                    model_path,
+                    local_files_only=True,
+                    use_cache=False,
+                )
+            else:
+                model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.3-70B-Instruct", token=access_token, use_cache=False)
+
             if int(os.environ["RANK"]) == 0:
                 print('> Total parameters in model: {:,}'.format(get_total_params(model)))
                 print('> World size: {}'.format(world_size)) # world size
@@ -260,7 +266,7 @@ try:
 
             optimus_p.optimizer.zero_grad()
 
-            print(">>> OPTIMUS RUN\n")
+            # print(">>> OPTIMUS RUN\n")
             #optimus_p.run(data, labels)
             #optimus_p.run(data, labels, mode="gpipe")
             optimus_p.run(data, labels, mode="1f1b")
@@ -276,7 +282,7 @@ try:
             else:
                 torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5)
 
-            print(">>> OPTIMUS STEP\n")
+            # print(">>> OPTIMUS STEP\n")
             optimus_p.optimizer.step()
 
             if optimus_p.is_last_stage():
@@ -286,7 +292,8 @@ try:
                 if i % log_interval == 0 and i > 0: 
                     cur_loss = total_loss / log_interval
                     elapsed = time.time() - start_time
-                    if optimus_p.get_rank() % int(world_size/args.pp_size) == 0: # print log only for the first stage
+                    if optimus_p.get_rank() % int(world_size/args.pp_size) == 0: # print log only for the first stage              
+                        print(f"===== {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} =====")
                         print('| epoch {:3d} | {:5d}/{:5d} batches | '
                             'lr {:02.2f} | ms/batch {:5.2f} | '
                             'loss {:5.2f} | ppl {:8.2f}'.format(
@@ -330,16 +337,19 @@ try:
     
 
 except torch.cuda.OutOfMemoryError as e:
+    print(f"===== {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} =====")
     print(f"ERROR: Out of GPU memory. {e}")
     #write_result(args.batch_size, args.micro_batch_size, args.pp_size, args.tp_size, args.dp_size, "OOM ERROR", RESULT_FILEPATH)
     EXIT_CODE = 10
 
 except dist.DistBackendError as dbe:
+    print(f"===== {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} =====")
     print(f"ERROR: Distributed communication failed. {dbe}")
     #write_result(args.batch_size, args.micro_batch_size, args.pp_size, args.tp_size, args.dp_size, "DIST ERROR", RESULT_FILEPATH)
     EXIT_CODE = 20
 
 except Exception as e:
+    print(f"===== {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} =====")
     print(f"ERROR: Unexpected error. {e}")
     #write_result(args.batch_size, args.micro_batch_size, args.pp_size, args.tp_size, args.dp_size, "EXCEPTION", RESULT_FILEPATH)
     EXIT_CODE = 30

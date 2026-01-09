@@ -288,7 +288,7 @@ try:
             if optimus_p.is_last_stage():
                 loss = sum(loss) / optimus_p.mbsize
                 total_loss += loss
-                log_interval = 10
+                log_interval = 1
                 if i % log_interval == 0 and i > 0: 
                     cur_loss = total_loss / log_interval
                     elapsed = time.time() - start_time

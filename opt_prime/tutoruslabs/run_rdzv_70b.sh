@@ -2,7 +2,7 @@
 
 export NCCL_DEBUG=ERROR
 # 피어가 죽으면 다른 랭크도 통신 에러로 즉시 터지도록
-export NCCL_ASYNC_ERROR_HANDLING=1
+export TORCH_NCCL_ASYNC_ERROR_HANDLING=1 # NCCL_ASYNC_ERROR_HANDLING is deprecated
 #export NCCL_BLOCKING_WAIT=0
 #export TORCH_DIST_INIT_BARRIER=1
 
@@ -32,8 +32,8 @@ USE_CACHE="${6:-True}"
 # PP/TP/DP 값을 명령줄 인자 또는 환경변수로 받기
 # 명령줄 인자: $7=PP, $8=TP, $9=DP
 # 환경변수: PP_SIZE, TP_SIZE, DP_SIZE
-PP_SIZE="${7:-${PP_SIZE:-4}}"
-TP_SIZE="${8:-${TP_SIZE:-2}}"
+PP_SIZE="${7:-${PP_SIZE:-32}}"
+TP_SIZE="${8:-${TP_SIZE:-1}}"
 DP_SIZE="${9:-${DP_SIZE:-1}}"
 
 WORLD_SIZE=$(( NNODES * NPROC_PER_NODE ))
@@ -41,7 +41,7 @@ MAX_TIME=18000
 
 # BATCH_SIZES=(64 32 16)
 # MICRO_BATCH_SIZES=(1 4 8 16 32 64)
-BATCH_SIZES=(2)
+BATCH_SIZES=(1)
 MICRO_BATCH_SIZES=(1)
 
 RESULT_DIR="results"
@@ -116,10 +116,10 @@ COUNTER=0
 for BATCH in "${BATCH_SIZES[@]}"; do
   for MICRO_BATCH in "${MICRO_BATCH_SIZES[@]}"; do
 
-    if [ $MICRO_BATCH -ge $BATCH ]; then
-      echo ">>> Skip: batch=$BATCH, micro_batch=$MICRO_BATCH (MICRO_BATCH >= BATCH)"
-      continue
-    fi
+    # if [ $MICRO_BATCH -ge $BATCH ]; then
+    #   echo ">>> Skip: batch=$BATCH, micro_batch=$MICRO_BATCH (MICRO_BATCH >= BATCH)"
+    #   continue
+    # fi
 
     NUM_MB=$(( BATCH / MICRO_BATCH ))
 

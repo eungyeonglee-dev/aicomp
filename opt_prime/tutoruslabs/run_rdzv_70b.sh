@@ -116,10 +116,10 @@ COUNTER=0
 for BATCH in "${BATCH_SIZES[@]}"; do
   for MICRO_BATCH in "${MICRO_BATCH_SIZES[@]}"; do
 
-    # if [ $MICRO_BATCH -ge $BATCH ]; then
-    #   echo ">>> Skip: batch=$BATCH, micro_batch=$MICRO_BATCH (MICRO_BATCH >= BATCH)"
-    #   continue
-    # fi
+    if [ $MICRO_BATCH -ge $BATCH ]; then
+      echo ">>> Skip: batch=$BATCH, micro_batch=$MICRO_BATCH (MICRO_BATCH >= BATCH)"
+      continue
+    fi
 
     NUM_MB=$(( BATCH / MICRO_BATCH ))
 

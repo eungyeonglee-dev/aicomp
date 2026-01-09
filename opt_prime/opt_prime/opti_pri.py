@@ -59,9 +59,9 @@ class Topology:
 
         #if rank == 0:
         #    print(f"> pp group:{self.pp_mesh}, tp group:{self.tp_mesh}, dp group:{self.dp_mesh}")
-        log(f"[{ts()}][rank:{self.rank}] pp group:{self.pp_mesh}")
-        log(f"[{ts()}][rank:{self.rank}] tp group:{self.tp_mesh}")
-        log(f"[{ts()}][rank:{self.rank}] dp group:{self.dp_mesh}")
+        log(f"[rank:{self.rank}] pp group:{self.pp_mesh}")
+        log(f"[rank:{self.rank}] tp group:{self.tp_mesh}")
+        log(f"[rank:{self.rank}] dp group:{self.dp_mesh}")
 
 
         #
@@ -83,7 +83,7 @@ class Topology:
             self.stage2rank[pp_stage] = stage_ranks
 
         if self.rank == 0:
-            log(f"[{ts()}][rank:0] stage2rank = { self.stage2rank }")
+            log(f"[rank:0] stage2rank = { self.stage2rank }")
 
     def get_rank2stage(self, rank):
         for stage, ranks in self.stage2rank.items():
@@ -390,10 +390,10 @@ class Optimus_p:
         if use_gpu == True:
             torch.cuda.set_device(local_rank) # TODO
             self.device = torch.device(f"cuda:{local_rank}")
-            log(f"[{ts()}][rank:{rank}] Using GPU ... cuda:{local_rank}")
+            log(f"[rank:{rank}] Using GPU ... cuda:{local_rank}")
         else:
             self.device = torch.device("cpu")
-            log(f"[{ts()}][rank:{rank}] Using CPU ...")
+            log(f"[rank:{rank}] Using CPU ...")
 
 
         # num_classes auto config
@@ -408,8 +408,8 @@ class Optimus_p:
 
         # TODO
         split_method = "llama-tp-split" if module.__class__.__name__.startswith("Llama") and tp_size > 1 else "simple"
-        log(f"[{ts()}][rank:{rank}] model class name: {module.__class__.__name__}")
-        log(f"[{ts()}][rank:{rank}] split method: {split_method}")
+        log(f"[rank:{rank}] model class name: {module.__class__.__name__}")
+        log(f"[rank:{rank}] split method: {split_method}")
 
         if ir_analyze == IR_Anal.SEQUENTIAL:
             for i in range(self.comm.local_world_size):
@@ -424,7 +424,7 @@ class Optimus_p:
                     self.ir.build_getitem_dic()
 
                     self.run_info.submod.to(self.run_info.device)
-                    log(f"[{ts()}][rank:{rank}] submod name:{self.run_info.node.name}, move {self.run_info.name} to {self.run_info.device}")
+                    log(f"[rank:{rank}] submod name:{self.run_info.node.name}, move {self.run_info.name} to {self.run_info.device}")
 
                     self.run_info.output_node = self.ir.get_output_node()
 
@@ -447,9 +447,9 @@ class Optimus_p:
                     if self.clean_module_memory == True:
                         print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
                         self.ir.clean_module_memory()
-                        log(f"[{ts()}][rank:{rank}] clean_module_memory")
+                        log(f"[rank:{rank}] clean_module_memory")
                         print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
-                    log(f"[{ts()}][rank:{rank}] SEQUENTIAL MODE PROCESSING")
+                    log(f"[rank:{rank}] SEQUENTIAL MODE PROCESSING")
 
                 dist.barrier()
         if (ir_analyze == IR_Anal.SINGLE and rank == 0) or ir_analyze == IR_Anal.PARALLEL:
@@ -490,7 +490,7 @@ class Optimus_p:
                         if to_rank == 0:
                             continue
                         else:
-                            log(f"[{ts()}][rank:0] Send IR partition to rank:{to_rank} ...")
+                            log(f"[rank:0] Send IR partition to rank:{to_rank} ...")
                             dist.broadcast_object_list(object_list, src=0, group=self.comm.ctrl_group[to_rank], device=self.run_info.device)
                     to_name, to_submod, to_node = None, None, None
                     object_list = []
@@ -517,9 +517,9 @@ class Optimus_p:
                 if self.clean_module_memory == True:
                     print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
                     self.ir.clean_module_memory()
-                    log(f"[{ts()}][rank:{rank}] clean_module_memory")
+                    log(f"[rank:{rank}] clean_module_memory")
                     print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
-                log(f"[{ts()}][rank:{rank}] PARALLEL MODE PROCESSING")
+                log(f"[rank:{rank}] PARALLEL MODE PROCESSING")
 
                 # TODO
                 if pre_barrier is not None:
@@ -570,9 +570,9 @@ class Optimus_p:
                 if self.clean_module_memory == True:
                     print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
                     self.ir.clean_module_memory()
-                    log(f"[{ts()}][rank:{rank}] clean_module_memory")
+                    log(f"[rank:{rank}] clean_module_memory")
                     print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
-                log(f"[{ts()}][rank:{rank}] SINGLE MODE PROCESSING")
+                log(f"[rank:{rank}] SINGLE MODE PROCESSING")
 
         self.preserve_output = preserve_output
 

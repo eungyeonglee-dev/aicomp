@@ -204,12 +204,12 @@ try:
                                   swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, 
                                   ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo) ## IR_Anal.PARALLEL
             #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=2, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo) ## IR_Anal.PARALLEL
-            log(f"[{ts()}][rank:{optimus_p.get_rank()}] Optimus_p initialized")
+            log(f"[rank:{optimus_p.get_rank()}] Optimus_p initialized")
 
         if local_rank > i:
-            log(f"[{ts()}][local_rank:{local_rank}] Waiting for rank {i} to load model ...")
+            log(f"[local_rank:{local_rank}] Waiting for rank {i} to load model ...")
             dist.barrier(group=group_gloo)
-            log(f"[{ts()}][local_rank:{local_rank}] Rank {i:2d} finished, proceeding...")
+            log(f"[local_rank:{local_rank}] Rank {i:2d} finished, proceeding...")
 
     optimus_p.train()
 
@@ -225,9 +225,9 @@ try:
     #dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
     dataloader = optimus_p.prepare_dataloader(datasets, batch_size)
     data_size=len(dataloader.dataset)
-    log(f"[{ts()}][rank:{optimus_p.get_rank()}] data_size={data_size}")
+    log(f"[rank:{optimus_p.get_rank()}] data_size={data_size}")
     nbatches = len(dataloader)
-    log(f"[{ts()}][rank:{optimus_p.get_rank()}] nbatches={nbatches}")
+    log(f"[rank:{optimus_p.get_rank()}] nbatches={nbatches}")
 
     """
     # 1F1B 안전 가드

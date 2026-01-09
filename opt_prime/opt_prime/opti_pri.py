@@ -48,8 +48,9 @@ class Topology:
         self.pp_size = pp_size
         self.dp_size = dp_size
         self.tp_size = tp_size
-
+        log(f"[rank:{self.rank}] before init_device_mesh")
         self.device_mesh = init_device_mesh("cuda", mesh_shape=(pp_size, dp_size, tp_size), mesh_dim_names=("pp", "dp", "tp"))
+        log(f"[rank:{self.rank}] after init_device_mesh")
         self.tp_group = self.device_mesh["tp"].get_group()
         self.dp_group = self.device_mesh["dp"].get_group()
         self.pp_group = self.device_mesh["pp"].get_group()

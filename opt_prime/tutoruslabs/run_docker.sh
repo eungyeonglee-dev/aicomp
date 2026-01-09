@@ -42,8 +42,6 @@ PP_SIZE=$7
 TP_SIZE=$8
 DP_SIZE=$9
 
-MBS=$10
-GBS=$11
 
 if [ $MODEL_SIZE -eq 70 ]; then
     MODEL_NAME="meta-llama/Llama-3.3-70B-Instruct"
@@ -56,4 +54,4 @@ sudo docker exec -it $CONTAINER_NAME \
                 (while true; do echo "===== $(date "+%F %T") ====="; gpustat --no-color || true; echo; sleep 1; done) >> "$GPULOGFILE" 2>&1 & GPUSTAT_PID=$!; \
                 (while true; do echo "===== $(date "+%F %T") ====="; free -h || true; echo; sleep 1; done) >> "$MEMLOGFILE" 2>&1 & MEMSTAT_PID=$!; \
                 trap "kill $GPUSTAT_PID $MEMSTAT_PID 2>/dev/null || true; wait $GPUSTAT_PID $MEMSTAT_PID 2>/dev/null || true" EXIT INT TERM; \
-                bash ./run_rdzv_70b.sh "$MODEL_NAME" "$NODE_RANK" "$MASTER_ADDR" "$NNODES" "$NPROC_PER_NODE" "$USE_CACHE" "$PP_SIZE" "$TP_SIZE" "$DP_SIZE" "$MBS" "$GBS" > "$LOGFILE" 2>&1;'                
+                bash ./run_rdzv_70b.sh "$MODEL_NAME" "$NODE_RANK" "$MASTER_ADDR" "$NNODES" "$NPROC_PER_NODE" "$USE_CACHE" "$PP_SIZE" "$TP_SIZE" "$DP_SIZE" > "$LOGFILE" 2>&1;'                

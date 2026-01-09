@@ -10,10 +10,12 @@ CONTAINER_WORKSPACE_DIR="/workspace/aicomp"
 #   exit 1
 # fi
 
-# if [ "$(sudo docker ps -q -f name=$CONTAINER_NAME)" ]; then
-#   sudo docker stop $CONTAINER_NAME
-#   sudo docker rm $CONTAINER_NAME
-# fi
+CID=$(sudo docker ps -q -f name="^/${CONTAINER_NAME}$")
+
+if [ -z "$CID" ]; then
+    echo "Container '$CONTAINER_NAME' does not found, start container"
+    sudo docker start $CONTAINER_NAME
+fi
 
 # sudo docker run --gpus all -i -t --name $CONTAINER_NAME \
 #                 -v ${HOME}/workspace/aicomp:$CONTAINER_WORKSPACE_DIR \
@@ -47,6 +49,7 @@ if [ $MODEL_SIZE -eq 70 ]; then
     MODEL_NAME="meta-llama/Llama-3.3-70B-Instruct"
 fi
 
+echo "Run $CONTAINER_NAME"
 sudo docker exec -it $CONTAINER_NAME \
                 /bin/bash -lc 'cd /workspace/aicomp/opt_prime/tutoruslabs && LOGFILE=./results/$(date +%Y%m%d%H%M%S).log; \
                 GPULOGFILE=./results/$(date +%Y%m%d%H%M%S)_gpustats.log; MEMLOGFILE=./results/$(date +%Y%m%d%H%M%S)_memstats.log; \

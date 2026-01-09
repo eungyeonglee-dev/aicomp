@@ -19,6 +19,7 @@ import gc
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
+from opt_prime.utils import ts, log
 
 #logging.basicConfig(level=logging.DEBUG)
 #logging.basicConfig(level=logging.INFO)
@@ -325,8 +326,10 @@ class Schedule:
                     if node_name in self.optimus.run_info.getitem_dic:
                         submod_name = self.optimus.run_info.getitem_dic[node_name][0]
                         if self.optimus.run_info.env_recv_mark[mb_idx][submod_name] is None:
+                            log(f"[{ts()}][rank:{self.optimus.tpl.rank}] receive_data begin | mb_idx:{mb_idx} | from rank:{pre_split_rank}")
                             self.optimus.run_info.env[mb_idx][submod_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
                             self.optimus.run_info.env_recv_mark[mb_idx][submod_name] = 1
+                            log(f"[{ts()}][rank:{self.optimus.tpl.rank}] receive_data end | mb_idx:{mb_idx} | from rank:{pre_split_rank}")
 
                         if isinstance(self.optimus.run_info.env[mb_idx][submod_name], torch.Tensor):
                             if not self.optimus.run_info.env[mb_idx][submod_name].requires_grad or self.optimus.run_info.env[mb_idx][submod_name].grad_fn is None:
@@ -334,8 +337,10 @@ class Schedule:
                                 logging.info(f" ###### node name:{submod_name} requires_grad(True) #####") 
                     else:
                         if self.optimus.run_info.env_recv_mark[mb_idx][node_name] is None:
+                            log(f"[{ts()}][rank:{self.optimus.tpl.rank}] receive_data begin | mb_idx:{mb_idx} | from rank:{pre_split_rank}")
                             self.optimus.run_info.env[mb_idx][node_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
                             self.optimus.run_info.env_recv_mark[mb_idx][node_name] = 1
+                            log(f"[{ts()}][rank:{self.optimus.tpl.rank}] receive_data end | mb_idx:{mb_idx} | from rank:{pre_split_rank}")
                         # TODO: Seq Cls.
                         #if isinstance(self.optimus.run_info.env[mb_idx][node_name], torch.Tensor):
                         #if node_name != "input_ids" and isinstance(self.optimus.run_info.env[mb_idx][node_name], torch.Tensor):
@@ -450,7 +455,9 @@ class Schedule:
                         submod_name = self.optimus.run_info.getitem_dic[node_name][0]
                         if self.optimus.run_info.env_send_mark[mb_idx][submod_name] is None:
                             obj = self.optimus.run_info.env[mb_idx][submod_name]
+                            log(f"[{ts()}][rank:{self.optimus.tpl.rank}] send_data begin | mb_idx:{mb_idx} | to rank:{next_split_rank}")
                             self.optimus.comm.send_data(obj, next_split_rank, self.optimus.run_info.device)
+                            log(f"[{ts()}][rank:{self.optimus.tpl.rank}] send_data end | mb_idx:{mb_idx} | to rank:{next_split_rank}")
                             self.optimus.run_info.env_send_mark[mb_idx][submod_name] = 1
                             if self.optimus.activation_ckpt == True and needed_by_stage - src_stage == 1: # For Act ckpt
                                 self.optimus.run_info.env[mb_idx][submod_name] = None  
@@ -459,7 +466,9 @@ class Schedule:
                     else:
                         if self.optimus.run_info.env_send_mark[mb_idx][node_name] is None:
                             obj = self.optimus.run_info.env[mb_idx][node_name]
+                            log(f"[{ts()}][rank:{self.optimus.tpl.rank}] send_data begin | mb_idx:{mb_idx} | to rank:{next_split_rank}")
                             self.optimus.comm.send_data(obj, next_split_rank, self.optimus.run_info.device)
+                            log(f"[{ts()}][rank:{self.optimus.tpl.rank}] send_data end | mb_idx:{mb_idx} | to rank:{next_split_rank}")
                             self.optimus.run_info.env_send_mark[mb_idx][node_name] = 1
                             if self.optimus.activation_ckpt == True and needed_by_stage - src_stage == 1: # For Act ckpt
                                 self.optimus.run_info.env[mb_idx][node_name] = None 
@@ -601,7 +610,9 @@ class Schedule:
 
             node_name = self.get_next_node_name()
             if self.optimus.run_info.env_grad_recv_mark[mb_idx][node_name] is None:
+                log(f"[{ts()}][rank:{self.optimus.tpl.rank}] receive_data begin | mb_idx:{mb_idx} | from rank:{pre_split_rank}")
                 self.optimus.run_info.grads[mb_idx][node_name] = self.optimus.comm.receive_data(pre_split_rank, self.optimus.run_info.device)
+                log(f"[{ts()}][rank:{self.optimus.tpl.rank}] receive_data end | mb_idx:{mb_idx} | from rank:{pre_split_rank}")
                 grads = self.optimus.run_info.grads[mb_idx][node_name]
                 self.optimus.run_info.env_grad_recv_mark[mb_idx][node_name] = 1
 
@@ -640,7 +651,9 @@ class Schedule:
             node_name = self.optimus.run_info.name
             if self.optimus.run_info.env_grad_send_mark[mb_idx][node_name] is None:
                 obj = self.optimus.run_info.grads[mb_idx][node_name]
+                log(f"[{ts()}][rank:{self.optimus.tpl.rank}] send_data begin | mb_idx:{mb_idx} | to rank:{next_split_rank}")
                 self.optimus.comm.send_data(obj, next_split_rank, self.optimus.run_info.device)
+                log(f"[{ts()}][rank:{self.optimus.tpl.rank}] send_data end | mb_idx:{mb_idx} | to rank:{next_split_rank}")
                 self.optimus.run_info.env_grad_send_mark[mb_idx][node_name] = 1
                 if self.optimus.activation_ckpt == True:
                     self.optimus.run_info.grads[mb_idx][node_name] = None

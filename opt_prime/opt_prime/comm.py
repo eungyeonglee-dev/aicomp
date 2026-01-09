@@ -8,7 +8,7 @@ from opt_prime.IR import IR_Anal
 
 from torch.distributed._functional_collectives import AsyncCollectiveTensor
 
-
+from opt_prime.utils import ts, log
 
 logging.basicConfig(level=logging.ERROR)
 
@@ -66,19 +66,19 @@ class Comm:
         if use_gpu == True:
             gpu_cnt = torch.cuda.device_count()
             if self.local_rank == 0:
-                print(f"Available GPUs per server: {gpu_cnt}")
+                log(f"[{ts()}][rank:{self.rank}] Available GPUs per server: {gpu_cnt}")
             if self.local_rank + 1 > gpu_cnt:
                 logging.error(f"This program cannot create more processes than the number of available GPUs:{gpu_cnt}")
                 sys.exit(1)
 
             self.backend = "nccl"
-            print(f"GPU mode is used.")
+            log(f"[{ts()}][rank:{self.rank}] GPU mode is used.")
         else:
             self.backend = "gloo"
-            print(f"CPU mode is used.")
+            log(f"[{ts()}][rank:{self.rank}] CPU mode is used.")
 
         if dist.is_initialized():
-            print(f"Communication already initialized")
+            log(f"[{ts()}][rank:{self.rank}] Communication already initialized")
             return
 
         init_method = "tcp://" + str(self.master_addr) + ":" + str(self.master_port)
@@ -193,22 +193,30 @@ class Comm:
 
     def receive_tensor(self, from_rank, device):
         dimension = torch.tensor([0], dtype=torch.long, device=device)
+        # log(f"[{ts()}][rank:{self.rank}] receive_tensor begin | dimension:{dimension} | from rank:{from_rank}")
         dist.recv(dimension, from_rank)
+        # log(f"[{ts()}][rank:{self.rank}] receive_tensor end | dimension:{dimension} | from rank:{from_rank}")
         #logging.debug(f" >>>>> recv_tensor, dimension:{dimension} from rank:{from_rank}")
 
         shape = torch.tensor([0] * dimension.item(), dtype=torch.long, device=device)
+        # log(f"[{ts()}][rank:{self.rank}] receive_tensor begin | shape:{shape} | from rank:{from_rank}")
         dist.recv(shape, from_rank)
+        # log(f"[{ts()}][rank:{self.rank}] receive_tensor end | shape:{shape} | from rank:{from_rank}")
         #logging.debug(f" >>>>> recv_tensor, shaple:{shape} from rank:{from_rank}")
         shape = tuple(shape.tolist())
 
         ttype = torch.tensor([0], dtype=torch.long, device=device)
+        # log(f"[{ts()}][rank:{self.rank}] receive_tensor begin | ttype:{ttype} | from rank:{from_rank}")
         dist.recv(ttype, from_rank)
+        # log(f"[{ts()}][rank:{self.rank}] receive_tensor end | ttype:{ttype} | from rank:{from_rank}")
         #logging.debug(f" >>>>> recv_tensor, ttype:{ttype} from rank:{from_rank}")
 
         ttype = self.tensor_id2type[ttype.item()]
 
         obj = torch.zeros(size=shape, dtype=ttype, device=device)
+        # log(f"[{ts()}][rank:{self.rank}] receive_tensor begin | obj:{obj} | from rank:{from_rank}")
         dist.recv(obj, from_rank)
+        # log(f"[{ts()}][rank:{self.rank}] receive_tensor end | obj:{obj} | from rank:{from_rank}")
         #logging.debug(f" >>>>> recv_tensor, obj:{obj} from rank:{from_rank}")
 
         return obj

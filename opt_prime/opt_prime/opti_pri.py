@@ -26,6 +26,7 @@ import psutil
 import os
 import glob
 
+from opt_prime.utils import ts, log
 
 #logging.basicConfig(level=logging.DEBUG)
 #logging.basicConfig(level=logging.INFO)
@@ -58,7 +59,9 @@ class Topology:
 
         #if rank == 0:
         #    print(f"> pp group:{self.pp_mesh}, tp group:{self.tp_mesh}, dp group:{self.dp_mesh}")
-        print(f"> [rank:{rank}] pp group:{self.pp_mesh}, tp group:{self.tp_mesh}, dp group:{self.dp_mesh}")
+        log(f"[{ts()}][rank:{self.rank}] pp group:{self.pp_mesh}")
+        log(f"[{ts()}][rank:{self.rank}] tp group:{self.tp_mesh}")
+        log(f"[{ts()}][rank:{self.rank}] dp group:{self.dp_mesh}")
 
 
         #
@@ -80,10 +83,7 @@ class Topology:
             self.stage2rank[pp_stage] = stage_ranks
 
         if self.rank == 0:
-            print(f" ----------------------------------")
-            print(f"stage2rank = { self.stage2rank }")
-            print(f" ----------------------------------")
-
+            log(f"[{ts()}][rank:0] stage2rank = { self.stage2rank }")
 
     def get_rank2stage(self, rank):
         for stage, ranks in self.stage2rank.items():
@@ -374,18 +374,9 @@ class Optimus_p:
         #pp_size = world_size // tp_size // dp_size
 
         if rank == 0:
-            print(f"> World Size: {world_size}")
-
-            print(f"> Pipeline Parallel Size: {pp_size}")  
-
-            if dp_size > 1:
-                print(f"> Data Parallel Size: {dp_size}")
-
-            if tp_size > 1:
-                print(f"> Tensor Parallel Size: {tp_size}")
-
-            print(f">> ir_analyze: {ir_analyze}")
-
+            print(f"[{ts()}][rank:0] Optimus_p init: world_size={world_size}")
+            print(f"[{ts()}][rank:0] Optimus_p init: PP={pp_size}, DP={dp_size}, TP={tp_size}")
+            print(f"[{ts()}][rank:0] Optimus_p init: IR={ir_analyze}, use_gpu={use_gpu}")
 
         self.tpl = Topology(rank, local_rank, world_size, pp_size, dp_size, tp_size)
 
@@ -399,10 +390,10 @@ class Optimus_p:
         if use_gpu == True:
             torch.cuda.set_device(local_rank) # TODO
             self.device = torch.device(f"cuda:{local_rank}")
-            print(f">>> Using GPU ... cuda:{local_rank}")
+            log(f"[{ts()}][rank:{rank}] Using GPU ... cuda:{local_rank}")
         else:
             self.device = torch.device("cpu")
-            print(f">>> Using CPU ...")
+            log(f"[{ts()}][rank:{rank}] Using CPU ...")
 
 
         # num_classes auto config
@@ -417,12 +408,10 @@ class Optimus_p:
 
         # TODO
         split_method = "llama-tp-split" if module.__class__.__name__.startswith("Llama") and tp_size > 1 else "simple"
-        print(f">> model class name: {module.__class__.__name__}")
-        print(f">> split method: {split_method}")
+        log(f"[{ts()}][rank:{rank}] model class name: {module.__class__.__name__}")
+        log(f"[{ts()}][rank:{rank}] split method: {split_method}")
 
         if ir_analyze == IR_Anal.SEQUENTIAL:
-            print(f"SEQUENTIAL mode >> [rank:{rank}, local_world_size:{self.comm.local_world_size}]")
-
             for i in range(self.comm.local_world_size):
                 if local_rank == i:
                     self.ir = IR(module, self)
@@ -435,13 +424,13 @@ class Optimus_p:
                     self.ir.build_getitem_dic()
 
                     self.run_info.submod.to(self.run_info.device)
-                    print(f" ### Rank:{rank}, name:{self.run_info.node.name}, move {self.run_info.name} to {self.run_info.device}")
+                    log(f"[{ts()}][rank:{rank}] submod name:{self.run_info.node.name}, move {self.run_info.name} to {self.run_info.device}")
 
                     self.run_info.output_node = self.ir.get_output_node()
 
                     if rank == 0:
                         self.ir.print_graph(rank)
-                        self.run_info.print_getitem_dic()
+                        # self.run_info.print_getitem_dic()
 
                     #    for stage in reversed(range(1, self.tpl.get_num_stage())):
                     #        self.ir.cross_reference_analyze(stage, self.ir.model_ir[0].graph)
@@ -458,13 +447,11 @@ class Optimus_p:
                     if self.clean_module_memory == True:
                         print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
                         self.ir.clean_module_memory()
-                        print(f" ### Rank:{rank}, clean_module_memory ...")
+                        log(f"[{ts()}][rank:{rank}] clean_module_memory")
                         print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
-                    print(f"[rank:{rank}, local_rank:{local_rank}] SEQUENTIAL MODE PROCESSING ...")
+                    log(f"[{ts()}][rank:{rank}] SEQUENTIAL MODE PROCESSING")
 
                 dist.barrier()
-
-
         if (ir_analyze == IR_Anal.SINGLE and rank == 0) or ir_analyze == IR_Anal.PARALLEL:
             # IR effective at #0 process when IR_Anal.SINGLE
 
@@ -503,7 +490,7 @@ class Optimus_p:
                         if to_rank == 0:
                             continue
                         else:
-                            print(f"[Rank:0] >> Send IR partition to rank:{to_rank} ...")
+                            log(f"[{ts()}][rank:0] Send IR partition to rank:{to_rank} ...")
                             dist.broadcast_object_list(object_list, src=0, group=self.comm.ctrl_group[to_rank], device=self.run_info.device)
                     to_name, to_submod, to_node = None, None, None
                     object_list = []
@@ -516,7 +503,7 @@ class Optimus_p:
 
                 if rank == 0:
                     self.ir.print_graph(rank)
-                    self.run_info.print_getitem_dic()
+                    # self.run_info.print_getitem_dic()
 
                 for stage in reversed(range(1, self.tpl.get_num_stage())):
                     self.ir.cross_reference_analyze(stage, self.ir.model_ir[0].graph)
@@ -530,9 +517,9 @@ class Optimus_p:
                 if self.clean_module_memory == True:
                     print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
                     self.ir.clean_module_memory()
-                    print(f" ### Rank:{rank}, clean_module_memory ...")
+                    log(f"[{ts()}][rank:{rank}] clean_module_memory")
                     print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
-                print(f"[rank:{rank}, local_rank:{local_rank}] PARALLEL MODE PROCESSING ...")
+                log(f"[{ts()}][rank:{rank}] PARALLEL MODE PROCESSING")
 
                 # TODO
                 if pre_barrier is not None:
@@ -540,8 +527,6 @@ class Optimus_p:
                     pre_barrier_remaining = self.comm.local_world_size - self.comm.local_rank - 1
                     for j in range(pre_barrier_remaining):
                         dist.barrier(group=pre_barrier)
-
-
         elif ir_analyze == IR_Anal.SINGLE and rank != 0:
             object_list = [None, None, None]
             dist.broadcast_object_list(object_list, src=0, group=self.comm.ctrl_group[rank], device=self.run_info.device)
@@ -574,7 +559,7 @@ class Optimus_p:
         if ir_analyze == IR_Anal.SINGLE:
             if rank == 0:
                 self.ir.print_graph(rank)
-                self.run_info.print_getitem_dic()
+                # self.run_info.print_getitem_dic()
 
                 for stage in reversed(range(1, self.tpl.get_num_stage())):
                     self.ir.cross_reference_analyze(stage, self.ir.model_ir[0].graph)
@@ -585,9 +570,9 @@ class Optimus_p:
                 if self.clean_module_memory == True:
                     print_cpu_memory_usage(f"[Rank:{rank}] Before: clean_module_memory")
                     self.ir.clean_module_memory()
-                    print(f" ### Rank:{rank}, clean_module_memory ...")
+                    log(f"[{ts()}][rank:{rank}] clean_module_memory")
                     print_cpu_memory_usage(f"[Rank:{rank}] After: clean_module_memory")
-                print(f"[rank:{rank}, local_rank:{local_rank}] SINGLE MODE PROCESSING ...")
+                log(f"[{ts()}][rank:{rank}] SINGLE MODE PROCESSING")
 
         self.preserve_output = preserve_output
 

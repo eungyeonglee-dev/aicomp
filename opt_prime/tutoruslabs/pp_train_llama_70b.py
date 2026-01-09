@@ -29,6 +29,7 @@ import transformers
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from opt_prime.opti_pri import Optimus_p
 from opt_prime.IR import IR_Anal
+from opt_prime.utils import ts, log
 
 logging.basicConfig(level=logging.ERROR)
 
@@ -79,9 +80,9 @@ def save_exit_code(exit_code: int, run_id: str, elapsed_time: float | None = Non
                 else:
                     # 그 외에는 exit_code만 기록
                     f.write(str(exit_code))
-            print(f"[rank:0] EXIT_CODE {exit_code} saved to {log_path}")
+            print(f"[{ts()}][rank:0] EXIT_CODE {exit_code} saved to {log_path}")
     except Exception as e:
-        print(f"[rank:0] Failed to save EXIT_CODE file: {e}")
+        print(f"[{ts()}][rank:0] Failed to save EXIT_CODE file: {e}")
         pass
 
 EXIT_CODE=0
@@ -151,7 +152,7 @@ try:
         
         snapshot_id = os.listdir(model_path)
         model_path = os.path.join(model_path, snapshot_id[0])
-        print(f"model_path: {model_path}")
+        # print(f"model_path: {model_path}")
 
         tokenizer = AutoTokenizer.from_pretrained(
             model_path,
@@ -183,7 +184,7 @@ try:
             else:
                 model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3.3-70B-Instruct", token=access_token, use_cache=False)
 
-            if int(os.environ["RANK"]) == 0:
+            if local_rank == 0:
                 print('> Total parameters in model: {:,}'.format(get_total_params(model)))
                 print('> World size: {}'.format(world_size)) # world size
                 print('> IR: {}'.format(IR_Anal.PARALLEL)) # IR analysis mode
@@ -203,17 +204,12 @@ try:
                                   swap_opt_in_fwdbwd=False, swap_model_in_optstep=False, 
                                   ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo) ## IR_Anal.PARALLEL
             #optimus_p = Optimus_p(model, micro_batch_size, use_gpu=True, dp_size=2, activation_ckpt=False, force_free_mem=True, display_mem=True, swap_opt_in_fwdbwd=True, swap_model_in_optstep=True, ir_analyze=IR_Anal.PARALLEL, pre_barrier=group_gloo) ## IR_Anal.PARALLEL
-            print(f" rank={optimus_p.get_rank()} ...")
+            log(f"[{ts()}][rank:{optimus_p.get_rank()}] Optimus_p initialized")
 
         if local_rank > i:
-            print(f"..[local_rank:{local_rank}, i:{i}] Before barrier()...")
+            log(f"[{ts()}][local_rank:{local_rank}] Waiting for rank {i} to load model ...")
             dist.barrier(group=group_gloo)
-            print(f"..[local_rank:{local_rank}, i:{i}] After barrier()...................................")
-    ###
-
-
-    # TODO
-    #get_info(optimus_p)
+            log(f"[{ts()}][local_rank:{local_rank}] Rank {i:2d} finished, proceeding...")
 
     optimus_p.train()
 
@@ -229,9 +225,9 @@ try:
     #dataloader = DataLoader(datasets, batch_size=batch_size, num_workers=4)
     dataloader = optimus_p.prepare_dataloader(datasets, batch_size)
     data_size=len(dataloader.dataset)
-    print(f"data_size={data_size}")
+    log(f"[{ts()}][rank:{optimus_p.get_rank()}] data_size={data_size}")
     nbatches = len(dataloader)
-    print(f"nbatches={nbatches}")
+    log(f"[{ts()}][rank:{optimus_p.get_rank()}] nbatches={nbatches}")
 
     """
     # 1F1B 안전 가드

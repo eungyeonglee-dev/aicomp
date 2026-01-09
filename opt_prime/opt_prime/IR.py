@@ -43,6 +43,8 @@ from enum import Enum
 
 from transformers.utils.fx import _SUPPORTED_MODELS
 
+from opt_prime.utils import ts, log
+
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
@@ -161,11 +163,12 @@ class IR(object):
 
         self.model_ir.append(submods)
 
-        if int(os.environ["RANK"]) == 0:
-            print(f">> ------------------ FX graph --------------------------------")
-            for n in self.model_ir[0].graph.nodes:
-                print(f"n.op:{n.op}, n.name:{n.name}, n.target:{n.target}, n.args:{n.args}, n.all_input_nodes:{n.all_input_nodes}")
-            print(f">> ------------------------------------------------------------")
+        # if int(os.environ["RANK"]) == 0:
+        #     log(f"[{ts()}][rank:0] ======= total FX graph =======")
+        #     for n in self.model_ir[0].graph.nodes:
+        #         log(f"[{ts()}][rank:0] n.op:{n.op}, n.name:{n.name}, n.target:{n.target}, n.args:{n.args}, n.all_input_nodes:{n.all_input_nodes}")
+        #     log(f"[{ts()}][rank:0] ==============================")
+            
 
 
     def simple_split(self, module, num_stage):
@@ -230,9 +233,9 @@ class IR(object):
             self.metadata_range.append((k, n.name))
 
         if int(os.environ["RANK"]) == 0:
-            print(f" ------------------------------------------------------------")
-            print(f"  rank:{self.optimus.tpl.rank},  first metadata_range: {self.metadata_range}")
-            print(f" ------------------------------------------------------------")
+            log(f"[{ts()}][rank:{self.optimus.tpl.rank}] first metadata_range: {self.metadata_range}")
+            for k, v in self.metadata_range:
+                log(f"[{ts()}][rank:{self.optimus.tpl.rank}] last_node[stage#{k}] = {v}")
 
         submodules = split_module(self.gm, module, part_fn, keep_original_order=True)
 
@@ -311,9 +314,9 @@ class IR(object):
                 self.metadata_range.append((cnt, n.name))
                 cnt = cnt + 1
 
-        print(f" ------------------------------------------------------------")
-        print(f"  rank:{self.optimus.tpl.rank},  second metadata_range: {self.metadata_range}")
-        print(f" ------------------------------------------------------------")
+        log(f"[{ts()}][rank:{self.optimus.tpl.rank}] second metadata_range")
+        for k, v in self.metadata_range:
+            log(f"[{ts()}][rank:{self.optimus.tpl.rank}] last_node[stage#{k}] = {v}")
 
         assert len(self.metadata_range) == num_stage
 
@@ -410,9 +413,10 @@ class IR(object):
             return idx
 
         if int(os.environ["RANK"]) == 0:
-            print(f" ------------------------------------------------------------")
-            print(f"  rank:{self.optimus.tpl.rank},  first metadata_range: {self.metadata_range}")
-            print(f" ------------------------------------------------------------")
+            log(f"[{ts()}][rank:{self.optimus.tpl.rank}] ======= first metadata_range ========")
+            for k, v in self.metadata_range:
+                log(f"[{ts()}][rank:{self.optimus.tpl.rank}] last_node[stage#{k}] = {v}")
+            
 
         submodules = split_module(self.gm, module, part_fn, keep_original_order=True)
 
@@ -488,9 +492,9 @@ class IR(object):
                 self.metadata_range.append((cnt, n.name))
                 cnt = cnt + 1
 
-        print(f" ------------------------------------------------------------")
-        print(f"  rank:{self.optimus.tpl.rank},  second metadata_range: {self.metadata_range}")
-        print(f" ------------------------------------------------------------")
+        # log(f"[{ts()}][rank:{self.optimus.tpl.rank}] ===== second metadata_range ======")
+        # for k, v in self.metadata_range:
+        #     log(f"[{ts()}][rank:{self.optimus.tpl.rank}] last_node[stage#{k}] = {v}")
 
         assert len(self.metadata_range) == num_stage
 
@@ -530,7 +534,7 @@ class IR(object):
         from_, to_ = self.get_range(stage, g)
     
         #logging.debug(f" ***** stage:{stage} >>  from_:{from_.name}, to_:{to_.name}")
-        print(f" ***** stage:{stage} >>  from_:{from_.name}, to_:{to_.name}")
+        # print(f" ***** stage:{stage} >>  from_:{from_.name}, to_:{to_.name}")
     
         cur = to_
         while (cur != from_) or (stage > 0 and cur == from_):
@@ -669,9 +673,9 @@ class IR(object):
 
     #def print_graph(self, ir, rank):
     def print_graph(self, rank):
-        print(f" # rank = {rank}, metadata_range:{self.metadata_range}")
-        for node in self.model_ir[0].graph.nodes:
-            print(f"-- node.op:{node.op}, node.name:{node.name}, node.target:{node.target}, node.args:{node.args}, node.all_input_nodes:{node.all_input_nodes}")
+        log(f"[{ts()}][rank:{rank}] metadata_range:{self.metadata_range}")
+        # for node in self.model_ir[0].graph.nodes:
+        #     print(f"-- node.op:{node.op}, node.name:{node.name}, node.target:{node.target}, node.args:{node.args}, node.all_input_nodes:{node.all_input_nodes}")
 
 
     def get_output_node(self):

@@ -1,14 +1,14 @@
 #!/bin/bash
 
-export NCCL_DEBUG=INFO # DEBUG
+# export NCCL_DEBUG=INFO # DEBUG
 # Communication debug flag
-export NCCL_DEBUG_SUBSYS=ALL
-export TORCH_DISTRIBUTED_DEBUG=DETAIL
-export TORCH_SHOW_CPP_STACKTRACES=1
+# export NCCL_DEBUG_SUBSYS=ALL
+# export TORCH_DISTRIBUTED_DEBUG=DETAIL
+# export TORCH_SHOW_CPP_STACKTRACES=1
 # export NCCL_SOCKET_IFNAME=ibp194s0,ibs8
 
 # 피어가 죽으면 다른 랭크도 통신 에러로 즉시 터지도록
-export TORCH_NCCL_ASYNC_ERROR_HANDLING=1 # NCCL_ASYNC_ERROR_HANDLING is deprecated
+# export TORCH_NCCL_ASYNC_ERROR_HANDLING=1 # NCCL_ASYNC_ERROR_HANDLING is deprecated
 #export NCCL_BLOCKING_WAIT=0
 #export TORCH_DIST_INIT_BARRIER=1
 
@@ -17,9 +17,6 @@ export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=18000 # 5 hours
 
 export HF_DATASETS_OFFLINE=1
 export HF_HUB_OFFLINE=1
-
-export GLOO_SOCKET_FAMILY=INET
-export NCCL_SOCKET_FAMILY=INET
 
 ############################################
 # User params

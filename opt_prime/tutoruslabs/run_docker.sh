@@ -8,30 +8,30 @@ CONTAINER_WORKSPACE_DIR="/workspace/aicomp"
 CID=$(sudo docker ps -q -f name="^/${CONTAINER_NAME}$")
 
 if sudo docker ps -q --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
-    echo "Container '$CONTAINER_NAME' exists."
-    echo "Removing '$CONTAINER_NAME' container."
+    echo "===> Container '$CONTAINER_NAME' exists."
+    echo "===> Removing '$CONTAINER_NAME' container."
     # 2>/dev/null: suppress error messages
     sudo docker stop $CONTAINER_NAME 2>/dev/null
 
-    echo "Removing '$CONTAINER_NAME' container."
+    echo "===> Removing '$CONTAINER_NAME' container."
     sudo docker rm $CONTAINER_NAME
 
-    echo "Container '$CONTAINER_NAME' removed successfully."
+    echo "===> Container '$CONTAINER_NAME' removed successfully."
 fi
 
-echo "Creating new container '$CONTAINER_NAME'."
+echo "===> Creating new container '$CONTAINER_NAME'."
 
 # 2=============== Clean up port ===============
-echo "Checking port range 29500-29509"
+echo "===> Checking port range 29500-29509"
 for port in $(seq 29500 29509); do
     if sudo lsof -i :$port >/dev/null 2>&1; then
-        echo "Port $port is already in use."
-        echo "Cleaning up port $port"
+        echo "===> Port $port is already in use."
+        echo "===> Cleaning up port $port"
         sudo lsof -i :$port | xargs -r sudo kill -9
-        echo "Port $port cleaned up."
+        echo "===> Port $port cleaned up."
         sleep 2
     else
-        echo "Port $port is not in use."
+        echo "===> Port $port is not in use."
     fi
 done
 
@@ -43,12 +43,12 @@ sudo docker run -d --gpus all -i -t --name $CONTAINER_NAME \
             -w $CONTAINER_WORKSPACE_DIR \
             -e LLAMA_ACCESS_TOKEN=$LLAMA_ACCESS_TOKEN \
             $CONTAINER_IMAGE bash -lc "tail -f /dev/null"
-echo "Container '$CONTAINER_NAME' created."
+echo "===> Container '$CONTAINER_NAME' created."
 
 # install gpustat
-echo "Installing gpustat."
+echo "===> Installing gpustat."
 sudo docker exec -it $CONTAINER_NAME pip install gpustat
-echo "Gpustat installed successfully."
+echo "===> Gpustat installed successfully."
 
 # 4=============== Run model ===============
 MODEL_SIZE=$1
@@ -66,7 +66,7 @@ if [ $MODEL_SIZE -eq 70 ]; then
     MODEL_NAME="meta-llama/Llama-3.3-70B-Instruct"
 fi
 
-echo "Run $CONTAINER_NAME"
+echo "===> Run $CONTAINER_NAME"
 sudo docker exec -it $CONTAINER_NAME \
                 /bin/bash -lc 'cd /workspace/aicomp/opt_prime/tutoruslabs && LOGFILE=./results/$(date +%Y%m%d%H%M%S).log; \
                 GPULOGFILE=./results/$(date +%Y%m%d%H%M%S)_gpustats.log; MEMLOGFILE=./results/$(date +%Y%m%d%H%M%S)_memstats.log; \

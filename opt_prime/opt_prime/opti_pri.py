@@ -25,6 +25,7 @@ from torch.fx.graph_module import GraphModule
 import psutil
 import os
 import glob
+import datetime
 
 from opt_prime.utils import ts, log
 
@@ -49,7 +50,7 @@ class Topology:
         self.dp_size = dp_size
         self.tp_size = tp_size
         # log(f"[rank:{self.rank}] before init_device_mesh")
-        self.device_mesh = init_device_mesh("cuda", mesh_shape=(pp_size, dp_size, tp_size), mesh_dim_names=("pp", "dp", "tp"))
+        self.device_mesh = init_device_mesh("cuda", mesh_shape=(pp_size, dp_size, tp_size), mesh_dim_names=("pp", "dp", "tp"), timeout=datetime.timedelta(hours=1))
         # log(f"[rank:{self.rank}] after init_device_mesh")
         self.tp_group = self.device_mesh["tp"].get_group()
         self.dp_group = self.device_mesh["dp"].get_group()

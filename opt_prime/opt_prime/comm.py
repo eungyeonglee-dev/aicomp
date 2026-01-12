@@ -3,6 +3,7 @@ import torch.distributed as dist
 import logging
 import os
 from torch import Tensor, Size
+import datetime
 
 from opt_prime.IR import IR_Anal
 
@@ -81,10 +82,11 @@ class Comm:
             log(f"[rank:{self.rank}] Communication already initialized")
             return
 
+        timeout = datetime.timedelta(hours=1)
         init_method = "tcp://" + str(self.master_addr) + ":" + str(self.master_port)
-        dist.init_process_group(backend=self.backend, rank=self.rank, world_size=self.world_size, init_method=init_method)
+        dist.init_process_group(backend=self.backend, rank=self.rank, world_size=self.world_size, init_method=init_method, timeout=timeout)
 
-        logging.info(f" --- rank:{dist.get_rank()}, world_size:{dist.get_world_size()}")
+        # logging.info(f" --- rank:{dist.get_rank()}, world_size:{dist.get_world_size()}")
 
 
 

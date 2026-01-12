@@ -102,13 +102,14 @@ local_world_size = int(os.environ['LOCAL_WORLD_SIZE'])
 master_addr = os.getenv("MASTER_ADDR")
 master_port = os.getenv("MASTER_PORT")
 
+timeout=datetime.timedelta(hours=1)
 
 init_method = "tcp://" + str(master_addr) + ":" + str(master_port)
 print(f"rank:{rank}, world_size:{world_size}, init_method:{init_method}, local_world_size:{local_world_size}, local_rank:{local_rank}")
 
-dist.init_process_group("nccl", rank=rank, world_size=world_size, init_method=init_method)
+dist.init_process_group("nccl", rank=rank, world_size=world_size, init_method=init_method, timeout=timeout)
 
-group_gloo = dist.new_group(backend="gloo")
+group_gloo = dist.new_group(backend="gloo", timeout=timeout)
 ###
 
 

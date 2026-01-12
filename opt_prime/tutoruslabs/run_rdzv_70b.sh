@@ -2,9 +2,10 @@
 
 export NCCL_DEBUG=INFO # DEBUG
 # Communication debug flag
-export NCCL_DEBUG_SUBSYS=INIT,NET
+export NCCL_DEBUG_SUBSYS=ALL
 export TORCH_DISTRIBUTED_DEBUG=DETAIL
 export TORCH_SHOW_CPP_STACKTRACES=1
+export NCCL_SOCKET_IFNAME=ibp194s0,ibs8
 
 # 피어가 죽으면 다른 랭크도 통신 에러로 즉시 터지도록
 export TORCH_NCCL_ASYNC_ERROR_HANDLING=1 # NCCL_ASYNC_ERROR_HANDLING is deprecated

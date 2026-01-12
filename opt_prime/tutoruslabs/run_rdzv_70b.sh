@@ -116,7 +116,7 @@ for COMBO in "${COMBINATIONS[@]}"; do
 done
 echo "================================================="
 
-COUNTER=0
+COUNTER=4
 
 # 모델 학습
 for BATCH in "${BATCH_SIZES[@]}"; do

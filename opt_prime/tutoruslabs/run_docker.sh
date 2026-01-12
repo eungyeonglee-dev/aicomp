@@ -71,8 +71,8 @@ sudo docker run -d --gpus all --name $CONTAINER_NAME \
             -e TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=18000 \
             -e HF_DATASETS_OFFLINE=1 \
             -e HF_HUB_OFFLINE=1 \
-            -e NCCL_SOCKET_FAMILY=AF_INET \
-            -e GLOO_SOCKET_FAMILY=AF_INET \
+            -e NCCL_SOCKET_FAMILY=INET \
+            -e GLOO_SOCKET_FAMILY=INET \
             -e PYTHON_PREFER_IPV4=1 \
             --entrypoint /bin/bash \
             $CONTAINER_IMAGE -c "tail -f /dev/null"

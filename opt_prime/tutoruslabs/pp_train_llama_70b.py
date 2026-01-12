@@ -8,6 +8,32 @@
 #     The version of transformers used must be consistent across all machines used for testing ***
 #
 
+import os
+import socket
+
+# 2. (중요) 소켓 생성 시 IPv6 자체를 못 쓰게 패치
+# 원래 소켓의 getaddrinfo가 IPv6를 반환하더라도 무시하도록 설정하는 꼼수입니다.
+original_getaddrinfo = socket.getaddrinfo
+
+def ipv4_only_getaddrinfo(*args, **kwargs):
+    # 강제로 AF_INET(IPv4) 패밀리만 요청하도록 수정
+    if len(args) >= 2:
+        args = list(args)
+        args[1] = socket.AF_INET # family index
+        args = tuple(args)
+    # kwargs에 family가 있으면 덮어쓰기
+    if 'family' in kwargs:
+        kwargs['family'] = socket.AF_INET
+    
+    return original_getaddrinfo(*args, **kwargs)
+
+# 함수 바꿔치기 (Monkey Patch)
+socket.getaddrinfo = ipv4_only_getaddrinfo
+
+# 1. 환경 변수 강제 주입
+os.environ["GLOO_SOCKET_FAMILY"] = "INET"
+os.environ["NCCL_SOCKET_FAMILY"] = "INET"
+
 import torch
 import torch.nn as nn
 

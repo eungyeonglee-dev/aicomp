@@ -81,8 +81,16 @@ sudo docker exec -it $CONTAINER_NAME pip install gpustat
 echo "===> Gpustat installed successfully."
 
 # infiniband deactivation
-echo "===> Deactivating infiniband."
+echo "===> Deactivating network without ethernet interface."
 sudo docker exec $CONTAINER_NAME ip link set $IB_IFNAME down 2>/dev/null || true
+sudo docker exec $CONTAINER_NAME ip link set docker0 down 2>/dev/null || true
+case "$HOSTNAME" in
+    "s6")
+        sudo docker exec $CONTAINER_NAME ip link set br-76f0280ffba5 down 2>/dev/null || true
+        ;;
+    *)
+        ;;
+esac
 
 echo "===> Network Interfaces after disabling IB"
 sudo docker exec $CONTAINER_NAME hostname -I

@@ -18,6 +18,9 @@ export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=18000 # 5 hours
 export HF_DATASETS_OFFLINE=1
 export HF_HUB_OFFLINE=1
 
+export GLOO_SOCKET_FAMILY=INET
+export NCCL_SOCKET_FAMILY=INET
+
 ############################################
 # User params
 ############################################

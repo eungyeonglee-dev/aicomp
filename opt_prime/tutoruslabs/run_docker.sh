@@ -4,16 +4,13 @@ CONTAINER_NAME="etri_test_container"
 CONTAINER_IMAGE="etri_test_image:latest"
 CONTAINER_WORKSPACE_DIR="/workspace/aicomp"
 
-# 1=============== Remove existing container ===============
+# 1=============== Remove container ===============
+echo "===> Removing '$CONTAINER_NAME' container."
+# 2>/dev/null: suppress error messages
+sudo docker rm -f $CONTAINER_NAME 2>/dev/null || true
+sleep 2
+echo "===> Container '$CONTAINER_NAME' removed successfully."
 
-if sudo docker ps -aq --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
-    echo "===> Container '$CONTAINER_NAME' exists."
-    echo "===> Removing '$CONTAINER_NAME' container."
-    # 2>/dev/null: suppress error messages
-    sudo docker rm -f $CONTAINER_NAME
-    sleep 2
-    echo "===> Container '$CONTAINER_NAME' removed successfully."
-fi
 
 echo "===> Creating new container '$CONTAINER_NAME'."
 
@@ -38,6 +35,15 @@ sudo docker run -d --gpus all --name $CONTAINER_NAME \
             --network=host \
             -w $CONTAINER_WORKSPACE_DIR \
             -e LLAMA_ACCESS_TOKEN=$LLAMA_ACCESS_TOKEN \
+            -e NCCL_DEBUG=INFO \
+            -e NCCL_DEBUG_SUBSYS=ALL \
+            -e TORCH_DISTRIBUTED_DEBUG=DETAIL \
+            -e TORCH_SHOW_CPP_STACKTRACES=1 \
+            -e NCCL_SOCKET_IFNAME=ibp194s0,ibs8 \
+            -e TORCH_NCCL_ASYNC_ERROR_HANDLING=1 \
+            -e TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=18000 \
+            -e HF_DATASETS_OFFLINE=1 \
+            -e HF_HUB_OFFLINE=1 \
             --entrypoint /bin/bash \
             $CONTAINER_IMAGE -c "tail -f /dev/null"
 echo "===> Container '$CONTAINER_NAME' created."

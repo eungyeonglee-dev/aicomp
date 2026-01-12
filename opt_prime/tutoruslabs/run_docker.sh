@@ -53,7 +53,7 @@ case "$HOSTNAME" in
         exit 1
     ;;
 esac    
-sudo docker run -d --gpus all --name $CONTAINER_NAME \
+sudo docker run --sysctl net.ipv6.conf.all.disable_ipv6=1 -d --gpus all --name $CONTAINER_NAME \
             -v ${HOME}/workspace/aicomp:$CONTAINER_WORKSPACE_DIR \
             --ipc=host \
             --network=host \

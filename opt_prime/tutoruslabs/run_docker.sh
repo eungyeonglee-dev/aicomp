@@ -29,6 +29,30 @@ for port in $(seq 29500 29509); do
 done
 
 # 3=============== Run container ===============
+HOSTNAME=$(hostname)
+case "$HOSTNAME" in
+    "s1")
+        IB_IFNAME="ibp194s0"
+        ETH_IFNAME="enp34s0f0"
+        ;;
+    "s5")
+        IB_IFNAME="ibp194s0"
+        ETH_IFNAME="enp34s0f0"
+        ;;
+    "s6")
+        IB_IFNAME="ibp194s0"
+        ETH_IFNAME="enp33s0f0"
+        ;;
+    "s8")
+        IB_IFNAME="ibp194s0"
+        ETH_IFNAME="enp35s0f0np0"
+        ;;
+    *)
+        echo "===> Unknown hostname: $HOSTNAME"
+        echo "===> Please check the hostname and set the IB_IFNAME and ETH_IFNAME."
+        exit 1
+    ;;
+esac    
 sudo docker run -d --gpus all --name $CONTAINER_NAME \
             -v ${HOME}/workspace/aicomp:$CONTAINER_WORKSPACE_DIR \
             --ipc=host \
@@ -39,8 +63,8 @@ sudo docker run -d --gpus all --name $CONTAINER_NAME \
             -e NCCL_DEBUG_SUBSYS=ALL \
             -e TORCH_DISTRIBUTED_DEBUG=DETAIL \
             -e TORCH_SHOW_CPP_STACKTRACES=1 \
-            -e NCCL_SOCKET_IFNAME=ibp194s0,ibs8 \
-            -e GLOO_SOCKET_IFNAME=enp34s0f0,enp33s0f0,enp35s0f0np0\
+            -e NCCL_SOCKET_IFNAME=$ETH_IFNAME \
+            -e GLOO_SOCKET_IFNAME=$ETH_IFNAME \
             -e TORCH_NCCL_ASYNC_ERROR_HANDLING=1 \
             -e TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=18000 \
             -e HF_DATASETS_OFFLINE=1 \

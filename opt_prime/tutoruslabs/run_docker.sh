@@ -57,6 +57,7 @@ sudo docker run -d --gpus all --name $CONTAINER_NAME \
             -v ${HOME}/workspace/aicomp:$CONTAINER_WORKSPACE_DIR \
             --ipc=host \
             --network=host \
+            --cap-add=NET_ADMIN \
             -w $CONTAINER_WORKSPACE_DIR \
             -e LLAMA_ACCESS_TOKEN=$LLAMA_ACCESS_TOKEN \
             -e NCCL_DEBUG=INFO \
@@ -78,6 +79,13 @@ echo "===> Container '$CONTAINER_NAME' created."
 echo "===> Installing gpustat."
 sudo docker exec -it $CONTAINER_NAME pip install gpustat
 echo "===> Gpustat installed successfully."
+
+# infiniband deactivation
+echo "===> Deactivating infiniband."
+sudo docker exec $CONTAINER_NAME ip link set $IB_IFNAME down 2>/dev/null || true
+
+echo "===> Network Interfaces after disabling IB"
+sudo docker exec $CONTAINER_NAME hostname -I
 
 # 4=============== Run model ===============
 MODEL_SIZE=$1

@@ -36,7 +36,7 @@ for port in $(seq 29500 29509); do
 done
 
 # 3=============== Run container ===============
-sudo docker run --gpus all -i -t --name $CONTAINER_NAME \
+sudo docker run -d --gpus all -i -t --name $CONTAINER_NAME \
             -v ${HOME}/workspace/aicomp:$CONTAINER_WORKSPACE_DIR \
             --ipc=host \
             --network=host \

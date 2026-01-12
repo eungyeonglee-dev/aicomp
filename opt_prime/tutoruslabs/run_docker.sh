@@ -11,11 +11,8 @@ if sudo docker ps -q --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
     echo "===> Container '$CONTAINER_NAME' exists."
     echo "===> Removing '$CONTAINER_NAME' container."
     # 2>/dev/null: suppress error messages
-    sudo docker stop $CONTAINER_NAME 2>/dev/null
-
-    echo "===> Removing '$CONTAINER_NAME' container."
-    sudo docker rm $CONTAINER_NAME
-
+    sudo docker rm -f $CONTAINER_NAME
+    sleep 2
     echo "===> Container '$CONTAINER_NAME' removed successfully."
 fi
 

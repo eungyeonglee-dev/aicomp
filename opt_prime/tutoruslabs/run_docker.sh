@@ -36,13 +36,14 @@ for port in $(seq 29500 29509); do
 done
 
 # 3=============== Run container ===============
-sudo docker run -d --gpus all -i -t --name $CONTAINER_NAME \
+sudo docker run -d --gpus all --name $CONTAINER_NAME \
             -v ${HOME}/workspace/aicomp:$CONTAINER_WORKSPACE_DIR \
             --ipc=host \
             --network=host \
             -w $CONTAINER_WORKSPACE_DIR \
             -e LLAMA_ACCESS_TOKEN=$LLAMA_ACCESS_TOKEN \
-            $CONTAINER_IMAGE bash -lc "tail -f /dev/null"
+            --entrypoint /bin/bash \
+            $CONTAINER_IMAGE -c "tail -f /dev/null"
 echo "===> Container '$CONTAINER_NAME' created."
 
 # install gpustat

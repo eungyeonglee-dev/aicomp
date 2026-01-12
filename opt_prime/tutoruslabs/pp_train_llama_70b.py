@@ -110,6 +110,9 @@ print(f"rank:{rank}, world_size:{world_size}, init_method:{init_method}, local_w
 dist.init_process_group("nccl", rank=rank, world_size=world_size, init_method=init_method, timeout=timeout)
 
 group_gloo = dist.new_group(backend="gloo", timeout=timeout)
+store = dist.distributed_c10d._get_default_store()
+if store is not None:
+    store.set_timeout(timeout)
 ###
 
 

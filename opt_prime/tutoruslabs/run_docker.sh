@@ -40,6 +40,7 @@ sudo docker run -d --gpus all --name $CONTAINER_NAME \
             -e TORCH_DISTRIBUTED_DEBUG=DETAIL \
             -e TORCH_SHOW_CPP_STACKTRACES=1 \
             -e NCCL_SOCKET_IFNAME=ibp194s0,ibs8 \
+            -e GLOO_SOCKET_IFNAME=enp34s0f0,enp33s0f0,enp35s0f0np0\
             -e TORCH_NCCL_ASYNC_ERROR_HANDLING=1 \
             -e TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=18000 \
             -e HF_DATASETS_OFFLINE=1 \

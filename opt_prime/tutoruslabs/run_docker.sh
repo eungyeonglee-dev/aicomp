@@ -5,9 +5,8 @@ CONTAINER_IMAGE="etri_test_image:latest"
 CONTAINER_WORKSPACE_DIR="/workspace/aicomp"
 
 # 1=============== Remove existing container ===============
-CID=$(sudo docker ps -q -f name="^/${CONTAINER_NAME}$")
 
-if sudo docker ps -q --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
+if sudo docker ps -aq --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
     echo "===> Container '$CONTAINER_NAME' exists."
     echo "===> Removing '$CONTAINER_NAME' container."
     # 2>/dev/null: suppress error messages

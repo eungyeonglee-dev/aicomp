@@ -20,7 +20,7 @@ for port in $(seq 29500 29509); do
     if sudo lsof -i :$port >/dev/null 2>&1; then
         echo "===> Port $port is already in use."
         echo "===> Cleaning up port $port"
-        sudo lsof -i :$port | xargs -r sudo kill -9
+        sudo kill -9 $(sudo lsof -t -i :$port) 2>/dev/null || true
         echo "===> Port $port cleaned up."
         sleep 2
     else

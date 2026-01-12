@@ -65,6 +65,7 @@ sudo docker run -d --gpus all --name $CONTAINER_NAME \
             -e TORCH_SHOW_CPP_STACKTRACES=1 \
             -e NCCL_SOCKET_IFNAME=$ETH_IFNAME \
             -e GLOO_SOCKET_IFNAME=$ETH_IFNAME \
+            -e NCCL_IB_DISABLE=1 \
             -e TORCH_NCCL_ASYNC_ERROR_HANDLING=1 \
             -e TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=18000 \
             -e HF_DATASETS_OFFLINE=1 \

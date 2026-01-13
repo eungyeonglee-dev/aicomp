@@ -29,30 +29,6 @@ for port in $(seq 29500 29509); do
 done
 
 # 3=============== Run container ===============
-HOSTNAME=$(hostname)
-case "$HOSTNAME" in
-    "s1")
-        IB_IFNAME="ibp194s0"
-        ETH_IFNAME="enp34s0f0"
-        ;;
-    "s5")
-        IB_IFNAME="ibp194s0"
-        ETH_IFNAME="enp34s0f0"
-        ;;
-    "s6")
-        IB_IFNAME="ibp194s0"
-        ETH_IFNAME="enp33s0f0"
-        ;;
-    "s8")
-        IB_IFNAME="ibp194s0"
-        ETH_IFNAME="enp35s0f0np0"
-        ;;
-    *)
-        echo "===> Unknown hostname: $HOSTNAME"
-        echo "===> Please check the hostname and set the IB_IFNAME and ETH_IFNAME."
-        exit 1
-    ;;
-esac    
 sudo docker run -d --gpus all --name $CONTAINER_NAME \
             -v ${HOME}/workspace/aicomp:$CONTAINER_WORKSPACE_DIR \
             --ipc=host \
@@ -67,18 +43,6 @@ echo "===> Container '$CONTAINER_NAME' created."
 echo "===> Installing gpustat."
 sudo docker exec -it $CONTAINER_NAME pip install gpustat
 echo "===> Gpustat installed successfully."
-
-# infiniband deactivation
-# echo "===> Deactivating network without ethernet interface."
-# sudo docker exec $CONTAINER_NAME ip link set $IB_IFNAME down 2>/dev/null || true
-# sudo docker exec $CONTAINER_NAME ip link set docker0 down 2>/dev/null || true
-# case "$HOSTNAME" in
-#     "s6")
-#         sudo docker exec $CONTAINER_NAME ip link set br-76f0280ffba5 down 2>/dev/null || true
-#         ;;
-#     *)
-#         ;;
-# esac
 
 echo "===> Network Interfaces after disabling IB"
 sudo docker exec $CONTAINER_NAME hostname -I

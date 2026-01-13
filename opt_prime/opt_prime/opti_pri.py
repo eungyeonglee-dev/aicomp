@@ -27,7 +27,7 @@ import os
 import glob
 import datetime
 
-from opt_prime.utils import ts, log
+from opt_prime.utils import ts, log, log_special_nodes
 
 #logging.basicConfig(level=logging.DEBUG)
 #logging.basicConfig(level=logging.INFO)
@@ -619,9 +619,7 @@ class Optimus_p:
                 self.model_type = special_nodes_obj[3]
 
 
-        print(f" *********** rank:{rank} cross-referenced nodes *****************")
-        print(f"   special_nodes: {self.run_info.special_nodes}")
-        print(f" *************************************************************************")
+        log_special_nodes(rank, world_size, self.run_info.special_nodes)
 
         #if self.clean_module_memory == True:
         #    if (ir_analyze == IR_Anal.PARALLEL) or (ir_analyze == IR_Anal.SINGLE and rank == 0):

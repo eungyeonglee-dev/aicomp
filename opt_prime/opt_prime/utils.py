@@ -9,7 +9,7 @@ def log(line: str) -> None:
 
 def log_special_nodes(rank: int, world_size: int, special_nodes: dict,
                       *, min_span: int = 2, topk: int = 5):
-    s = _summerize_special_nodes(special_nodes, min_span, topk)
+    s = _summerize_special_nodes(special_nodes)
     if rank == 0:
         log(f" special_nodes by rank | world_size={world_size} | far=span>={min_span} | topk={topk}")
     log(f" special_nodes | total={s['total']} far={s['far']} max_span={s['max_span']} dropped_submod_adj={s['dropped_submod_adj']}")

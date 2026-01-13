@@ -47,7 +47,7 @@ MAX_TIME=18000
 
 # BATCH_SIZES=(64 32 16)
 # MICRO_BATCH_SIZES=(1 4 8 16 32 64)
-BATCH_SIZES=(32)
+BATCH_SIZES=(1)
 MICRO_BATCH_SIZES=(1)
 
 RESULT_DIR="results"
@@ -122,8 +122,8 @@ COUNTER=0
 for BATCH in "${BATCH_SIZES[@]}"; do
   for MICRO_BATCH in "${MICRO_BATCH_SIZES[@]}"; do
 
-    if [ $MICRO_BATCH -ge $BATCH ]; then
-      echo ">>> Skip: batch=$BATCH, micro_batch=$MICRO_BATCH (MICRO_BATCH >= BATCH)"
+    if [ $MICRO_BATCH -gt $BATCH ]; then
+      echo ">>> Skip: batch=$BATCH, micro_batch=$MICRO_BATCH (MICRO_BATCH > BATCH)"
       continue
     fi
 

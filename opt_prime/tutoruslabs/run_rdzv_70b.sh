@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# export NCCL_DEBUG=INFO # DEBUG
+export NCCL_DEBUG=INFO # DEBUG
 # Communication debug flag
 # export NCCL_DEBUG_SUBSYS=ALL
 # export TORCH_DISTRIBUTED_DEBUG=DETAIL
@@ -8,7 +8,7 @@
 # export NCCL_SOCKET_IFNAME=ibp194s0,ibs8
 
 # 피어가 죽으면 다른 랭크도 통신 에러로 즉시 터지도록
-# export TORCH_NCCL_ASYNC_ERROR_HANDLING=1 # NCCL_ASYNC_ERROR_HANDLING is deprecated
+export TORCH_NCCL_ASYNC_ERROR_HANDLING=1 # NCCL_ASYNC_ERROR_HANDLING is deprecated
 #export NCCL_BLOCKING_WAIT=0
 #export TORCH_DIST_INIT_BARRIER=1
 
@@ -116,7 +116,7 @@ for COMBO in "${COMBINATIONS[@]}"; do
 done
 echo "================================================="
 
-COUNTER=4
+COUNTER=0
 
 # 모델 학습
 for BATCH in "${BATCH_SIZES[@]}"; do

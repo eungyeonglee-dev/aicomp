@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Kill processes occupying port 29500
-TARGET_PORT=29500
+TARGET_PORT=29505
 echo "[INFO] Killing process on port $TARGET_PORT..."
 # Find PIDs using lsof (-t: PID only, -i: check port)
 PORT_PID=$(sudo lsof -t -i:$TARGET_PORT)

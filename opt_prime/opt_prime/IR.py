@@ -45,10 +45,360 @@ from transformers.utils.fx import _SUPPORTED_MODELS
 
 from opt_prime.utils import ts, log
 
+from torch.fx.interpreter import Interpreter
+from collections import defaultdict
+from typing import Dict, Tuple, List, Optional
+import re
+
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 logging.basicConfig(level=logging.ERROR)
+
+
+class LayerProfileInterpreter(Interpreter):
+    """
+    FX Graph의 레이어별 연산 시간을 정확히 측정하는 Interpreter.
+    
+    레이어 X의 시간 = model_layers_X의 첫 call_module 시작 ~ 
+                     model_layers_(X+1)의 첫 call_module 직전까지의 모든 노드 시간 합
+    
+    Usage:
+        profiler = LayerProfileInterpreter(submod, use_cuda=True)
+        output = profiler.run(input_tensor)
+        profiler.print_layer_profile()
+    """
+    
+    def __init__(self, gm: GraphModule, use_cuda: bool = True):
+        super().__init__(gm)
+        self.use_cuda = use_cuda
+        
+        # 노드별 시간 기록
+        self.node_times: Dict[str, List[dict]] = defaultdict(list)
+        
+        # 레이어별 시간 기록 (모든 노드 포함)
+        self.layer_times: Dict[str, List[float]] = defaultdict(list)
+        
+        # 현재 활성 레이어 추적
+        self._current_layer: Optional[str] = None
+        self._layer_accumulated_time: float = 0.0
+        
+        # 레이어 경계 정보 미리 분석
+        self._layer_boundaries = self._analyze_layer_boundaries()
+        
+    def _extract_layer_id(self, node_name: str) -> Optional[str]:
+        """
+        노드 이름에서 레이어 ID 추출
+        예: model_layers_1_self_attn_q_proj -> model_layers_1
+            model_layers_15_mlp_down_proj -> model_layers_15
+        """
+        match = re.match(r'(model_layers_\d+)', node_name)
+        return match.group(1) if match else None
+    
+    def _analyze_layer_boundaries(self) -> Dict[str, Tuple[str, str]]:
+        """
+        그래프를 분석하여 각 레이어의 시작/끝 노드 식별
+        Returns: {layer_id: (first_node_name, last_node_name)}
+        """
+        boundaries = {}
+        current_layer = None
+        first_node = None
+        last_node = None
+        
+        for node in self.module.graph.nodes:
+            layer_id = self._extract_layer_id(node.name)
+            
+            if layer_id and layer_id != current_layer:
+                # 이전 레이어 마무리
+                if current_layer and first_node:
+                    boundaries[current_layer] = (first_node, last_node)
+                
+                # 새 레이어 시작
+                current_layer = layer_id
+                first_node = node.name
+                last_node = node.name
+            elif current_layer:
+                # 현재 레이어 계속 (중간 노드들도 포함)
+                last_node = node.name
+        
+        # 마지막 레이어 마무리
+        if current_layer and first_node:
+            boundaries[current_layer] = (first_node, last_node)
+        
+        return boundaries
+    
+    def run_node(self, n: Node):
+        """각 노드 실행 시 시간 측정 및 레이어별 누적"""
+        
+        # 현재 노드가 속한 레이어 확인
+        node_layer = self._extract_layer_id(n.name)
+        
+        # 새로운 레이어 시작 감지 (call_module이면서 새 레이어)
+        if node_layer and node_layer != self._current_layer and n.op == 'call_module':
+            # 이전 레이어 종료 처리
+            if self._current_layer and self._layer_accumulated_time > 0:
+                self.layer_times[self._current_layer].append(self._layer_accumulated_time)
+            
+            # 새 레이어 시작
+            self._current_layer = node_layer
+            self._layer_accumulated_time = 0.0
+        
+        # 시간 측정 시작
+        if self.use_cuda:
+            start_event = torch.cuda.Event(enable_timing=True)
+            end_event = torch.cuda.Event(enable_timing=True)
+            torch.cuda.synchronize()
+            start_event.record()
+        else:
+            start_time = time.perf_counter()
+        
+        # 실제 노드 실행
+        result = super().run_node(n)
+        
+        # 시간 측정 종료
+        if self.use_cuda:
+            end_event.record()
+            torch.cuda.synchronize()
+            elapsed_ms = start_event.elapsed_time(end_event)
+        else:
+            elapsed_ms = (time.perf_counter() - start_time) * 1000
+        
+        # 노드별 시간 기록
+        self.node_times[n.name].append({
+            'op': n.op,
+            'target': str(n.target)[:50],
+            'time_ms': elapsed_ms,
+            'layer': self._current_layer
+        })
+        
+        # 현재 활성 레이어에 시간 누적
+        if self._current_layer:
+            self._layer_accumulated_time += elapsed_ms
+        
+        return result
+    
+    def finalize(self):
+        """마지막 레이어 시간 기록 완료"""
+        if self._current_layer and self._layer_accumulated_time > 0:
+            self.layer_times[self._current_layer].append(self._layer_accumulated_time)
+            self._layer_accumulated_time = 0.0
+    
+    def reset(self):
+        """iteration 간 상태 리셋 (누적 통계는 유지)"""
+        self._current_layer = None
+        self._layer_accumulated_time = 0.0
+    
+    def get_layer_summary(self) -> Dict[str, dict]:
+        """레이어별 시간 요약 (자연 정렬)"""
+        self.finalize()
+        
+        summary = {}
+        for layer_id, times in self.layer_times.items():
+            if times:
+                summary[layer_id] = {
+                    'mean_ms': sum(times) / len(times),
+                    'total_ms': sum(times),
+                    'min_ms': min(times),
+                    'max_ms': max(times),
+                    'calls': len(times)
+                }
+        
+        # 자연 정렬 (model_layers_1, model_layers_2, ..., model_layers_10, ...)
+        def natural_sort_key(key):
+            match = re.search(r'(\d+)', key)
+            return int(match.group(1)) if match else 0
+        
+        return dict(sorted(summary.items(), key=lambda x: natural_sort_key(x[0])))
+    
+    def get_node_summary(self, top_n: int = 50) -> Dict[str, dict]:
+        """노드별 시간 요약 (시간 내림차순)"""
+        summary = {}
+        for node_name, records in self.node_times.items():
+            times = [r['time_ms'] for r in records]
+            if times:
+                summary[node_name] = {
+                    'op': records[0]['op'],
+                    'target': records[0]['target'],
+                    'layer': records[0]['layer'],
+                    'mean_ms': sum(times) / len(times),
+                    'total_ms': sum(times),
+                    'calls': len(times)
+                }
+        
+        sorted_summary = dict(sorted(summary.items(), key=lambda x: x[1]['total_ms'], reverse=True))
+        return dict(list(sorted_summary.items())[:top_n])
+    
+    def get_layer_node_breakdown(self, layer_id: str) -> Dict[str, dict]:
+        """특정 레이어의 노드별 시간 분해"""
+        breakdown = {}
+        for node_name, records in self.node_times.items():
+            layer_records = [r for r in records if r['layer'] == layer_id]
+            if layer_records:
+                times = [r['time_ms'] for r in layer_records]
+                breakdown[node_name] = {
+                    'op': layer_records[0]['op'],
+                    'target': layer_records[0]['target'],
+                    'mean_ms': sum(times) / len(times),
+                    'total_ms': sum(times),
+                    'calls': len(times)
+                }
+        
+        return dict(sorted(breakdown.items(), key=lambda x: x[1]['total_ms'], reverse=True))
+    
+    def print_layer_profile(self, rank: int = 0):
+        """레이어별 프로파일 출력"""
+        if int(os.environ.get('RANK', 0)) != rank:
+            return
+        
+        summary = self.get_layer_summary()
+        total_time = sum(s['mean_ms'] for s in summary.values())
+        
+        print(f"\n{'='*85}")
+        print(f" Layer Profile (Total: {total_time:.2f} ms)")
+        print(f"{'='*85}")
+        print(f"{'Layer':<20} {'Mean(ms)':<12} {'Min(ms)':<12} {'Max(ms)':<12} {'Calls':<8} {'%':<8}")
+        print(f"{'-'*85}")
+        
+        for layer_id, stats in summary.items():
+            pct = (stats['mean_ms'] / total_time * 100) if total_time > 0 else 0
+            print(f"{layer_id:<20} {stats['mean_ms']:<12.4f} {stats['min_ms']:<12.4f} "
+                  f"{stats['max_ms']:<12.4f} {stats['calls']:<8} {pct:<8.2f}")
+        
+        print(f"{'='*85}")
+    
+    def print_node_profile(self, top_n: int = 30, rank: int = 0):
+        """노드별 프로파일 출력"""
+        if int(os.environ.get('RANK', 0)) != rank:
+            return
+        
+        print(f"\n{'='*100}")
+        print(f" Top {top_n} Nodes by Time")
+        print(f"{'='*100}")
+        print(f"{'Node Name':<45} {'Op':<15} {'Layer':<18} {'Mean(ms)':<12} {'Calls':<8}")
+        print(f"{'-'*100}")
+        
+        for node_name, stats in self.get_node_summary(top_n).items():
+            layer = stats['layer'] or 'N/A'
+            print(f"{node_name[:45]:<45} {stats['op']:<15} {layer:<18} "
+                  f"{stats['mean_ms']:<12.4f} {stats['calls']:<8}")
+        
+        print(f"{'='*100}")
+    
+    def print_layer_breakdown(self, layer_id: str, rank: int = 0):
+        """특정 레이어의 노드별 시간 분해 출력"""
+        if int(os.environ.get('RANK', 0)) != rank:
+            return
+        
+        breakdown = self.get_layer_node_breakdown(layer_id)
+        total_time = sum(s['mean_ms'] for s in breakdown.values())
+        
+        print(f"\n{'='*90}")
+        print(f" {layer_id} Breakdown (Total: {total_time:.4f} ms)")
+        print(f"{'='*90}")
+        print(f"{'Node Name':<50} {'Op':<15} {'Mean(ms)':<12} {'%':<10}")
+        print(f"{'-'*90}")
+        
+        for node_name, stats in breakdown.items():
+            pct = (stats['mean_ms'] / total_time * 100) if total_time > 0 else 0
+            print(f"{node_name[:50]:<50} {stats['op']:<15} {stats['mean_ms']:<12.4f} {pct:<10.2f}")
+        
+        print(f"{'='*90}")
+
+    def get_node_range_time(self, start_node: str, end_node: str) -> Dict[str, any]:
+        """
+        특정 노드 범위의 시간을 측정합니다.
+        
+        Args:
+            start_node: 시작 노드 이름 (예: 'model_layers_0_self_attn_q_proj')
+            end_node: 끝 노드 이름 (예: 'model_layers_0_mlp_down_proj')
+        
+        Returns:
+            Dict containing total time, node details, and statistics
+        """
+        self.finalize()
+        
+        # 그래프에서 노드 순서 결정
+        node_order = [n.name for n in self.module.graph.nodes]
+        
+        # 시작/끝 노드 인덱스 찾기
+        start_idx = -1
+        end_idx = -1
+        
+        for i, name in enumerate(node_order):
+            if start_node in name and start_idx == -1:
+                start_idx = i
+            if end_node in name:
+                end_idx = i
+        
+        if start_idx == -1 or end_idx == -1:
+            return {
+                'error': f'Node not found: start={start_node}, end={end_node}',
+                'available_nodes': [n for n in node_order if 'model_layers' in n][:20]
+            }
+        
+        # 범위 내 노드들의 시간 합산
+        range_nodes = node_order[start_idx:end_idx + 1]
+        total_time_ms = 0.0
+        node_details = []
+        
+        for node_name in range_nodes:
+            if node_name in self.node_times:
+                records = self.node_times[node_name]
+                times = [r['time_ms'] for r in records]
+                if times:
+                    mean_time = sum(times) / len(times)
+                    total_time_ms += mean_time
+                    node_details.append({
+                        'name': node_name,
+                        'op': records[0]['op'],
+                        'mean_ms': mean_time,
+                        'calls': len(times)
+                    })
+        
+        return {
+            'start_node': start_node,
+            'end_node': end_node,
+            'total_time_ms': total_time_ms,
+            'num_nodes': len(node_details),
+            'node_details': node_details
+        }
+
+    def print_node_range_time(self, start_node: str, end_node: str, rank: int = 0):
+        """
+        특정 노드 범위의 시간을 출력합니다.
+        
+        Args:
+            start_node: 시작 노드 이름 패턴 (예: 'model_layers_0_self_attn_q_proj')
+            end_node: 끝 노드 이름 패턴 (예: 'model_layers_0_mlp_down_proj')
+            rank: 출력할 rank (기본값: 0)
+        """
+        if int(os.environ.get('RANK', 0)) != rank:
+            return
+        
+        result = self.get_node_range_time(start_node, end_node)
+        
+        if 'error' in result:
+            print(f"\n{'='*80}")
+            print(f" ERROR: {result['error']}")
+            print(f" Available nodes (first 20):")
+            for n in result.get('available_nodes', []):
+                print(f"   - {n}")
+            print(f"{'='*80}")
+            return
+        
+        print(f"\n{'='*100}")
+        print(f" Node Range Profile: {result['start_node']} -> {result['end_node']}")
+        print(f" Total Time: {result['total_time_ms']:.4f} ms ({result['num_nodes']} nodes)")
+        print(f"{'='*100}")
+        print(f"{'Node Name':<55} {'Op':<15} {'Mean(ms)':<15} {'Calls':<10}")
+        print(f"{'-'*100}")
+        
+        for node in result['node_details']:
+            print(f"{node['name'][:55]:<55} {node['op']:<15} {node['mean_ms']:<15.4f} {node['calls']:<10}")
+        
+        print(f"{'-'*100}")
+        print(f"{'TOTAL':<55} {'':<15} {result['total_time_ms']:<15.4f}")
+        print(f"{'='*100}")
 
 class IR_Anal(Enum):
     SINGLE = 1      # Experimental
@@ -134,6 +484,36 @@ class IR(object):
             print(f"Not supported model!")
             sys.exit(1)
 
+    def print_graph_all_nodes(self, rank: int = 0):
+        if int(os.environ.get('RANK', 0)) != rank:
+            return
+        log(f"\n{'='*80}")
+        log(f" FX graph")
+        log(f"{'='*80}")
+        module_idx = 0
+        for n in self.gm.graph.nodes:
+            if n.op == 'call_module':
+                target_str = getattr(n.target, '__name__', str(n.target))
+            else:
+                target_str = str(n.target)
+            
+            args_str = []
+            for arg in n.args:
+                if hasattr(arg, 'name'):
+                    args_str.append(f"%{arg.name}")
+                else:
+                    args_str.append(str(arg)[:30])
+            args_display = f"({', '.join(args_str)}"
+
+            if n.op == 'call_module':
+                log(f"[{module_idx:3d}] {n.op:15s} | {n.name:35s} | {target_str}")
+                log(f"       args: {args_display}")
+                module_idx += 1
+            else:
+                log(f"      {n.op:15s} | {n.name:35s} | {target_str}")
+                log(f"       args: {args_display}")
+            
+        
 
     def split_IR(self, model: nn.Module, method, num_stage):
 

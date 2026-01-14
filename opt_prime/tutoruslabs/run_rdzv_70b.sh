@@ -1,68 +1,67 @@
 #!/bin/bash
+#
+# Copyright (c) 2025-present, ETRI, All rights reserved.
+#
+# Distributed Training / Layer Profiling Script for Llama 70B
+#
+# Usage:
+#   Training Mode:
+#     ./run_rdzv_70b.sh <MODEL_NAME> <NODE_RANK> <MASTER_ADDR> <NNODES> <NPROC> <USE_CACHE> <PP> <TP> <DP>
+#
+#   Profile Mode:
+#     ./run_rdzv_70b.sh <MODEL_NAME> <NODE_RANK> <MASTER_ADDR> <NNODES> <NPROC> <USE_CACHE> <PP> <TP> <DP> profile
+#
 
-export NCCL_DEBUG=INFO # DEBUG
-# Communication debug flag
-# export NCCL_DEBUG_SUBSYS=ALL
-# export TORCH_DISTRIBUTED_DEBUG=DETAIL
-# export TORCH_SHOW_CPP_STACKTRACES=1
-# export NCCL_SOCKET_IFNAME=ibp194s0,ibs8
-
-# 피어가 죽으면 다른 랭크도 통신 에러로 즉시 터지도록
-export TORCH_NCCL_ASYNC_ERROR_HANDLING=1 # NCCL_ASYNC_ERROR_HANDLING is deprecated
-#export NCCL_BLOCKING_WAIT=0
-#export TORCH_DIST_INIT_BARRIER=1
-
+export NCCL_DEBUG=INFO
+export TORCH_NCCL_ASYNC_ERROR_HANDLING=1
 unset NCCL_BLOCKING_WAIT
-export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=18000 # 5 hours
+export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=18000
 
 export HF_DATASETS_OFFLINE=1
 export HF_HUB_OFFLINE=1
 
 ############################################
-# User params
+# Arguments
 ############################################
-# models
-# "meta-llama/Llama-3.2-1B"
-# "meta-llama/Llama-3.2-3B"
-# "meta-llama/Llama-3.1-8B-Instruct"
-# "meta-llama/Llama-2-13b-chat-hf"
-# "meta-llama/Llama-3.3-70B-Instruct"
-
 MODEL_NAME="${1:-meta-llama/Llama-3.3-70B-Instruct}"
 NODE_RANK="${2:-0}"
 MASTER_ADDR="${3:-127.0.0.1}"
 NNODES="${4:-1}"
 NPROC_PER_NODE="${5:-8}"
 USE_CACHE="${6:-True}"
-
-# PP/TP/DP 값을 명령줄 인자 또는 환경변수로 받기
-# 명령줄 인자: $7=PP, $8=TP, $9=DP
-# 환경변수: PP_SIZE, TP_SIZE, DP_SIZE
-PP_SIZE="${7:-${PP_SIZE:-32}}"
+PP_SIZE="${7:-${PP_SIZE:-2}}"
 TP_SIZE="${8:-${TP_SIZE:-1}}"
 DP_SIZE="${9:-${DP_SIZE:-1}}"
+PROFILE_MODE="${10:-}"  # "profile" to enable
 
 WORLD_SIZE=$(( NNODES * NPROC_PER_NODE ))
 MAX_TIME=18000
 
-# BATCH_SIZES=(64 32 16)
-# MICRO_BATCH_SIZES=(1 4 8 16 32 64)
+# Batch settings
 BATCH_SIZES=(2)
 MICRO_BATCH_SIZES=(1)
+
+# Profile settings (when PROFILE_MODE="profile")
+PROFILE_STEPS=15
+PROFILE_WARMUP=10
+NUM_HIDDEN_LAYERS=2
 
 RESULT_DIR="results"
 mkdir -p "$RESULT_DIR"
 MODEL_FILENAME=$(echo "$MODEL_NAME" | cut -d'/' -f2)
 
-# 마스터 전용 결과 파일
+# Result file (master only)
 RESULT_FILEPATH="$RESULT_DIR/${MODEL_FILENAME}.csv"
 if [ "$NODE_RANK" -eq 0 ] && [ ! -f "$RESULT_FILEPATH" ]; then
   echo "batch_size,micro_batch_size,pp_size,tp_size,dp_size,training_time(sec)" > "$RESULT_FILEPATH"
 fi
 
+############################################
+# Helper Functions
+############################################
 status_from_exit() {
   case "$1" in
-    0)  echo "" ;;                 # 성공 시엔 숫자 시간 기록이 들어감
+    0)  echo "" ;;
     10) echo "OOM ERROR" ;;
     20) echo "DIST ERROR" ;;
     30) echo "EXCEPTION" ;;
@@ -74,22 +73,20 @@ status_from_exit() {
   esac
 }
 
-# PP/TP/DP 조합 생성
+############################################
+# Validate PP/TP/DP
+############################################
 COMBINATIONS=()
 
-# PP_SIZE, TP_SIZE, DP_SIZE가 모두 지정되어 있으면 해당 값 사용
 if [ -n "$PP_SIZE" ] && [ -n "$TP_SIZE" ] && [ -n "$DP_SIZE" ]; then
-  # 값 검증: PP * TP * DP == WORLD_SIZE
   if [ $((PP_SIZE * TP_SIZE * DP_SIZE)) -eq $WORLD_SIZE ]; then
     COMBINATIONS+=("$PP_SIZE $TP_SIZE $DP_SIZE")
-    echo "Using specified PP/TP/DP values: PP=$PP_SIZE, TP=$TP_SIZE, DP=$DP_SIZE"
+    echo "Using specified PP/TP/DP: PP=$PP_SIZE, TP=$TP_SIZE, DP=$DP_SIZE"
   else
-    echo "ERROR: PP($PP_SIZE) * TP($TP_SIZE) * DP($DP_SIZE) = $((PP_SIZE * TP_SIZE * DP_SIZE)) != WORLD_SIZE($WORLD_SIZE)"
-    echo "Please ensure PP * TP * DP equals WORLD_SIZE"
+    echo "ERROR: PP($PP_SIZE) * TP($TP_SIZE) * DP($DP_SIZE) != WORLD_SIZE($WORLD_SIZE)"
     exit 1
   fi
 else
-  # 지정되지 않았으면 기존 자동 생성 로직 사용
   echo "Auto-generating PP/TP/DP combinations..."
   for ((PP=2; PP<=WORLD_SIZE; PP*=2)); do
     for ((TP=1; TP<=WORLD_SIZE; TP*=2)); do
@@ -102,70 +99,70 @@ else
   done
 fi
 
-# 정렬: PP desc, TP desc, DP desc (여러 조합이 있을 때만)
+# Sort by PP desc
 if [ ${#COMBINATIONS[@]} -gt 1 ]; then
-  mapfile -t COMBINATIONS < <(
-    printf '%s\n' "${COMBINATIONS[@]}" | sort -k1,1nr -k2,2nr -k3,3nr
-  )
+  mapfile -t COMBINATIONS < <(printf '%s\n' "${COMBINATIONS[@]}" | sort -k1,1nr -k2,2nr -k3,3nr)
 fi
 
-echo "======== Generated PP/TP/DP combinations ========"
+echo "================================================="
+echo " Mode: $([ "$PROFILE_MODE" = "profile" ] && echo "PROFILE" || echo "TRAINING")"
+echo " Model: $MODEL_NAME"
+echo " World Size: $WORLD_SIZE (${NNODES} nodes x ${NPROC_PER_NODE} GPUs)"
+echo " PP/TP/DP combinations:"
 for COMBO in "${COMBINATIONS[@]}"; do
   read PP TP DP <<<"$COMBO"
-  echo "PP=$PP, TP=$TP, DP=$DP"
+  echo "   PP=$PP, TP=$TP, DP=$DP"
 done
 echo "================================================="
 
+############################################
+# Main Loop
+############################################
 COUNTER=0
 
-# 모델 학습
 for BATCH in "${BATCH_SIZES[@]}"; do
   for MICRO_BATCH in "${MICRO_BATCH_SIZES[@]}"; do
 
     if [ $MICRO_BATCH -gt $BATCH ]; then
-      echo ">>> Skip: batch=$BATCH, micro_batch=$MICRO_BATCH (MICRO_BATCH > BATCH)"
+      echo ">>> Skip: MICRO_BATCH($MICRO_BATCH) > BATCH($BATCH)"
       continue
     fi
-
-    NUM_MB=$(( BATCH / MICRO_BATCH ))
 
     for COMBO in "${COMBINATIONS[@]}"; do
       read PP TP DP <<<"$COMBO"
 
-      # Deadlock 조건만 샘플링: num_mb < pp_size 인 경우만 실험
-      # if [ "$NUM_MB" -ge "$PP" ]; then
-      #   echo ">>> Skip: batch=$BATCH, micro_batch=$MICRO_BATCH, PP=$PP (num_mb=${NUM_MB} >= PP → 1F1B 가드 조건 아님.)"
-      #   continue
-      # fi
-
       RUN_ID="${MODEL_FILENAME}-${BATCH}-${MICRO_BATCH}-${PP}-${TP}-${DP}"
+      [ "$PROFILE_MODE" = "profile" ] && RUN_ID="${RUN_ID}-profile"
       
       COUNTER=$((COUNTER+1))
       RDZV_PORT=$((29500 + (COUNTER % 200)))
-
       RDZV_TIMEOUT=18000
 
       echo "================================================="
       echo "RUN_ID            : $RUN_ID"
-      echo "Model             : $MODEL_NAME"
+      echo "Mode              : $([ "$PROFILE_MODE" = "profile" ] && echo "PROFILE" || echo "TRAINING")"
       echo "Batch/Micro       : $BATCH / $MICRO_BATCH"
       echo "PP/TP/DP          : $PP / $TP / $DP"
-      echo "Nodes x GPUs/node : $NNODES x $NPROC_PER_NODE (WORLD_SIZE=$WORLD_SIZE)"
-      echo "RDZV              : c10d ${MASTER_ADDR}:${RDZV_PORT} (timeout=${RDZV_TIMEOUT}s)"
+      echo "RDZV              : ${MASTER_ADDR}:${RDZV_PORT}"
       echo "================================================="
 
       ROLE=$([ "$NODE_RANK" -eq 0 ] && echo "master" || echo "worker")
-      echo "[$ROLE] RUN_ID=$RUN_ID  batch/micro=$BATCH/$MICRO_BATCH  PP/TP/DP=$PP/$TP/$DP"
 
       if [ "$ROLE" = "worker" ]; then
-        echo "Waiting for master rendezvous (${MASTER_ADDR}:${RDZV_PORT})..."
+        echo "Waiting for master rendezvous..."
         while ! nc -z "$MASTER_ADDR" "$RDZV_PORT"; do
           sleep 3
-          echo "Still waiting for master..."
+          echo "Still waiting..."
         done
       fi
 
-      SECONDS=0 # for fallback
+      # Build command args
+      PROFILE_ARGS=""
+      if [ "$PROFILE_MODE" = "profile" ]; then
+        PROFILE_ARGS="--profile_mode --profile_steps $PROFILE_STEPS --profile_warmup_steps $PROFILE_WARMUP --num_hidden_layers $NUM_HIDDEN_LAYERS"
+      fi
+
+      SECONDS=0
       timeout ${MAX_TIME}s env CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
       torchrun \
         --nproc_per_node=$NPROC_PER_NODE \
@@ -185,56 +182,55 @@ for BATCH in "${BATCH_SIZES[@]}"; do
           --tp_size $TP \
           --dp_size $DP \
           --run_id "$RUN_ID" \
-          --use_cache $USE_CACHE
+          --use_cache $USE_CACHE \
+          $PROFILE_ARGS
+
       EXIT_CODE=$?
-      if [ "$EXIT_CODE" -eq 124 ]; then
-        EXIT_CODE=50
-      fi
+      [ "$EXIT_CODE" -eq 124 ] && EXIT_CODE=50
 
       sleep 1
 
-      # tmp/exitcode_<RUN_ID>.txt 에서 EXIT_CODE와 elapsed_time(sec) 같이 읽기
-      EXIT_LOG=$(ls tmp/exitcode_${RUN_ID}.txt 2>/dev/null | tail -n 1)
+      # Read exit code from file
+      EXIT_LOG="tmp/exitcode_${RUN_ID}.txt"
       ELAPSED_SEC=""
       if [ -f "$EXIT_LOG" ]; then
         EXIT_LINE=$(cat "$EXIT_LOG")
-        # "0,123.456" 형식이면 EXIT_CODE, ELAPSED_SEC 분리
         if [[ "$EXIT_LINE" == *,* ]]; then
           EXIT_CODE="${EXIT_LINE%%,*}"
           ELAPSED_SEC="${EXIT_LINE##*,}"
         else
-          # "10" 같이 코드만 있을 때
           EXIT_CODE="$EXIT_LINE"
         fi
       fi
 
-      # 혹시 성공인데 ELAPSED_SEC가 비어 있으면 SECONDS로 fallback
-      if [ "$EXIT_CODE" -eq 0 ] && [ -z "$ELAPSED_SEC" ]; then
-        ELAPSED_SEC=$SECONDS
-      fi
+      [ "$EXIT_CODE" -eq 0 ] && [ -z "$ELAPSED_SEC" ] && ELAPSED_SEC=$SECONDS
 
-      pkill -9 -f "torchrun" || true
-      pkill -9 -f "pp_train_llama.py" || true
-      pkill -9 -f "python" || true
+      # Cleanup
+      pkill -9 -f "torchrun" 2>/dev/null || true
+      pkill -9 -f "pp_train_llama" 2>/dev/null || true
       sleep 2
       fuser -v /dev/nvidia* -k 2>/dev/null || true
 
+      # Record result (master only)
       if [ "$NODE_RANK" -eq 0 ]; then
-        if [ $EXIT_CODE -eq 0 ]; then
-          # 성공: 경과시간 숫자 기록
-          echo "${BATCH},${MICRO_BATCH},${PP},${TP},${DP},${ELAPSED_SEC}" >> "$RESULT_FILEPATH"
-          echo "SUCCESS → recorded ${ELAPSED_SEC}s"
-          #echo "--- END ---"
-          #break 3
+        if [ "$PROFILE_MODE" != "profile" ]; then
+          # Training mode: record to CSV
+          if [ "$EXIT_CODE" -eq 0 ]; then
+            echo "${BATCH},${MICRO_BATCH},${PP},${TP},${DP},${ELAPSED_SEC}" >> "$RESULT_FILEPATH"
+            echo "SUCCESS → ${ELAPSED_SEC}s"
+          else
+            STATUS_STR=$(status_from_exit "$EXIT_CODE")
+            echo "${BATCH},${MICRO_BATCH},${PP},${TP},${DP},${STATUS_STR}" >> "$RESULT_FILEPATH"
+            echo "FAILED (exit=$EXIT_CODE) → '${STATUS_STR}'"
+          fi
         else
-          # 실패: 상태 문자열 기록
-          STATUS_STR=$(status_from_exit "$EXIT_CODE")
-          echo "${BATCH},${MICRO_BATCH},${PP},${TP},${DP},${STATUS_STR}" >> "$RESULT_FILEPATH"
-          echo "FAILED (exit=$EXIT_CODE) → recorded '${STATUS_STR}'"
+          # Profile mode: result is in JSON file
+          if [ "$EXIT_CODE" -eq 0 ]; then
+            echo "PROFILE SUCCESS → results/profile_${RUN_ID}.json"
+          else
+            echo "PROFILE FAILED (exit=$EXIT_CODE)"
+          fi
         fi
-
-        # 중복 제거(헤더 유지)
-        #( head -n 1 "$RESULT_FILEPATH" && tail -n +2 "$RESULT_FILEPATH" | sort -u ) > "${RESULT_FILEPATH}.tmp" && mv "${RESULT_FILEPATH}.tmp" "$RESULT_FILEPATH"
       fi
 
       sleep 5
@@ -242,8 +238,7 @@ for BATCH in "${BATCH_SIZES[@]}"; do
   done
 done
 
-# 결과 파일 정렬
-#if [ "$NODE_RANK" -eq 0 ]; then
-#  (head -n 1 "$RESULT_FILEPATH" && tail -n +2 "$RESULT_FILEPATH" | sort -t',' -k1,1n -k2,2n -k3,3n -k4,4n -k5,5n) > "${RESULT_FILEPATH}.tmp" && mv "${RESULT_FILEPATH}.tmp" "$RESULT_FILEPATH"
-#  echo ">> Master wrote results to: $RESULT_FILEPATH"
-#fi
+echo ""
+echo "================================================="
+echo " Completed!"
+echo "================================================="

@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
 from opt_prime.comm import Comm
-from opt_prime.IR import IR, IR_Anal
+from opt_prime.IR import IR, IR_Anal, LayerProfileInterpreter
 from opt_prime.schedule import ScheduleGPipe 
 from opt_prime.schedule import Schedule1F1B 
 
@@ -376,9 +376,9 @@ class Optimus_p:
         #pp_size = world_size // tp_size // dp_size
 
         if rank == 0:
-            print(f"[{ts()}][rank:0] Optimus_p init: world_size={world_size}")
-            print(f"[{ts()}][rank:0] Optimus_p init: PP={pp_size}, DP={dp_size}, TP={tp_size}")
-            print(f"[{ts()}][rank:0] Optimus_p init: IR={ir_analyze}, use_gpu={use_gpu}")
+            log(f"[rank:0] Optimus_p init: world_size={world_size}")
+            log(f"[rank:0] Optimus_p init: PP={pp_size}, DP={dp_size}, TP={tp_size}")
+            log(f"[rank:0] Optimus_p init: IR={ir_analyze}, use_gpu={use_gpu}")
 
         self.tpl = Topology(rank, local_rank, world_size, pp_size, dp_size, tp_size)
 
@@ -504,7 +504,7 @@ class Optimus_p:
                 self.run_info.output_node = self.ir.get_output_node()
 
                 if rank == 0:
-                    self.ir.print_graph(rank)
+                    self.ir.print_graph_all_nodes(rank)
                     # self.run_info.print_getitem_dic()
 
                 for stage in reversed(range(1, self.tpl.get_num_stage())):
@@ -879,3 +879,60 @@ class Optimus_p:
         self.optimizer.load_state_dict(ckpt['optimizer_state_dict'])
 
         print(f"Checkpoint loaded: {ckpt_path}")
+
+    def profile_layer(self, input_data, warmup_runs: int = 3, measure_runs: int = 5, 
+                      start_node: str = None, end_node: str = None):
+        """
+        레이어별 및 특정 노드 범위의 실행 시간을 프로파일링합니다.
+        
+        Args:
+            input_data: 입력 데이터 (tokenized input_ids)
+            warmup_runs: 웜업 실행 횟수 (기본값: 3)
+            measure_runs: 측정 실행 횟수 (기본값: 5)
+            start_node: 시간 측정 시작 노드 (예: 'model_layers_0_self_attn_q_proj')
+            end_node: 시간 측정 끝 노드 (예: 'model_layers_0_mlp_down_proj')
+        
+        Returns:
+            LayerProfileInterpreter: 프로파일링 결과가 담긴 인터프리터 객체
+        """
+        # 입력 데이터를 디바이스로 이동
+        if isinstance(input_data, torch.Tensor):
+            input_data = input_data.to(self.run_info.device)
+        
+        # LayerProfileInterpreter 생성
+        profiler = LayerProfileInterpreter(
+            self.run_info.submod, 
+            use_cuda=self.use_gpu
+        )
+        
+        # Warmup runs
+        log(f"[rank:{self.tpl.rank}] Profiler warmup ({warmup_runs} runs)...")
+        with torch.no_grad():
+            for _ in range(warmup_runs):
+                profiler.run(input_data)
+                profiler.reset()
+        
+        # Clear warmup data
+        profiler.node_times.clear()
+        profiler.layer_times.clear()
+        
+        # Measurement runs
+        log(f"[rank:{self.tpl.rank}] Profiler measurement ({measure_runs} runs)...")
+        with torch.no_grad():
+            for _ in range(measure_runs):
+                profiler.run(input_data)
+                profiler.reset()
+        
+        # 결과 출력 (rank 0만)
+        if self.tpl.rank == 0:
+            # 전체 레이어 프로파일 출력
+            profiler.print_layer_profile(rank=0)
+            
+            # 특정 노드 범위 프로파일 출력
+            if start_node and end_node:
+                profiler.print_node_range_time(start_node, end_node, rank=0)
+            
+            # Top 노드 출력
+            profiler.print_node_profile(top_n=30, rank=0)
+        
+        return profiler

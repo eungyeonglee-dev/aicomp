@@ -67,6 +67,8 @@ class LayerProfileInterpreter(Interpreter):
         profiler = LayerProfileInterpreter(submod, use_cuda=True)
         output = profiler.run(input_tensor)
         profiler.print_layer_profile()
+    
+    NOTE: 동기화는 finalize()에서 한 번만 수행하여 측정 오버헤드를 최소화합니다.
     """
     
     def __init__(self, gm: GraphModule, use_cuda: bool = True):
@@ -128,7 +130,13 @@ class LayerProfileInterpreter(Interpreter):
         return boundaries
     
     def run_node(self, n: Node):
-        """각 노드 실행 시 시간 측정 및 레이어별 누적"""
+        """
+        각 노드 실행 시 시간 측정.
+        
+        측정 방법:
+        - start_event.record() → 노드 실행 → end_event.record() → end_event.synchronize()
+        - end_event.synchronize()는 해당 이벤트까지만 대기 (torch.cuda.synchronize()보다 효율적)
+        """
         
         # 현재 노드가 속한 레이어 확인
         node_layer = self._extract_layer_id(n.name)
@@ -143,11 +151,10 @@ class LayerProfileInterpreter(Interpreter):
             self._current_layer = node_layer
             self._layer_accumulated_time = 0.0
         
-        # 시간 측정 시작
+        # 시간 측정
         if self.use_cuda:
             start_event = torch.cuda.Event(enable_timing=True)
             end_event = torch.cuda.Event(enable_timing=True)
-            torch.cuda.synchronize()
             start_event.record()
         else:
             start_time = time.perf_counter()
@@ -158,7 +165,7 @@ class LayerProfileInterpreter(Interpreter):
         # 시간 측정 종료
         if self.use_cuda:
             end_event.record()
-            torch.cuda.synchronize()
+            end_event.synchronize()  # 이 이벤트까지만 대기 (효율적)
             elapsed_ms = start_event.elapsed_time(end_event)
         else:
             elapsed_ms = (time.perf_counter() - start_time) * 1000

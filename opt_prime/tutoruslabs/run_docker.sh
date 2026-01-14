@@ -8,14 +8,17 @@
 #   Training Mode:
 #     ./run_docker.sh <MODEL_SIZE> <NODE_RANK> <MASTER_ADDR> <NNODES> <NPROC> <USE_CACHE> <PP> <TP> <DP>
 #
-#   Profile Mode:
+#   Profile Mode (Hook-based):
 #     ./run_docker.sh <MODEL_SIZE> <NODE_RANK> <MASTER_ADDR> <NNODES> <NPROC> <USE_CACHE> <PP> <TP> <DP> profile
+#
+#   Profile Mode (FX Interpreter-based):
+#     ./run_docker.sh <MODEL_SIZE> <NODE_RANK> <MASTER_ADDR> <NNODES> <NPROC> <USE_CACHE> <PP> <TP> <DP> profile_fx
 #
 #   MODEL_SIZE: 1B, 3B, 70B or full model name (e.g., meta-llama/Llama-3.2-1B)
 #
 # Examples:
-#   ./run_docker.sh 70B 0 127.0.0.1 1 2 True 2 1 1 profile   # Profile 70B
-#   ./run_docker.sh 1B 0 127.0.0.1 1 2 True 2 1 1 profile    # Profile 1B
+#   ./run_docker.sh 70B 0 127.0.0.1 1 2 True 2 1 1 profile      # Hook-based profile
+#   ./run_docker.sh 1B 0 127.0.0.1 1 2 True 2 1 1 profile_fx    # FX Interpreter profile
 #
 
 CONTAINER_NAME="etri_test_container"
@@ -107,7 +110,14 @@ esac
 # ============================================================================
 echo ""
 echo "================================================="
-echo " Mode: $([ "$PROFILE_MODE" = "profile" ] && echo "PROFILE" || echo "TRAINING")"
+if [ "$PROFILE_MODE" = "profile" ]; then
+    MODE_STR="PROFILE (Hook-based)"
+elif [ "$PROFILE_MODE" = "profile_fx" ]; then
+    MODE_STR="PROFILE (FX Interpreter)"
+else
+    MODE_STR="TRAINING"
+fi
+echo " Mode: $MODE_STR"
 echo " Model: $MODEL_NAME"
 echo " PP=$PP_SIZE, TP=$TP_SIZE, DP=$DP_SIZE"
 echo "================================================="
@@ -116,6 +126,8 @@ echo "================================================="
 TIMESTAMP=$(date +%Y%m%d%H%M%S)
 if [ "$PROFILE_MODE" = "profile" ]; then
     LOGFILE="./results/${TIMESTAMP}_profile.log"
+elif [ "$PROFILE_MODE" = "profile_fx" ]; then
+    LOGFILE="./results/${TIMESTAMP}_profile_fx.log"
 else
     LOGFILE="./results/${TIMESTAMP}.log"
 fi
@@ -131,7 +143,11 @@ echo "===> Running $CONTAINER_NAME"
 
 # Build profile argument
 PROFILE_ARG=""
-[ "$PROFILE_MODE" = "profile" ] && PROFILE_ARG="profile"
+if [ "$PROFILE_MODE" = "profile" ]; then
+    PROFILE_ARG="profile"
+elif [ "$PROFILE_MODE" = "profile_fx" ]; then
+    PROFILE_ARG="profile_fx"
+fi
 
 docker exec -it $CONTAINER_NAME \
     /bin/bash -lc "cd /workspace/aicomp/opt_prime/tutoruslabs && \

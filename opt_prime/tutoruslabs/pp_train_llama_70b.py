@@ -63,6 +63,7 @@ parser.add_argument("--run_id", type=str, default="default")
 
 # Profile mode settings
 parser.add_argument("--profile_mode", action="store_true", help="Enable layer profiling mode")
+parser.add_argument("--profile_fx", action="store_true", help="Use FX Interpreter-based profiling (node-level)")
 parser.add_argument("--profile_steps", type=int, default=15, help="Total profiling steps")
 parser.add_argument("--profile_warmup_steps", type=int, default=10, help="Warmup steps before measurement")
 parser.add_argument("--profile_start_node", type=str, default="model_layers_0_self_attn_q_proj")
@@ -338,17 +339,340 @@ def gather_and_print_combined_profile(block_profiler, warmup_steps: int, world_s
 
 
 # ============================================================================
-# Layer Block Profiler (Measures entire layer block: q_proj start -> down_proj end)
+# FX Interpreter-based Layer Profiler (precise node-level timing)
+# ============================================================================
+class FXLayerProfiler:
+    """
+    FX Interpreter 기반 레이어 프로파일러.
+    
+    정확한 경계 기반 측정:
+    - Embedding: model_embed_tokens ~ to_2 (pow_1 직전까지)
+    - Transformer Layer N: pow_(N*2+1) ~ 다음 layer q_proj 직전
+    - LM Head: lm_head 노드
+    
+    FX graph를 직접 순회하며 각 노드의 실행 시간을 측정하고
+    지정된 경계에 따라 그룹화합니다.
+    """
+    
+    def __init__(self, submod, device, rank, stage, num_mb: int = 1):
+        self.submod = submod
+        self.device = device
+        self.rank = rank
+        self.stage = stage
+        self.num_mb = num_mb
+        
+        # Results storage
+        self.step_times = defaultdict(list)  # component -> list of step totals
+        self.current_step_times = defaultdict(float)
+        self.node_times = defaultdict(list)  # node_name -> list of times
+        
+        # Graph analysis
+        self.graph = submod.graph
+        self.node_to_component = {}  # node_name -> component (embedding/layer_N/lm_head)
+        self._analyze_graph()
+        
+        if rank == 0:
+            print(f"[FXLayerProfiler] Initialized with {len(self.node_to_component)} nodes")
+            print(f"[FXLayerProfiler] Components: {set(self.node_to_component.values())}")
+    
+    def _analyze_graph(self):
+        """
+        FX Graph를 분석하여 각 노드의 소속 컴포넌트를 결정합니다.
+        
+        Boundaries (based on log analysis):
+        - Embedding: from model_embed_tokens until we hit pow_1 (RMSNorm start)
+        - Transformer Layer N: from pow_(2N+1) until next layer's q_proj
+        - LM Head: lm_head node
+        """
+        import re
+        
+        current_component = None
+        embedding_ended = False
+        current_layer = -1
+        pow_count = 0
+        
+        # First pass: identify all layer-related nodes
+        layer_q_proj_nodes = {}  # layer_idx -> q_proj node name
+        for node in self.graph.nodes:
+            if 'self_attn_q_proj' in node.name or 'self_attn.q_proj' in str(node.target):
+                match = re.search(r'layers?[_.]?(\d+)', node.name)
+                if match:
+                    layer_idx = int(match.group(1))
+                    if layer_idx not in layer_q_proj_nodes:
+                        layer_q_proj_nodes[layer_idx] = node.name
+        
+        # Second pass: assign components
+        for node in self.graph.nodes:
+            node_name = node.name
+            
+            # Skip placeholder and output nodes
+            if node.op in ['placeholder', 'output']:
+                continue
+            
+            # Check for embedding
+            if 'embed_tokens' in node_name:
+                current_component = 'embedding'
+                embedding_ended = False
+            
+            # Check for lm_head
+            elif 'lm_head' in node_name:
+                current_component = 'lm_head'
+            
+            # Check for pow (RMSNorm start marker)
+            elif node.op == 'call_method' and node.name.startswith('pow'):
+                pow_count += 1
+                
+                if pow_count == 1 and not embedding_ended:
+                    # First pow marks end of embedding, start of layer 0
+                    embedding_ended = True
+                    current_layer = 0
+                    current_component = f'layer_{current_layer}'
+                elif pow_count > 1:
+                    # Every 2nd pow marks a new layer's input_layernorm
+                    # Actually: pow_1 = layer_0 input_norm, pow_2 = layer_0 post_attn_norm
+                    #           pow_3 = layer_1 input_norm, pow_4 = layer_1 post_attn_norm
+                    # So layer N starts at pow_(2N+1)
+                    new_layer = (pow_count - 1) // 2
+                    if new_layer != current_layer:
+                        current_layer = new_layer
+                        current_component = f'layer_{current_layer}'
+            
+            # Check for layer q_proj to mark layer transition more accurately
+            elif node_name in layer_q_proj_nodes.values():
+                match = re.search(r'layers?[_.]?(\d+)', node_name)
+                if match:
+                    layer_idx = int(match.group(1))
+                    current_layer = layer_idx
+                    current_component = f'layer_{layer_idx}'
+            
+            # Use layer info from node name if available
+            elif current_component is None:
+                if 'model_layers' in node_name or 'layers' in str(node.target):
+                    match = re.search(r'layers?[_.]?(\d+)', node_name)
+                    if match:
+                        layer_idx = int(match.group(1))
+                        current_component = f'layer_{layer_idx}'
+            
+            # Assign component
+            if current_component:
+                self.node_to_component[node_name] = current_component
+    
+    def run_with_timing(self, input_data):
+        """
+        FX Graph를 실행하며 각 노드의 시간을 측정합니다.
+        
+        측정 방법:
+        - 시작 전 한 번 동기화 (clean state)
+        - 각 노드: start_event.record() → execute → end_event.record() → end_event.synchronize()
+        - end_event.synchronize()는 해당 노드의 연산만 대기 (다른 연산 기다리지 않음)
+        """
+        from torch.fx.interpreter import Interpreter
+        
+        profiler = self
+        
+        class TimingInterpreter(Interpreter):
+            def __init__(inner_self, gm):
+                super().__init__(gm)
+                inner_self.first_node = True
+            
+            def run_node(inner_self, n):
+                if n.op in ['placeholder', 'output']:
+                    return super().run_node(n)
+                
+                # 첫 노드 전에만 전체 동기화 (clean state)
+                if inner_self.first_node:
+                    torch.cuda.synchronize()
+                    inner_self.first_node = False
+                
+                # Record start event
+                start_event = torch.cuda.Event(enable_timing=True)
+                end_event = torch.cuda.Event(enable_timing=True)
+                start_event.record()
+                
+                # Execute node
+                result = super().run_node(n)
+                
+                # Record end event and sync only this event
+                end_event.record()
+                end_event.synchronize()  # 이 노드의 연산만 대기
+                
+                elapsed_ms = start_event.elapsed_time(end_event)
+                
+                # Store node time
+                profiler.node_times[n.name].append(elapsed_ms)
+                
+                # Accumulate to component
+                component = profiler.node_to_component.get(n.name)
+                if component:
+                    profiler.current_step_times[component] += elapsed_ms
+                
+                return result
+        
+        interpreter = TimingInterpreter(self.submod)
+        return interpreter.run(input_data)
+    
+    def step_end(self):
+        """Called at end of each training step"""
+        for key, value in self.current_step_times.items():
+            self.step_times[key].append(value)
+        self.current_step_times.clear()
+    
+    def get_summary(self, warmup_steps: int = 0) -> dict:
+        """Get timing summary (excluding warmup, per-forward-pass averages)"""
+        summary = {}
+        
+        for key, times in self.step_times.items():
+            measured = times[warmup_steps:] if len(times) > warmup_steps else times
+            if measured:
+                per_fwd_times = [t / self.num_mb for t in measured]
+                sorted_times = sorted(per_fwd_times)
+                mean_val = sum(per_fwd_times) / len(per_fwd_times)
+                median_val = sorted_times[len(sorted_times) // 2]
+                summary[key] = {
+                    'mean_ms': mean_val,
+                    'median_ms': median_val,
+                    'min_ms': min(per_fwd_times),
+                    'max_ms': max(per_fwd_times),
+                    'std_ms': (sum((t - mean_val)**2 for t in per_fwd_times) / len(per_fwd_times)) ** 0.5 if len(per_fwd_times) > 1 else 0,
+                    'measured_steps': len(measured)
+                }
+        
+        return summary
+    
+    def get_node_summary(self, warmup_steps: int = 0, top_n: int = 50) -> dict:
+        """Get per-node timing summary"""
+        summary = {}
+        for node_name, times in self.node_times.items():
+            measured = times[warmup_steps:] if len(times) > warmup_steps else times
+            if measured:
+                mean_val = sum(measured) / len(measured)
+                component = self.node_to_component.get(node_name, 'unknown')
+                summary[node_name] = {
+                    'mean_ms': mean_val,
+                    'component': component,
+                    'calls': len(measured)
+                }
+        
+        # Sort by time
+        sorted_summary = dict(sorted(summary.items(), key=lambda x: x[1]['mean_ms'], reverse=True))
+        return dict(list(sorted_summary.items())[:top_n])
+    
+    def print_summary(self, warmup_steps: int = 0):
+        """Print layer timing summary"""
+        if self.rank != 0:
+            return
+        
+        summary = self.get_summary(warmup_steps)
+        total_time = sum(v.get('median_ms', v['mean_ms']) for v in summary.values())
+        
+        # Categorize
+        embedding = {k: v for k, v in summary.items() if k == 'embedding'}
+        layers = {k: v for k, v in summary.items() if k.startswith('layer_')}
+        lm_head = {k: v for k, v in summary.items() if k == 'lm_head'}
+        
+        layer_total = sum(v.get('median_ms', v['mean_ms']) for v in layers.values())
+        measured_steps = list(summary.values())[0].get('measured_steps', 0) if summary else 0
+        
+        print(f"\n{'='*90}")
+        print(f" FX Interpreter Layer Profile (Stage {self.stage}, Rank {self.rank})")
+        print(f" Measures: ALL FX nodes grouped by component")
+        print(f" Warmup: {warmup_steps} steps, Measured: {measured_steps} steps")
+        print(f" Values: per-forward-pass average (num_mb={self.num_mb})")
+        print(f"{'='*90}")
+        
+        print(f"\n[Summary - Per Forward Pass]")
+        print(f"{'Component':<20} {'Median(ms)':<12} {'Min(ms)':<12} {'Max(ms)':<12} {'Mean(ms)':<12} {'%':<8}")
+        print(f"{'-'*80}")
+        
+        # Embedding
+        if embedding:
+            s = embedding['embedding']
+            pct = (s['median_ms'] / total_time * 100) if total_time > 0 else 0
+            print(f"{'Embedding':<20} {s['median_ms']:<12.4f} {s['min_ms']:<12.4f} {s['max_ms']:<12.4f} {s['mean_ms']:<12.4f} {pct:<8.2f}")
+        
+        # Transformer total
+        if layers:
+            trans_pct = (layer_total / total_time * 100) if total_time > 0 else 0
+            print(f"{'Transformer (total)':<20} {layer_total:<12.4f} {'-':<12} {'-':<12} {sum(v['mean_ms'] for v in layers.values()):<12.4f} {trans_pct:<8.2f}")
+        
+        # LM Head
+        if lm_head:
+            s = lm_head['lm_head']
+            pct = (s['median_ms'] / total_time * 100) if total_time > 0 else 0
+            print(f"{'LM Head':<20} {s['median_ms']:<12.4f} {s['min_ms']:<12.4f} {s['max_ms']:<12.4f} {s['mean_ms']:<12.4f} {pct:<8.2f}")
+        
+        print(f"{'-'*80}")
+        print(f"{'TOTAL':<20} {total_time:<12.4f}")
+        
+        # Per-layer breakdown
+        if layers:
+            print(f"\n[Per-Layer Breakdown (FX node-level timing)]")
+            print(f"{'Layer':<15} {'Median(ms)':<12} {'Min(ms)':<12} {'Max(ms)':<12} {'Mean(ms)':<12} {'%':<8}")
+            print(f"{'-'*75}")
+            
+            sorted_layers = sorted(layers.items(), key=lambda x: int(x[0].split('_')[1]))
+            for layer_key, stats in sorted_layers:
+                pct = (stats['median_ms'] / total_time * 100) if total_time > 0 else 0
+                print(f"{layer_key:<15} {stats['median_ms']:<12.4f} {stats['min_ms']:<12.4f} {stats['max_ms']:<12.4f} {stats['mean_ms']:<12.4f} {pct:<8.2f}")
+            
+            if len(layers) > 0:
+                avg_layer = layer_total / len(layers)
+                print(f"{'-'*75}")
+                print(f"{'Avg per layer':<15} {avg_layer:<12.4f}")
+        
+        print(f"\n{'='*90}\n")
+    
+    def print_node_breakdown(self, component: str, warmup_steps: int = 0, top_n: int = 20):
+        """Print top nodes for a specific component"""
+        if self.rank != 0:
+            return
+        
+        print(f"\n[{component} Node Breakdown (Top {top_n})]")
+        print(f"{'Node Name':<50} {'Mean(ms)':<12} {'Calls':<8}")
+        print(f"{'-'*75}")
+        
+        nodes = []
+        for node_name, times in self.node_times.items():
+            if self.node_to_component.get(node_name) == component:
+                measured = times[warmup_steps:] if len(times) > warmup_steps else times
+                if measured:
+                    mean_val = sum(measured) / len(measured)
+                    nodes.append((node_name, mean_val, len(measured)))
+        
+        # Sort by time descending
+        nodes.sort(key=lambda x: x[1], reverse=True)
+        
+        for name, mean_ms, calls in nodes[:top_n]:
+            print(f"{name[:50]:<50} {mean_ms:<12.4f} {calls:<8}")
+        
+        print()
+
+
+# ============================================================================
+# Layer Block Profiler (FULL decoder layer: embedding_end → next_q_proj_start)
 # ============================================================================
 class LayerBlockProfiler:
     """
-    Measures transformer layer block time from q_proj (start) to down_proj (end).
+    Measures FULL transformer decoder layer time using boundary-based approach.
     
-    Layer N timing:
-      START: model_layers_N_self_attn_q_proj (pre_hook)
-      END:   model_layers_N_mlp_down_proj (post_hook)
+    FX Graph에서 layernorm/residual은 call_function이므로 직접 hook 불가.
+    대신 q_proj를 경계로 사용하여 FULL 레이어 시간을 측정:
     
-    NOTE: Times are accumulated per-step (matching LayerProfiler behavior).
+    Layer 0:
+      START: embedding post_hook (embedding_end)
+      END:   layer_1 q_proj pre_hook (또는 lm_head pre_hook if single layer)
+      포함: input_layernorm + attn + 1st_residual + post_attn_norm + mlp + 2nd_residual
+    
+    Layer N (N>0, not last):
+      START: layer_N q_proj pre_hook
+      END:   layer_(N+1) q_proj pre_hook
+      
+    Last Layer:
+      START: layer_N q_proj pre_hook
+      END:   lm_head pre_hook
+      포함: 동일 + model_norm (final norm before lm_head)
+    
+    NOTE: Times are accumulated per-step.
           With num_mb micro-batches per step, this measures total time across all micro-batches.
     """
     
@@ -365,10 +689,16 @@ class LayerBlockProfiler:
         # Current step accumulator (sum of all micro-batches in current step)
         self.current_step_times = defaultdict(float)
         
-        # Timing state - store event pairs for deferred timing
-        self.current_layer_start = {}  # layer_N -> start_event
+        # Timing state for boundary-based measurement
         self.embedding_start = None
-        self.lm_head_start = None
+        self.embedding_end_event = None  # Layer 0 start boundary
+        self.layer_q_proj_events = {}    # layer_idx -> q_proj start event
+        self.lm_head_start_event = None  # Last layer end boundary
+        
+        # Track layer indices
+        self.layer_indices = set()
+        self.min_layer_idx = None  # First layer (starts from embedding_end)
+        self.max_layer_idx = None  # Last layer (ends at lm_head_start)
         
         # Deferred event pairs (will be processed at step_end)
         self.pending_events = []  # [(key, start_event, end_event), ...]
@@ -377,41 +707,61 @@ class LayerBlockProfiler:
         self._register_hooks()
     
     def _register_hooks(self):
-        """Register hooks on layer boundary modules"""
+        """Register hooks for boundary-based FULL layer timing"""
         import re
+        
+        # First pass: find all layer indices
+        for name, module in self.submod.named_modules():
+            name_lower = name.lower()
+            if 'self_attn_q_proj' in name_lower or 'self_attn.q_proj' in name_lower:
+                match = re.search(r'layers?[_.]?(\d+)', name_lower)
+                if match:
+                    self.layer_indices.add(int(match.group(1)))
+        
+        if self.layer_indices:
+            self.min_layer_idx = min(self.layer_indices)
+            self.max_layer_idx = max(self.layer_indices)
+        
+        # Second pass: register hooks
+        registered_q_proj = set()
         
         for name, module in self.submod.named_modules():
             name_lower = name.lower()
             
-            # Embedding: start and end on same module
+            # Embedding: record end as layer_0 start boundary
             if 'embed_tokens' in name_lower or name_lower == 'model_embed_tokens':
                 self._register_embedding_hooks(name, module)
             
-            # LM Head: start and end on same module
+            # LM Head: pre_hook records last layer end boundary
             elif 'lm_head' in name_lower:
                 self._register_lm_head_hooks(name, module)
             
-            # Layer START: q_proj
+            # q_proj: records layer boundaries
             elif 'self_attn_q_proj' in name_lower or 'self_attn.q_proj' in name_lower:
                 match = re.search(r'layers?[_.]?(\d+)', name_lower)
                 if match:
                     layer_idx = int(match.group(1))
-                    self._register_layer_start_hook(name, module, layer_idx)
+                    if layer_idx not in registered_q_proj:
+                        self._register_q_proj_hook(name, module, layer_idx)
+                        registered_q_proj.add(layer_idx)
             
-            # Layer END: mlp_down_proj
+            # down_proj: fallback for single-layer stages (PP scenario)
             elif 'mlp_down_proj' in name_lower or 'mlp.down_proj' in name_lower:
                 match = re.search(r'layers?[_.]?(\d+)', name_lower)
                 if match:
                     layer_idx = int(match.group(1))
-                    self._register_layer_end_hook(name, module, layer_idx)
+                    # Only register if this is the max layer and it equals min (single layer stage)
+                    if self.max_layer_idx is not None and layer_idx == self.max_layer_idx:
+                        if self.min_layer_idx == self.max_layer_idx:
+                            self._register_down_proj_fallback(name, module, layer_idx)
         
         if self.rank == 0:
-            layers_found = set()
-            for name, _ in self.submod.named_modules():
-                match = re.search(r'layers?[_.]?(\d+)', name.lower())
-                if match:
-                    layers_found.add(int(match.group(1)))
-            print(f"[LayerBlockProfiler] Found {len(layers_found)} transformer layers: {sorted(layers_found)}")
+            print(f"[LayerBlockProfiler] FULL LAYER PROFILING (boundary-based)")
+            print(f"[LayerBlockProfiler] Layer 0: embedding_end → next_q_proj_start")
+            print(f"[LayerBlockProfiler] Layer N: q_proj_start → next_q_proj_start")  
+            print(f"[LayerBlockProfiler] Last Layer: q_proj_start → lm_head_start")
+            print(f"[LayerBlockProfiler] Includes: input_layernorm + attn + 1st_residual + post_attn_norm + mlp + 2nd_residual")
+            print(f"[LayerBlockProfiler] Registered layers: {sorted(self.layer_indices)}")
             print(f"[LayerBlockProfiler] num_mb={self.num_mb} (times will be per-forward-pass average)")
     
     def _register_embedding_hooks(self, name, module):
@@ -426,66 +776,99 @@ class LayerBlockProfiler:
             if profiler.embedding_start:
                 end_event = torch.cuda.Event(enable_timing=True)
                 end_event.record()
-                # Defer timing - no sync during forward pass
                 profiler.pending_events.append(('embedding', profiler.embedding_start, end_event))
+                profiler.embedding_end_event = end_event
                 profiler.embedding_start = None
         
         self.hooks.append(module.register_forward_pre_hook(pre_hook))
         self.hooks.append(module.register_forward_hook(post_hook))
+        if self.rank == 0:
+            print(f"[LayerBlockProfiler] Embedding hooks: {name}")
     
     def _register_lm_head_hooks(self, name, module):
-        """Register pre/post hooks for lm_head"""
+        """Register pre/post hooks for lm_head (pre_hook serves as last layer end)"""
         profiler = self
-        
-        def pre_hook(mod, inp):
-            profiler.lm_head_start = torch.cuda.Event(enable_timing=True)
-            profiler.lm_head_start.record()
-        
-        def post_hook(mod, inp, out):
-            if profiler.lm_head_start:
-                end_event = torch.cuda.Event(enable_timing=True)
-                end_event.record()
-                # Defer timing - no sync during forward pass
-                profiler.pending_events.append(('lm_head', profiler.lm_head_start, end_event))
-                profiler.lm_head_start = None
-        
-        self.hooks.append(module.register_forward_pre_hook(pre_hook))
-        self.hooks.append(module.register_forward_hook(post_hook))
-    
-    def _register_layer_start_hook(self, name, module, layer_idx):
-        """Register pre_hook on q_proj (layer START)"""
-        profiler = self
-        layer_key = f"layer_{layer_idx}"
         
         def pre_hook(mod, inp):
             start_event = torch.cuda.Event(enable_timing=True)
             start_event.record()
-            profiler.current_layer_start[layer_key] = start_event
+            profiler.lm_head_start_event = start_event
+            
+            if profiler.max_layer_idx is not None:
+                last_layer_key = f"layer_{profiler.max_layer_idx}"
+                last_start = profiler.layer_q_proj_events.get(profiler.max_layer_idx)
+                if last_start is not None:
+                    profiler.pending_events.append((last_layer_key, last_start, start_event))
+        
+        def post_hook(mod, inp, out):
+            if profiler.lm_head_start_event:
+                end_event = torch.cuda.Event(enable_timing=True)
+                end_event.record()
+                profiler.pending_events.append(('lm_head', profiler.lm_head_start_event, end_event))
+                profiler.lm_head_start_event = None
+        
+        self.hooks.append(module.register_forward_pre_hook(pre_hook))
+        self.hooks.append(module.register_forward_hook(post_hook))
+        if self.rank == 0:
+            print(f"[LayerBlockProfiler] LM Head hooks: {name}")
+    
+    def _register_q_proj_hook(self, name, module, layer_idx):
+        """Register pre_hook on q_proj for boundary-based layer timing."""
+        profiler = self
+        is_first_layer = (layer_idx == self.min_layer_idx)
+        is_last_layer = (layer_idx == self.max_layer_idx)
+        
+        def pre_hook(mod, inp):
+            current_event = torch.cuda.Event(enable_timing=True)
+            current_event.record()
+            
+            # For first layer: use embedding_end as start
+            if is_first_layer and profiler.embedding_end_event is not None:
+                profiler.layer_q_proj_events[layer_idx] = profiler.embedding_end_event
+            
+            # For non-first layers: measure previous layer
+            if not is_first_layer:
+                prev_layer_idx = layer_idx - 1
+                prev_layer_key = f"layer_{prev_layer_idx}"
+                prev_start = profiler.layer_q_proj_events.get(prev_layer_idx)
+                if prev_start is not None:
+                    profiler.pending_events.append((prev_layer_key, prev_start, current_event))
+            
+            profiler.layer_q_proj_events[layer_idx] = current_event
         
         self.hooks.append(module.register_forward_pre_hook(pre_hook))
         if self.rank == 0:
-            print(f"[LayerBlockProfiler] {layer_key} START hook: {name}")
+            layer_key = f"layer_{layer_idx}"
+            if is_first_layer:
+                print(f"[LayerBlockProfiler] {layer_key}: embedding_end → next ({name})")
+            else:
+                print(f"[LayerBlockProfiler] {layer_key}: prev_q_proj → {name}")
+        
+        # For last layer on this stage: also register down_proj fallback
+        # (in case there's no next q_proj on the same stage, PP scenario)
+        if is_last_layer and self.min_layer_idx == self.max_layer_idx:
+            # Single layer stage: need down_proj fallback
+            self._need_down_proj_fallback = True
     
-    def _register_layer_end_hook(self, name, module, layer_idx):
-        """Register post_hook on down_proj (layer END)"""
+    def _register_down_proj_fallback(self, name, module, layer_idx):
+        """Fallback for last layer when next q_proj is on different stage."""
         profiler = self
         layer_key = f"layer_{layer_idx}"
         
         def post_hook(mod, inp, out):
-            if layer_key in profiler.current_layer_start:
-                end_event = torch.cuda.Event(enable_timing=True)
-                end_event.record()
-                # Defer timing - no sync during forward pass
-                profiler.pending_events.append((layer_key, profiler.current_layer_start[layer_key], end_event))
-                del profiler.current_layer_start[layer_key]
+            end_event = torch.cuda.Event(enable_timing=True)
+            end_event.record()
+            
+            start = profiler.layer_q_proj_events.get(layer_idx)
+            if start is not None:
+                profiler.pending_events.append((layer_key, start, end_event))
         
         self.hooks.append(module.register_forward_hook(post_hook))
         if self.rank == 0:
-            print(f"[LayerBlockProfiler] {layer_key} END hook: {name}")
+            print(f"[LayerBlockProfiler] {layer_key}: fallback down_proj end ({name})")
     
     def step_end(self):
         """Called at end of each training step to finalize measurements"""
-        # Sync GPU and process all pending events
         torch.cuda.synchronize()
         
         for key, start_event, end_event in self.pending_events:
@@ -493,7 +876,10 @@ class LayerBlockProfiler:
             self.current_step_times[key] += elapsed
         self.pending_events.clear()
         
-        # Move current step times to history
+        self.embedding_end_event = None
+        self.lm_head_start_event = None
+        self.layer_q_proj_events.clear()
+        
         for key, value in self.current_step_times.items():
             self.step_times[key].append(value)
         self.current_step_times.clear()
@@ -505,14 +891,13 @@ class LayerBlockProfiler:
         for key, times in self.step_times.items():
             measured = times[warmup_steps:] if len(times) > warmup_steps else times
             if measured:
-                # Divide by num_mb to get per-forward-pass time
                 per_fwd_times = [t / self.num_mb for t in measured]
                 sorted_times = sorted(per_fwd_times)
                 mean_val = sum(per_fwd_times) / len(per_fwd_times)
                 median_val = sorted_times[len(sorted_times) // 2]
                 summary[key] = {
                     'mean_ms': mean_val,
-                    'median_ms': median_val,  # P50 - more robust to outliers
+                    'median_ms': median_val,
                     'min_ms': min(per_fwd_times),
                     'max_ms': max(per_fwd_times),
                     'std_ms': (sum((t - mean_val)**2 for t in per_fwd_times) / len(per_fwd_times)) ** 0.5 if len(per_fwd_times) > 1 else 0,
@@ -527,40 +912,33 @@ class LayerBlockProfiler:
             return
         
         summary = self.get_summary(warmup_steps)
-        # Use median for total time calculation (more robust)
         total_time = sum(v.get('median_ms', v['mean_ms']) for v in summary.values())
-        
-        # Categorize components
         transformer_layers = {k: v for k, v in summary.items() if k.startswith('layer_')}
         transformer_total = sum(v['mean_ms'] for v in transformer_layers.values())
-        
         measured_steps = list(summary.values())[0].get('measured_steps', 0) if summary else 0
         
         print(f"\n{'='*90}")
         print(f" Layer Block Profile (Stage {self.stage}, Rank {self.rank})")
-        print(f" Measures: q_proj (start) -> down_proj (end) per layer [END-TO-END]")
+        print(f" Measures: FULL DecoderLayer (embedding_end → next_q_proj or lm_head)")
+        print(f" Includes: input_layernorm + attn + 1st_res + post_attn_norm + mlp + 2nd_res")
         print(f" Warmup: {warmup_steps} steps, Measured: {measured_steps} steps")
         print(f" Values: per-forward-pass average (num_mb={self.num_mb})")
         print(f"{'='*90}")
         
-        # Main summary
         print(f"\n[Summary - Per Forward Pass]")
         print(f"{'Component':<20} {'Median(ms)':<12} {'Min(ms)':<12} {'Max(ms)':<12} {'Mean(ms)':<12} {'%':<8}")
         print(f"{'-'*80}")
         
-        # Embedding
         if 'embedding' in summary:
             s = summary['embedding']
             pct = (s['median_ms'] / total_time * 100) if total_time > 0 else 0
             print(f"{'Embedding':<20} {s['median_ms']:<12.4f} {s['min_ms']:<12.4f} {s['max_ms']:<12.4f} {s['mean_ms']:<12.4f} {pct:<8.2f}")
         
-        # Transformer total (use median sum)
         if transformer_layers:
             trans_median_total = sum(v.get('median_ms', v['mean_ms']) for v in transformer_layers.values())
             trans_pct = (trans_median_total / total_time * 100) if total_time > 0 else 0
             print(f"{'Transformer (total)':<20} {trans_median_total:<12.4f} {'-':<12} {'-':<12} {transformer_total:<12.4f} {trans_pct:<8.2f}")
         
-        # LM Head
         if 'lm_head' in summary:
             s = summary['lm_head']
             pct = (s['median_ms'] / total_time * 100) if total_time > 0 else 0
@@ -569,9 +947,8 @@ class LayerBlockProfiler:
         print(f"{'-'*80}")
         print(f"{'TOTAL':<20} {total_time:<12.4f}")
         
-        # Per-layer breakdown
         if transformer_layers:
-            print(f"\n[Per-Layer Breakdown (q_proj -> down_proj, END-TO-END)]")
+            print(f"\n[Per-Layer Breakdown (FULL: input_layernorm → 2nd_residual)]")
             print(f"{'Layer':<15} {'Mean(ms)':<12} {'Min(ms)':<12} {'Max(ms)':<12} {'Std(ms)':<12} {'%':<8}")
             print(f"{'-'*75}")
             
@@ -996,7 +1373,7 @@ try:
         tokenizer = AutoTokenizer.from_pretrained(args.model_name, token=access_token)
         if rank == 0:
             log(f'> Tokenizer loaded from HuggingFace: {args.model_name}')
-    
+        
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.pad_token_id = tokenizer.eos_token_id
 
@@ -1037,7 +1414,7 @@ try:
         log(f'> Using {num_layers} layers (full model: {model_cfg["num_hidden_layers"]} layers)')
 
     for i in range(local_world_size):
-        if local_rank == i:
+        if local_rank == i:            
             # Llama 3.x vocab_size is 128256
             # Using tokenizer.vocab_size can cause mismatch with actual token IDs
             actual_vocab_size = model_cfg["vocab_size"]
@@ -1095,125 +1472,237 @@ try:
     if args.profile_mode:
         log(f"[{ts()}] ========== PROFILE MODE ==========") if rank == 0 else None
         
-        # Setup profilers
-        # 1. LayerProfiler: measures individual module times (sum of all ops)
-        profiler = LayerProfiler(
-            optimus_p.run_info.submod,
-            optimus_p.run_info.device,
-            rank, 
-            optimus_p.tpl.stage,
-            num_mb=num_mb  # Pass num_mb for per-forward-pass normalization
-        )
-        
-        # 2. LayerBlockProfiler: measures layer block times (q_proj start -> down_proj end, END-TO-END)
-        block_profiler = LayerBlockProfiler(
-            optimus_p.run_info.submod,
-            optimus_p.run_info.device,
-            rank,
-            optimus_p.tpl.stage,
-            num_mb=num_mb  # Pass num_mb for per-forward-pass normalization
-        )
-        
-        # Use optimizer to ensure realistic timing
-        if args.tp_size > 1:
-            optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5, foreach=False)
-        else:
-            optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
-        
-        # Load dataset
-        datasets = load_dataset("squad").data["train"]["context"]
-        datasets = [str(record) for record in datasets if len(str(record)) < 500]
-        dataloader = optimus_p.prepare_dataloader(datasets, batch_size)
-        
-        log(f"[rank:{rank}] Profile: {args.profile_steps} steps ({args.profile_warmup_steps} warmup)")
-        
-        # Profile loop
-        tick = time.time()
-        step_count = 0
-        
-        for batch in dataloader:
-            if step_count >= args.profile_steps:
-                break
+        # ================================================================
+        # Simple boundary-based profiling (start/end only, all ranks)
+        # Uses LayerBlockProfiler which measures:
+        #   - Embedding: embed_tokens module
+        #   - Layer N: from embedding_end/prev_layer_end to next_layer_start/lm_head_start  
+        #   - LM Head: lm_head module
+        # ================================================================
+        if args.profile_fx:
+            log(f"[{ts()}] Using Simple Boundary Profiling (start/end only)") if rank == 0 else None
             
-            data, labels = None, None
-            if optimus_p.is_first_stage():
-                tokens = tokenizer(batch, padding=True, truncation=True, max_length=1024, return_tensors="pt")
-                data, labels = tokens.input_ids, tokens.input_ids
+            # LayerBlockProfiler measures FULL layer time via boundary hooks
+            block_profiler = LayerBlockProfiler(
+                optimus_p.run_info.submod,
+                optimus_p.run_info.device,
+                rank,
+                optimus_p.tpl.stage,
+                num_mb=num_mb
+            )
             
-            labels = optimus_p.move_labels2last_stage(labels)
-            optimus_p.optimizer.zero_grad()
+            # Use optimizer for realistic timing
+            if args.tp_size > 1:
+                optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5, foreach=False)
+            else:
+                optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
             
-            # Forward + Backward
-            optimus_p.run(data, labels, mode="1f1b")
+            # Load dataset
+            datasets = load_dataset("squad").data["train"]["context"]
+            datasets = [str(record) for record in datasets if len(str(record)) < 500]
+            dataloader = optimus_p.prepare_dataloader(datasets, batch_size)
             
-            if args.tp_size == 1:
-                torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5)
+            log(f"[rank:{rank}] Simple Profile: {args.profile_steps} steps ({args.profile_warmup_steps} warmup)")
             
-            optimus_p.optimizer.step()
-            profiler.step_end()
-            block_profiler.step_end()  # Finalize layer block times for this step
+            # Profile loop (actual training execution)
+            tick = time.time()
+            step_count = 0
             
-            step_count += 1
-            if rank == 0 and step_count % 5 == 0:
-                log(f"[rank:0] Profile step {step_count}/{args.profile_steps}")
-        
-        tock = time.time()
-        
-        # Synchronize all ranks before printing
-        dist.barrier()
-        
-        # Print per-rank results (for debugging)
-        block_profiler.print_summary(warmup_steps=args.profile_warmup_steps)
-        
-        # Synchronize again
-        dist.barrier()
-        
-        # Gather and print combined results from all ranks
-        combined_result = gather_and_print_combined_profile(
-            block_profiler, 
-            args.profile_warmup_steps, 
-            world_size, 
-            rank,
-            gloo_group=group_gloo
-        )
-        
-        # Save results (rank 0 only)
-        if rank == 0:
-            profile_result = {
-                'config': {
-                    'model_name': args.model_name,
-                    'model_size': model_size_str,
-                    'hidden_size': model_cfg["hidden_size"],
-                    'intermediate_size': model_cfg["intermediate_size"],
-                    'num_attention_heads': model_cfg["num_attention_heads"],
-                    'num_key_value_heads': model_cfg["num_key_value_heads"],
-                    'num_layers': num_layers,
-                    'num_layers_full': model_cfg["num_hidden_layers"],
-                    'batch_size': batch_size,
-                    'micro_batch_size': micro_batch_size,
-                    'pp_size': args.pp_size,
-                    'tp_size': args.tp_size,
-                    'dp_size': args.dp_size,
-                    'profile_steps': args.profile_steps,
-                    'warmup_steps': args.profile_warmup_steps,
-                    'total_time_sec': tock - tick,
-                },
-                'combined_timing': combined_result,
-                'per_rank_timing': {
-                    f'rank_{rank}': block_profiler.get_summary(args.profile_warmup_steps)
+            for batch in dataloader:
+                if step_count >= args.profile_steps:
+                    break
+                
+                data, labels = None, None
+                if optimus_p.is_first_stage():
+                    tokens = tokenizer(batch, padding=True, truncation=True, max_length=512, return_tensors="pt")
+                    data, labels = tokens.input_ids, tokens.input_ids
+                
+                labels = optimus_p.move_labels2last_stage(labels)
+                optimus_p.optimizer.zero_grad()
+                
+                # Forward + Backward (actual execution for realistic timing)
+                optimus_p.run(data, labels, mode="1f1b")
+                
+                if args.tp_size == 1:
+                    torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5)
+                
+                optimus_p.optimizer.step()
+                block_profiler.step_end()
+                
+                step_count += 1
+                if rank == 0 and step_count % 5 == 0:
+                    log(f"[rank:0] Simple Profile step {step_count}/{args.profile_steps}")
+            
+            tock = time.time()
+            
+            # Synchronize all ranks
+            dist.barrier()
+            
+            # Print per-rank summary
+            block_profiler.print_summary(warmup_steps=args.profile_warmup_steps)
+            
+            # Synchronize again
+            dist.barrier()
+            
+            # Gather and print combined results from all ranks
+            combined_result = gather_and_print_combined_profile(
+                block_profiler, 
+                args.profile_warmup_steps, 
+                world_size, 
+                rank,
+                gloo_group=group_gloo
+            )
+            
+            # Save results (rank 0 only)
+            if rank == 0:
+                profile_result = {
+                    'config': {
+                        'model_name': args.model_name,
+                        'model_size': model_size_str,
+                        'num_layers': num_layers,
+                        'batch_size': batch_size,
+                        'micro_batch_size': micro_batch_size,
+                        'pp_size': args.pp_size,
+                        'tp_size': args.tp_size,
+                        'dp_size': args.dp_size,
+                        'profile_steps': args.profile_steps,
+                        'warmup_steps': args.profile_warmup_steps,
+                        'total_time_sec': tock - tick,
+                        'method': 'simple_boundary (start/end only)'
+                    },
+                    'combined_timing': combined_result,
                 }
-            }
+                
+                output_path = args.profile_output if args.profile_output else f"{RESULT_DIR}/profile_{args.run_id}.json"
+                save_profile_result(profile_result, output_path)
+                ELAPSED_TIME = tock - tick
             
-            output_path = args.profile_output if args.profile_output else f"{RESULT_DIR}/profile_{args.run_id}.json"
-            save_profile_result(profile_result, output_path)
-            ELAPSED_TIME = tock - tick
+            block_profiler.remove_hooks()
+            EXIT_CODE = 0
         
-        profiler.remove_hooks()
-        block_profiler.remove_hooks()
-        EXIT_CODE = 0
-
+        # ================================================================
+        # Hook-based profiling (during normal training execution)
+        # ================================================================
+        else:
+            # Setup profilers
+            # 1. LayerProfiler: measures individual module times (sum of all ops)
+            profiler = LayerProfiler(
+                optimus_p.run_info.submod,
+                optimus_p.run_info.device,
+                rank, 
+                optimus_p.tpl.stage,
+                num_mb=num_mb  # Pass num_mb for per-forward-pass normalization
+            )
+            
+            # 2. LayerBlockProfiler: measures layer block times (boundary-based, END-TO-END)
+            block_profiler = LayerBlockProfiler(
+                optimus_p.run_info.submod,
+                optimus_p.run_info.device,
+                rank,
+                optimus_p.tpl.stage,
+                num_mb=num_mb  # Pass num_mb for per-forward-pass normalization
+            )
+            
+            # Use optimizer to ensure realistic timing
+            if args.tp_size > 1:
+                optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5, foreach=False)
+            else:
+                optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
+            
+            # Load dataset
+            datasets = load_dataset("squad").data["train"]["context"]
+            datasets = [str(record) for record in datasets if len(str(record)) < 500]
+            dataloader = optimus_p.prepare_dataloader(datasets, batch_size)
+            
+            log(f"[rank:{rank}] Profile: {args.profile_steps} steps ({args.profile_warmup_steps} warmup)")
+            
+            # Profile loop
+            tick = time.time()
+            step_count = 0
+            
+            for batch in dataloader:
+                if step_count >= args.profile_steps:
+                    break
+                
+                data, labels = None, None
+                if optimus_p.is_first_stage():
+                    tokens = tokenizer(batch, padding=True, truncation=True, max_length=1024, return_tensors="pt")
+                    data, labels = tokens.input_ids, tokens.input_ids
+                
+                labels = optimus_p.move_labels2last_stage(labels)
+                optimus_p.optimizer.zero_grad()
+                
+                # Forward + Backward
+                optimus_p.run(data, labels, mode="1f1b")
+                
+                if args.tp_size == 1:
+                    torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5)
+                
+                optimus_p.optimizer.step()
+                profiler.step_end()
+                block_profiler.step_end()  # Finalize layer block times for this step
+                
+                step_count += 1
+                if rank == 0 and step_count % 5 == 0:
+                    log(f"[rank:0] Profile step {step_count}/{args.profile_steps}")
+            
+            tock = time.time()
+            
+            # Synchronize all ranks before printing
+            dist.barrier()
+            
+            # Print per-rank results (for debugging)
+            block_profiler.print_summary(warmup_steps=args.profile_warmup_steps)
+            
+            # Synchronize again
+            dist.barrier()
+            
+            # Gather and print combined results from all ranks
+            combined_result = gather_and_print_combined_profile(
+                block_profiler, 
+                args.profile_warmup_steps, 
+                world_size, 
+                rank,
+                gloo_group=group_gloo
+            )
+            
+            # Save results (rank 0 only)
+            if rank == 0:
+                profile_result = {
+                    'config': {
+                        'model_name': args.model_name,
+                        'model_size': model_size_str,
+                        'hidden_size': model_cfg["hidden_size"],
+                        'intermediate_size': model_cfg["intermediate_size"],
+                        'num_attention_heads': model_cfg["num_attention_heads"],
+                        'num_key_value_heads': model_cfg["num_key_value_heads"],
+                        'num_layers': num_layers,
+                        'num_layers_full': model_cfg["num_hidden_layers"],
+                        'batch_size': batch_size,
+                        'micro_batch_size': micro_batch_size,
+                        'pp_size': args.pp_size,
+                        'tp_size': args.tp_size,
+                        'dp_size': args.dp_size,
+                        'profile_steps': args.profile_steps,
+                        'warmup_steps': args.profile_warmup_steps,
+                        'total_time_sec': tock - tick,
+                    },
+                    'combined_timing': combined_result,
+                    'per_rank_timing': {
+                        f'rank_{rank}': block_profiler.get_summary(args.profile_warmup_steps)
+                    }
+                }
+                
+                output_path = args.profile_output if args.profile_output else f"{RESULT_DIR}/profile_{args.run_id}.json"
+                save_profile_result(profile_result, output_path)
+                ELAPSED_TIME = tock - tick
+            
+            profiler.remove_hooks()
+            block_profiler.remove_hooks()
+            EXIT_CODE = 0
+    
     # ========================================================================
-    # TRAINING MODE
+    # TRAINING MODE (when profile_mode is False)
     # ========================================================================
     else:
         log(f"[{ts()}] ========== TRAINING MODE ==========") if rank == 0 else None
@@ -1223,7 +1712,7 @@ try:
             optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5, foreach=False)
         else:
             optimus_p.optimizer = torch.optim.Adam(optimus_p.parameters(), lr=3e-5)
-
+        
         scheduler = torch.optim.lr_scheduler.StepLR(optimus_p.optimizer, 1.0, gamma=0.95)
         
         # Dataset
@@ -1234,63 +1723,62 @@ try:
         nbatches = len(dataloader)
         
         log(f"[rank:{optimus_p.get_rank()}] data_size={data_size}, nbatches={nbatches}")
-
+        
         epochs = 1
-
-        def train():
+        
+        def train_epoch():
             optimus_p.train()
             total_loss = 0
             start_time = time.time()
-
+            
             for i, batch in enumerate(dataloader):
                 data, labels = None, None
                 
                 if optimus_p.is_first_stage():
                     tokens = tokenizer(batch, padding=True, truncation=True, max_length=1024, return_tensors="pt")
                     data, labels = tokens.input_ids, tokens.input_ids
-
+                
                 labels = optimus_p.move_labels2last_stage(labels)
                 optimus_p.optimizer.zero_grad()
                 optimus_p.run(data, labels, mode="1f1b")
-
+                
                 if optimus_p.is_last_stage():
                     loss = optimus_p.get_loss()
                 else:
                     loss = None
-
+                
                 if args.tp_size == 1:
                     torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5)
-
+                
                 optimus_p.optimizer.step()
-
-                if optimus_p.is_last_stage():
-                    loss = sum(loss) / optimus_p.mbsize
-                    total_loss += loss
-                    log_interval = 1
+                
+                if optimus_p.is_last_stage() and loss is not None:
+                    loss_val = sum(loss) / optimus_p.mbsize
+                    total_loss += loss_val
+                    log_interval = 10
                     if i % log_interval == 0 and i > 0:
                         cur_loss = total_loss / log_interval
                         elapsed = time.time() - start_time
-                        if optimus_p.get_rank() % int(world_size/args.pp_size) == 0:
+                        if optimus_p.get_rank() % int(world_size / args.pp_size) == 0:
                             print(f"===== {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} =====")
                             print(f'| epoch {epoch:3d} | {i:5d}/{nbatches:5d} batches | '
                                   f'lr {scheduler.get_lr()[0]:02.2f} | ms/batch {elapsed * 1000 / log_interval:5.2f} | '
                                   f'loss {cur_loss:5.2f} | ppl {math.exp(cur_loss):8.2f}')
                         total_loss = 0
                         start_time = time.time()
-
+        
         if optimus_p.get_rank() == 0:
             tick = time.time()
-
+        
         for epoch in range(1, epochs + 1):
-            train()
+            train_epoch()
             scheduler.step()
-
+        
         if optimus_p.get_rank() == 0:
             tock = time.time()
             ELAPSED_TIME = tock - tick
             print(f'Time elapsed: {ELAPSED_TIME:.3f} sec')
-            EXIT_CODE = 0
-
+        EXIT_CODE = 0
 
 except torch.cuda.OutOfMemoryError as e:
     print(f"[{ts()}] ERROR: OOM - {e}")

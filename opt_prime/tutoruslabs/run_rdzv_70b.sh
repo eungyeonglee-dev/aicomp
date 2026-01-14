@@ -12,7 +12,7 @@
 #     ./run_rdzv_70b.sh <MODEL_NAME> <NODE_RANK> <MASTER_ADDR> <NNODES> <NPROC> <USE_CACHE> <PP> <TP> <DP> profile
 #
 
-export NCCL_DEBUG=INFO
+# export NCCL_DEBUG=INFO
 export TORCH_NCCL_ASYNC_ERROR_HANDLING=1
 unset NCCL_BLOCKING_WAIT
 export TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC=18000
@@ -42,9 +42,9 @@ BATCH_SIZES=(2)
 MICRO_BATCH_SIZES=(1)
 
 # Profile settings (when PROFILE_MODE="profile")
-PROFILE_STEPS=15
-PROFILE_WARMUP=10
-NUM_HIDDEN_LAYERS=2
+PROFILE_STEPS=10
+PROFILE_WARMUP=50
+NUM_HIDDEN_LAYERS=16
 
 RESULT_DIR="results"
 mkdir -p "$RESULT_DIR"
@@ -160,6 +160,8 @@ for BATCH in "${BATCH_SIZES[@]}"; do
       PROFILE_ARGS=""
       if [ "$PROFILE_MODE" = "profile" ]; then
         PROFILE_ARGS="--profile_mode --profile_steps $PROFILE_STEPS --profile_warmup_steps $PROFILE_WARMUP --num_hidden_layers $NUM_HIDDEN_LAYERS"
+      elif [ "$PROFILE_MODE" = "profile_fx" ]; then
+        PROFILE_ARGS="--profile_mode --profile_fx --profile_steps $PROFILE_STEPS --profile_warmup_steps $PROFILE_WARMUP --num_hidden_layers $NUM_HIDDEN_LAYERS"
       fi
 
       SECONDS=0

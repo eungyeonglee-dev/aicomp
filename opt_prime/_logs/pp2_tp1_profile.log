@@ -1,0 +1,731 @@
+W0114 07:16:32.083000 2633 site-packages/torch/distributed/run.py:793] 
+W0114 07:16:32.083000 2633 site-packages/torch/distributed/run.py:793] *****************************************
+W0114 07:16:32.083000 2633 site-packages/torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0114 07:16:32.083000 2633 site-packages/torch/distributed/run.py:793] *****************************************
+[rank:0] torch version 2.3.1 or higher --> OK
+[rank:0] transformers version 4.46.2 or higher --> OK
+> Total parameters in model: 1,235,814,400
+> World size: 2
+> IR: IR_Anal.SEQUENTIAL
+> GAS: 2
+> GBS: 2
+> MBS: 1
+> TP: 1
+> DP: 1
+> PP: 2
+GPU mode is used.
+Available GPUs per server: 8
+GPU mode is used.
+> World Size: 2
+> Pipeline Parallel Size: 2
+>> ir_analyze: IR_Anal.SEQUENTIAL
+> [rank:0] pp group:DeviceMesh('cuda', [0, 1], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [0], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [0], mesh_dim_names=('dp',))
+ ----------------------------------
+stage2rank = {0: [0], 1: [1]}
+ ----------------------------------
+> [rank:1] pp group:DeviceMesh('cuda', [0, 1], mesh_dim_names=('pp',)), tp group:DeviceMesh('cuda', [1], mesh_dim_names=('tp',)), dp group:DeviceMesh('cuda', [1], mesh_dim_names=('dp',))
+>>> Using GPU ... cuda:0
+>> model class name: LlamaForCausalLM
+>> split method: simple
+SEQUENTIAL mode >> [rank:0, local_world_size:2]
+>>> Using GPU ... cuda:1
+>> model class name: LlamaForCausalLM
+>> split method: simple
+SEQUENTIAL mode >> [rank:1, local_world_size:2]
+[rank1]:[W114 07:17:08.381462190 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 1]  using GPU 1 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+length:1618, modcnt:130, num_stage:2, segment:65
+ ------------------------------------------------------------
+  rank:0,  first metadata_range: [(0, 'model_layers_7_mlp_down_proj'), (1, 'lm_head')]
+ ------------------------------------------------------------
+ ------------------------------------------------------------
+  rank:0,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+>> ------------------ FX graph --------------------------------
+n.op:placeholder, n.name:input_ids, n.target:input_ids, n.args:(), n.all_input_nodes:[]
+n.op:call_module, n.name:submod_0, n.target:submod_0, n.args:(input_ids,), n.all_input_nodes:[input_ids]
+n.op:call_function, n.name:getitem, n.target:<built-in function getitem>, n.args:(submod_0, 0), n.all_input_nodes:[submod_0]
+n.op:call_function, n.name:getitem_1, n.target:<built-in function getitem>, n.args:(submod_0, 1), n.all_input_nodes:[submod_0]
+n.op:call_function, n.name:getitem_2, n.target:<built-in function getitem>, n.args:(submod_0, 2), n.all_input_nodes:[submod_0]
+n.op:call_function, n.name:getitem_3, n.target:<built-in function getitem>, n.args:(submod_0, 3), n.all_input_nodes:[submod_0]
+n.op:call_function, n.name:getitem_4, n.target:<built-in function getitem>, n.args:(submod_0, 4), n.all_input_nodes:[submod_0]
+n.op:call_module, n.name:submod_1, n.target:submod_1, n.args:(getitem, getitem_1, getitem_2, getitem_3, getitem_4), n.all_input_nodes:[getitem, getitem_1, getitem_2, getitem_3, getitem_4]
+n.op:output, n.name:output, n.target:output, n.args:({'logits': submod_1},), n.all_input_nodes:[submod_1]
+>> ------------------------------------------------------------
+ ### Rank:0, name:submod_0, move submod_0 to cuda:0
+ # rank = 0, metadata_range:[(0, 'submod_0'), (1, 'submod_1')]
+-- node.op:placeholder, node.name:input_ids, node.target:input_ids, node.args:(), node.all_input_nodes:[]
+-- node.op:call_module, node.name:submod_0, node.target:submod_0, node.args:(input_ids,), node.all_input_nodes:[input_ids]
+-- node.op:call_function, node.name:getitem, node.target:<built-in function getitem>, node.args:(submod_0, 0), node.all_input_nodes:[submod_0]
+-- node.op:call_function, node.name:getitem_1, node.target:<built-in function getitem>, node.args:(submod_0, 1), node.all_input_nodes:[submod_0]
+-- node.op:call_function, node.name:getitem_2, node.target:<built-in function getitem>, node.args:(submod_0, 2), node.all_input_nodes:[submod_0]
+-- node.op:call_function, node.name:getitem_3, node.target:<built-in function getitem>, node.args:(submod_0, 3), node.all_input_nodes:[submod_0]
+-- node.op:call_function, node.name:getitem_4, node.target:<built-in function getitem>, node.args:(submod_0, 4), node.all_input_nodes:[submod_0]
+-- node.op:call_module, node.name:submod_1, node.target:submod_1, node.args:(getitem, getitem_1, getitem_2, getitem_3, getitem_4), node.all_input_nodes:[getitem, getitem_1, getitem_2, getitem_3, getitem_4]
+-- node.op:output, node.name:output, node.target:output, node.args:({'logits': submod_1},), node.all_input_nodes:[submod_1]
+ ========= getitem_dic =========
+ --- key:getitem, values:('submod_0', 0)
+ --- key:getitem_1, values:('submod_0', 1)
+ --- key:getitem_2, values:('submod_0', 2)
+ --- key:getitem_3, values:('submod_0', 3)
+ --- key:getitem_4, values:('submod_0', 4)
+ ===============================
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:0, clean_module_memory ...
+[rank:0, local_rank:0] SEQUENTIAL MODE PROCESSING ...
+[rank0]:[W114 07:17:10.392491770 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0 Rank 0]  using GPU 0 to perform barrier as devices used by this process are currently unknown. This can potentially cause a hang if this rank to GPU mapping is incorrect.Specify device_ids in barrier() to force use of a particular device,or call init_process_group() with a device_id.
+length:1618, modcnt:130, num_stage:2, segment:65
+ ------------------------------------------------------------
+  rank:1,  second metadata_range: [(0, 'submod_0'), (1, 'submod_1')]
+ ------------------------------------------------------------
+ ### Rank:1, name:submod_1, move submod_1 to cuda:1
+ ***** stage:1 >>  from_:getitem, to_:submod_1
+ ### Rank:1, clean_module_memory ...
+[rank:1, local_rank:1] SEQUENTIAL MODE PROCESSING ...
+ *********** rank:1 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ *********** rank:0 cross-referenced nodes *****************
+   special_nodes: {'submod_0': (0, 1)}
+ *************************************************************************
+ rank=0 ...
+data_size=10334
+nbatches=5167
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 1
+  layer[8]: compute=165.719ms (avg=10.357ms), comm=0.000ms (avg=0.000ms), total=165.719ms (avg=10.357ms), ops=16
+  layer[9]: compute=2.948ms (avg=0.184ms), comm=0.000ms (avg=0.000ms), total=2.948ms (avg=0.184ms), ops=16
+  layer[10]: compute=2.601ms (avg=0.163ms), comm=0.000ms (avg=0.000ms), total=2.601ms (avg=0.163ms), ops=16
+  layer[11]: compute=2.685ms (avg=0.168ms), comm=0.000ms (avg=0.000ms), total=2.685ms (avg=0.168ms), ops=16
+  layer[12]: compute=2.516ms (avg=0.157ms), comm=0.000ms (avg=0.000ms), total=2.516ms (avg=0.157ms), ops=16
+  layer[13]: compute=2.526ms (avg=0.158ms), comm=0.000ms (avg=0.000ms), total=2.526ms (avg=0.158ms), ops=16
+  layer[14]: compute=2.531ms (avg=0.158ms), comm=0.000ms (avg=0.000ms), total=2.531ms (avg=0.158ms), ops=16
+  layer[15]: compute=2.504ms (avg=0.156ms), comm=0.000ms (avg=0.000ms), total=2.504ms (avg=0.156ms), ops=16
+  layer[lm_head]: compute=9.133ms (avg=4.567ms), comm=0.000ms (avg=0.000ms), total=9.133ms (avg=4.567ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 1
+  layer[embed]: compute=59.713ms (avg=29.856ms), comm=0.000ms (avg=0.000ms), total=59.713ms (avg=29.856ms), ops=2
+  layer[0]: compute=16.882ms (avg=1.055ms), comm=0.000ms (avg=0.000ms), total=16.882ms (avg=1.055ms), ops=16
+  layer[1]: compute=3.165ms (avg=0.198ms), comm=0.000ms (avg=0.000ms), total=3.165ms (avg=0.198ms), ops=16
+  layer[2]: compute=2.870ms (avg=0.179ms), comm=0.000ms (avg=0.000ms), total=2.870ms (avg=0.179ms), ops=16
+  layer[3]: compute=2.918ms (avg=0.182ms), comm=0.000ms (avg=0.000ms), total=2.918ms (avg=0.182ms), ops=16
+  layer[4]: compute=2.986ms (avg=0.187ms), comm=0.000ms (avg=0.000ms), total=2.986ms (avg=0.187ms), ops=16
+  layer[5]: compute=2.738ms (avg=0.171ms), comm=0.000ms (avg=0.000ms), total=2.738ms (avg=0.171ms), ops=16
+  layer[6]: compute=2.801ms (avg=0.175ms), comm=0.000ms (avg=0.000ms), total=2.801ms (avg=0.175ms), ops=16
+  layer[7]: compute=2.738ms (avg=0.171ms), comm=0.000ms (avg=0.000ms), total=2.738ms (avg=0.171ms), ops=16
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 2
+  layer[embed]: compute=0.206ms (avg=0.103ms), comm=0.000ms (avg=0.000ms), total=0.206ms (avg=0.103ms), ops=2
+  layer[0]: compute=3.179ms (avg=0.199ms), comm=0.000ms (avg=0.000ms), total=3.179ms (avg=0.199ms), ops=16
+  layer[1]: compute=2.883ms (avg=0.180ms), comm=0.000ms (avg=0.000ms), total=2.883ms (avg=0.180ms), ops=16
+  layer[2]: compute=2.745ms (avg=0.172ms), comm=0.000ms (avg=0.000ms), total=2.745ms (avg=0.172ms), ops=16
+  layer[3]: compute=2.897ms (avg=0.181ms), comm=0.000ms (avg=0.000ms), total=2.897ms (avg=0.181ms), ops=16
+  layer[4]: compute=2.724ms (avg=0.170ms), comm=0.000ms (avg=0.000ms), total=2.724ms (avg=0.170ms), ops=16
+  layer[5]: compute=2.841ms (avg=0.178ms), comm=0.000ms (avg=0.000ms), total=2.841ms (avg=0.178ms), ops=16
+  layer[6]: compute=2.832ms (avg=0.177ms), comm=0.000ms (avg=0.000ms), total=2.832ms (avg=0.177ms), ops=16
+  layer[7]: compute=2.952ms (avg=0.185ms), comm=0.000ms (avg=0.000ms), total=2.952ms (avg=0.185ms), ops=16
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 2
+  layer[8]: compute=3.304ms (avg=0.207ms), comm=0.000ms (avg=0.000ms), total=3.304ms (avg=0.207ms), ops=16
+  layer[9]: compute=2.663ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.663ms (avg=0.166ms), ops=16
+  layer[10]: compute=2.529ms (avg=0.158ms), comm=0.000ms (avg=0.000ms), total=2.529ms (avg=0.158ms), ops=16
+  layer[11]: compute=2.553ms (avg=0.160ms), comm=0.000ms (avg=0.000ms), total=2.553ms (avg=0.160ms), ops=16
+  layer[12]: compute=2.492ms (avg=0.156ms), comm=0.000ms (avg=0.000ms), total=2.492ms (avg=0.156ms), ops=16
+  layer[13]: compute=2.560ms (avg=0.160ms), comm=0.000ms (avg=0.000ms), total=2.560ms (avg=0.160ms), ops=16
+  layer[14]: compute=2.550ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.550ms (avg=0.159ms), ops=16
+  layer[15]: compute=2.466ms (avg=0.154ms), comm=0.000ms (avg=0.000ms), total=2.466ms (avg=0.154ms), ops=16
+  layer[lm_head]: compute=8.707ms (avg=4.354ms), comm=0.000ms (avg=0.000ms), total=8.707ms (avg=4.354ms), ops=2
+/opt/conda/lib/python3.11/site-packages/torch/optim/lr_scheduler.py:536: UserWarning: To get the last learning rate computed by the scheduler, please use `get_last_lr()`.
+  _warn_get_lr_called_within_step(self)
+| epoch   1 |     1/ 5167 batches | lr 0.00 | ms/batch 2247.46 | loss 16.51 | ppl 14862309.02
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 3
+  layer[embed]: compute=0.193ms (avg=0.096ms), comm=0.000ms (avg=0.000ms), total=0.193ms (avg=0.096ms), ops=2
+  layer[0]: compute=3.003ms (avg=0.188ms), comm=0.000ms (avg=0.000ms), total=3.003ms (avg=0.188ms), ops=16
+  layer[1]: compute=2.785ms (avg=0.174ms), comm=0.000ms (avg=0.000ms), total=2.785ms (avg=0.174ms), ops=16
+  layer[2]: compute=2.873ms (avg=0.180ms), comm=0.000ms (avg=0.000ms), total=2.873ms (avg=0.180ms), ops=16
+  layer[3]: compute=2.689ms (avg=0.168ms), comm=0.000ms (avg=0.000ms), total=2.689ms (avg=0.168ms), ops=16
+  layer[4]: compute=2.840ms (avg=0.177ms), comm=0.000ms (avg=0.000ms), total=2.840ms (avg=0.177ms), ops=16
+  layer[5]: compute=2.719ms (avg=0.170ms), comm=0.000ms (avg=0.000ms), total=2.719ms (avg=0.170ms), ops=16
+  layer[6]: compute=2.602ms (avg=0.163ms), comm=0.000ms (avg=0.000ms), total=2.602ms (avg=0.163ms), ops=16
+  layer[7]: compute=2.587ms (avg=0.162ms), comm=0.000ms (avg=0.000ms), total=2.587ms (avg=0.162ms), ops=16
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 3
+  layer[8]: compute=2.934ms (avg=0.183ms), comm=0.000ms (avg=0.000ms), total=2.934ms (avg=0.183ms), ops=16
+  layer[9]: compute=2.526ms (avg=0.158ms), comm=0.000ms (avg=0.000ms), total=2.526ms (avg=0.158ms), ops=16
+  layer[10]: compute=2.486ms (avg=0.155ms), comm=0.000ms (avg=0.000ms), total=2.486ms (avg=0.155ms), ops=16
+  layer[11]: compute=2.545ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.545ms (avg=0.159ms), ops=16
+  layer[12]: compute=2.428ms (avg=0.152ms), comm=0.000ms (avg=0.000ms), total=2.428ms (avg=0.152ms), ops=16
+  layer[13]: compute=2.427ms (avg=0.152ms), comm=0.000ms (avg=0.000ms), total=2.427ms (avg=0.152ms), ops=16
+  layer[14]: compute=2.465ms (avg=0.154ms), comm=0.000ms (avg=0.000ms), total=2.465ms (avg=0.154ms), ops=16
+  layer[15]: compute=2.537ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.537ms (avg=0.159ms), ops=16
+  layer[lm_head]: compute=8.888ms (avg=4.444ms), comm=0.000ms (avg=0.000ms), total=8.888ms (avg=4.444ms), ops=2
+| epoch   1 |     2/ 5167 batches | lr 0.00 | ms/batch 625.89 | loss  1.66 | ppl     5.27
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 4
+  layer[embed]: compute=0.221ms (avg=0.111ms), comm=0.000ms (avg=0.000ms), total=0.221ms (avg=0.111ms), ops=2
+  layer[0]: compute=2.989ms (avg=0.187ms), comm=0.000ms (avg=0.000ms), total=2.989ms (avg=0.187ms), ops=16
+  layer[1]: compute=2.858ms (avg=0.179ms), comm=0.000ms (avg=0.000ms), total=2.858ms (avg=0.179ms), ops=16
+  layer[2]: compute=2.577ms (avg=0.161ms), comm=0.000ms (avg=0.000ms), total=2.577ms (avg=0.161ms), ops=16
+  layer[3]: compute=2.755ms (avg=0.172ms), comm=0.000ms (avg=0.000ms), total=2.755ms (avg=0.172ms), ops=16
+  layer[4]: compute=2.660ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.660ms (avg=0.166ms), ops=16
+  layer[5]: compute=2.888ms (avg=0.180ms), comm=0.000ms (avg=0.000ms), total=2.888ms (avg=0.180ms), ops=16
+  layer[6]: compute=2.702ms (avg=0.169ms), comm=0.000ms (avg=0.000ms), total=2.702ms (avg=0.169ms), ops=16
+  layer[7]: compute=2.660ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.660ms (avg=0.166ms), ops=16
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 4
+  layer[8]: compute=3.301ms (avg=0.206ms), comm=0.000ms (avg=0.000ms), total=3.301ms (avg=0.206ms), ops=16
+  layer[9]: compute=2.550ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.550ms (avg=0.159ms), ops=16
+  layer[10]: compute=2.533ms (avg=0.158ms), comm=0.000ms (avg=0.000ms), total=2.533ms (avg=0.158ms), ops=16
+  layer[11]: compute=2.559ms (avg=0.160ms), comm=0.000ms (avg=0.000ms), total=2.559ms (avg=0.160ms), ops=16
+  layer[12]: compute=2.532ms (avg=0.158ms), comm=0.000ms (avg=0.000ms), total=2.532ms (avg=0.158ms), ops=16
+  layer[13]: compute=2.466ms (avg=0.154ms), comm=0.000ms (avg=0.000ms), total=2.466ms (avg=0.154ms), ops=16
+  layer[14]: compute=2.463ms (avg=0.154ms), comm=0.000ms (avg=0.000ms), total=2.463ms (avg=0.154ms), ops=16
+  layer[15]: compute=2.499ms (avg=0.156ms), comm=0.000ms (avg=0.000ms), total=2.499ms (avg=0.156ms), ops=16
+  layer[lm_head]: compute=8.802ms (avg=4.401ms), comm=0.000ms (avg=0.000ms), total=8.802ms (avg=4.401ms), ops=2
+| epoch   1 |     3/ 5167 batches | lr 0.00 | ms/batch 535.31 | loss  0.58 | ppl     1.79
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 5
+  layer[embed]: compute=0.203ms (avg=0.101ms), comm=0.000ms (avg=0.000ms), total=0.203ms (avg=0.101ms), ops=2
+  layer[0]: compute=3.034ms (avg=0.190ms), comm=0.000ms (avg=0.000ms), total=3.034ms (avg=0.190ms), ops=16
+  layer[1]: compute=3.031ms (avg=0.189ms), comm=0.000ms (avg=0.000ms), total=3.031ms (avg=0.189ms), ops=16
+  layer[2]: compute=2.711ms (avg=0.169ms), comm=0.000ms (avg=0.000ms), total=2.711ms (avg=0.169ms), ops=16
+  layer[3]: compute=2.845ms (avg=0.178ms), comm=0.000ms (avg=0.000ms), total=2.845ms (avg=0.178ms), ops=16
+  layer[4]: compute=2.816ms (avg=0.176ms), comm=0.000ms (avg=0.000ms), total=2.816ms (avg=0.176ms), ops=16
+  layer[5]: compute=2.608ms (avg=0.163ms), comm=0.000ms (avg=0.000ms), total=2.608ms (avg=0.163ms), ops=16
+  layer[6]: compute=2.858ms (avg=0.179ms), comm=0.000ms (avg=0.000ms), total=2.858ms (avg=0.179ms), ops=16
+  layer[7]: compute=2.658ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.658ms (avg=0.166ms), ops=16
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 5
+  layer[8]: compute=2.862ms (avg=0.179ms), comm=0.000ms (avg=0.000ms), total=2.862ms (avg=0.179ms), ops=16
+  layer[9]: compute=2.553ms (avg=0.160ms), comm=0.000ms (avg=0.000ms), total=2.553ms (avg=0.160ms), ops=16
+  layer[10]: compute=2.456ms (avg=0.153ms), comm=0.000ms (avg=0.000ms), total=2.456ms (avg=0.153ms), ops=16
+  layer[11]: compute=2.542ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.542ms (avg=0.159ms), ops=16
+  layer[12]: compute=2.538ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.538ms (avg=0.159ms), ops=16
+  layer[13]: compute=2.500ms (avg=0.156ms), comm=0.000ms (avg=0.000ms), total=2.500ms (avg=0.156ms), ops=16
+  layer[14]: compute=2.504ms (avg=0.156ms), comm=0.000ms (avg=0.000ms), total=2.504ms (avg=0.156ms), ops=16
+  layer[15]: compute=2.733ms (avg=0.171ms), comm=0.000ms (avg=0.000ms), total=2.733ms (avg=0.171ms), ops=16
+  layer[lm_head]: compute=8.894ms (avg=4.447ms), comm=0.000ms (avg=0.000ms), total=8.894ms (avg=4.447ms), ops=2
+| epoch   1 |     4/ 5167 batches | lr 0.00 | ms/batch 629.92 | loss  0.30 | ppl     1.35
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 6
+  layer[embed]: compute=0.218ms (avg=0.109ms), comm=0.000ms (avg=0.000ms), total=0.218ms (avg=0.109ms), ops=2
+  layer[0]: compute=3.002ms (avg=0.188ms), comm=0.000ms (avg=0.000ms), total=3.002ms (avg=0.188ms), ops=16
+  layer[1]: compute=2.808ms (avg=0.175ms), comm=0.000ms (avg=0.000ms), total=2.808ms (avg=0.175ms), ops=16
+  layer[2]: compute=2.635ms (avg=0.165ms), comm=0.000ms (avg=0.000ms), total=2.635ms (avg=0.165ms), ops=16
+  layer[3]: compute=2.855ms (avg=0.178ms), comm=0.000ms (avg=0.000ms), total=2.855ms (avg=0.178ms), ops=16
+  layer[4]: compute=2.632ms (avg=0.164ms), comm=0.000ms (avg=0.000ms), total=2.632ms (avg=0.164ms), ops=16
+  layer[5]: compute=2.716ms (avg=0.170ms), comm=0.000ms (avg=0.000ms), total=2.716ms (avg=0.170ms), ops=16
+  layer[6]: compute=2.859ms (avg=0.179ms), comm=0.000ms (avg=0.000ms), total=2.859ms (avg=0.179ms), ops=16
+  layer[7]: compute=2.700ms (avg=0.169ms), comm=0.000ms (avg=0.000ms), total=2.700ms (avg=0.169ms), ops=16
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 6
+  layer[8]: compute=2.870ms (avg=0.179ms), comm=0.000ms (avg=0.000ms), total=2.870ms (avg=0.179ms), ops=16
+  layer[9]: compute=2.532ms (avg=0.158ms), comm=0.000ms (avg=0.000ms), total=2.532ms (avg=0.158ms), ops=16
+  layer[10]: compute=2.433ms (avg=0.152ms), comm=0.000ms (avg=0.000ms), total=2.433ms (avg=0.152ms), ops=16
+  layer[11]: compute=2.523ms (avg=0.158ms), comm=0.000ms (avg=0.000ms), total=2.523ms (avg=0.158ms), ops=16
+  layer[12]: compute=2.605ms (avg=0.163ms), comm=0.000ms (avg=0.000ms), total=2.605ms (avg=0.163ms), ops=16
+  layer[13]: compute=2.502ms (avg=0.156ms), comm=0.000ms (avg=0.000ms), total=2.502ms (avg=0.156ms), ops=16
+  layer[14]: compute=2.475ms (avg=0.155ms), comm=0.000ms (avg=0.000ms), total=2.475ms (avg=0.155ms), ops=16
+  layer[15]: compute=2.530ms (avg=0.158ms), comm=0.000ms (avg=0.000ms), total=2.530ms (avg=0.158ms), ops=16
+  layer[lm_head]: compute=8.769ms (avg=4.384ms), comm=0.000ms (avg=0.000ms), total=8.769ms (avg=4.384ms), ops=2
+| epoch   1 |     5/ 5167 batches | lr 0.00 | ms/batch 453.64 | loss  2.83 | ppl    16.94
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 7
+  layer[embed]: compute=0.195ms (avg=0.097ms), comm=0.000ms (avg=0.000ms), total=0.195ms (avg=0.097ms), ops=2
+  layer[0]: compute=2.661ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.661ms (avg=0.166ms), ops=16
+  layer[1]: compute=2.767ms (avg=0.173ms), comm=0.000ms (avg=0.000ms), total=2.767ms (avg=0.173ms), ops=16
+  layer[2]: compute=2.479ms (avg=0.155ms), comm=0.000ms (avg=0.000ms), total=2.479ms (avg=0.155ms), ops=16
+  layer[3]: compute=2.338ms (avg=0.146ms), comm=0.000ms (avg=0.000ms), total=2.338ms (avg=0.146ms), ops=16
+  layer[4]: compute=2.645ms (avg=0.165ms), comm=0.000ms (avg=0.000ms), total=2.645ms (avg=0.165ms), ops=16
+  layer[5]: compute=2.410ms (avg=0.151ms), comm=0.000ms (avg=0.000ms), total=2.410ms (avg=0.151ms), ops=16
+  layer[6]: compute=2.305ms (avg=0.144ms), comm=0.000ms (avg=0.000ms), total=2.305ms (avg=0.144ms), ops=16
+  layer[7]: compute=2.618ms (avg=0.164ms), comm=0.000ms (avg=0.000ms), total=2.618ms (avg=0.164ms), ops=16
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 7
+  layer[8]: compute=3.338ms (avg=0.209ms), comm=0.000ms (avg=0.000ms), total=3.338ms (avg=0.209ms), ops=16
+  layer[9]: compute=3.135ms (avg=0.196ms), comm=0.000ms (avg=0.000ms), total=3.135ms (avg=0.196ms), ops=16
+  layer[10]: compute=2.612ms (avg=0.163ms), comm=0.000ms (avg=0.000ms), total=2.612ms (avg=0.163ms), ops=16
+  layer[11]: compute=2.569ms (avg=0.161ms), comm=0.000ms (avg=0.000ms), total=2.569ms (avg=0.161ms), ops=16
+  layer[12]: compute=2.663ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.663ms (avg=0.166ms), ops=16
+  layer[13]: compute=2.649ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.649ms (avg=0.166ms), ops=16
+  layer[14]: compute=2.642ms (avg=0.165ms), comm=0.000ms (avg=0.000ms), total=2.642ms (avg=0.165ms), ops=16
+  layer[15]: compute=2.529ms (avg=0.158ms), comm=0.000ms (avg=0.000ms), total=2.529ms (avg=0.158ms), ops=16
+  layer[lm_head]: compute=8.507ms (avg=4.254ms), comm=0.000ms (avg=0.000ms), total=8.507ms (avg=4.254ms), ops=2
+| epoch   1 |     6/ 5167 batches | lr 0.00 | ms/batch 466.00 | loss  1.44 | ppl     4.20
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 8
+  layer[embed]: compute=0.240ms (avg=0.120ms), comm=0.000ms (avg=0.000ms), total=0.240ms (avg=0.120ms), ops=2
+  layer[0]: compute=2.571ms (avg=0.161ms), comm=0.000ms (avg=0.000ms), total=2.571ms (avg=0.161ms), ops=16
+  layer[1]: compute=2.678ms (avg=0.167ms), comm=0.000ms (avg=0.000ms), total=2.678ms (avg=0.167ms), ops=16
+  layer[2]: compute=2.395ms (avg=0.150ms), comm=0.000ms (avg=0.000ms), total=2.395ms (avg=0.150ms), ops=16
+  layer[3]: compute=2.422ms (avg=0.151ms), comm=0.000ms (avg=0.000ms), total=2.422ms (avg=0.151ms), ops=16
+  layer[4]: compute=10.011ms (avg=0.626ms), comm=0.000ms (avg=0.000ms), total=10.011ms (avg=0.626ms), ops=16
+  layer[5]: compute=3.260ms (avg=0.204ms), comm=0.000ms (avg=0.000ms), total=3.260ms (avg=0.204ms), ops=16
+  layer[6]: compute=2.539ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.539ms (avg=0.159ms), ops=16
+  layer[7]: compute=20.038ms (avg=1.252ms), comm=0.000ms (avg=0.000ms), total=20.038ms (avg=1.252ms), ops=16
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 8
+  layer[8]: compute=4.724ms (avg=0.295ms), comm=0.000ms (avg=0.000ms), total=4.724ms (avg=0.295ms), ops=16
+  layer[9]: compute=3.103ms (avg=0.194ms), comm=0.000ms (avg=0.000ms), total=3.103ms (avg=0.194ms), ops=16
+  layer[10]: compute=6.831ms (avg=0.427ms), comm=0.000ms (avg=0.000ms), total=6.831ms (avg=0.427ms), ops=16
+  layer[11]: compute=3.485ms (avg=0.218ms), comm=0.000ms (avg=0.000ms), total=3.485ms (avg=0.218ms), ops=16
+  layer[12]: compute=8.340ms (avg=0.521ms), comm=0.000ms (avg=0.000ms), total=8.340ms (avg=0.521ms), ops=16
+  layer[13]: compute=16.688ms (avg=1.043ms), comm=0.000ms (avg=0.000ms), total=16.688ms (avg=1.043ms), ops=16
+  layer[14]: compute=17.376ms (avg=1.086ms), comm=0.000ms (avg=0.000ms), total=17.376ms (avg=1.086ms), ops=16
+  layer[15]: compute=9.721ms (avg=0.608ms), comm=0.000ms (avg=0.000ms), total=9.721ms (avg=0.608ms), ops=16
+  layer[lm_head]: compute=8.595ms (avg=4.298ms), comm=0.000ms (avg=0.000ms), total=8.595ms (avg=4.298ms), ops=2
+| epoch   1 |     7/ 5167 batches | lr 0.00 | ms/batch 702.43 | loss  0.39 | ppl     1.48
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 9
+  layer[embed]: compute=0.199ms (avg=0.099ms), comm=0.000ms (avg=0.000ms), total=0.199ms (avg=0.099ms), ops=2
+  layer[0]: compute=2.569ms (avg=0.161ms), comm=0.000ms (avg=0.000ms), total=2.569ms (avg=0.161ms), ops=16
+  layer[1]: compute=2.678ms (avg=0.167ms), comm=0.000ms (avg=0.000ms), total=2.678ms (avg=0.167ms), ops=16
+  layer[2]: compute=2.397ms (avg=0.150ms), comm=0.000ms (avg=0.000ms), total=2.397ms (avg=0.150ms), ops=16
+  layer[3]: compute=2.343ms (avg=0.146ms), comm=0.000ms (avg=0.000ms), total=2.343ms (avg=0.146ms), ops=16
+  layer[4]: compute=2.684ms (avg=0.168ms), comm=0.000ms (avg=0.000ms), total=2.684ms (avg=0.168ms), ops=16
+  layer[5]: compute=2.380ms (avg=0.149ms), comm=0.000ms (avg=0.000ms), total=2.380ms (avg=0.149ms), ops=16
+  layer[6]: compute=2.306ms (avg=0.144ms), comm=0.000ms (avg=0.000ms), total=2.306ms (avg=0.144ms), ops=16
+  layer[7]: compute=2.683ms (avg=0.168ms), comm=0.000ms (avg=0.000ms), total=2.683ms (avg=0.168ms), ops=16
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 9
+  layer[8]: compute=2.873ms (avg=0.180ms), comm=0.000ms (avg=0.000ms), total=2.873ms (avg=0.180ms), ops=16
+  layer[9]: compute=3.516ms (avg=0.220ms), comm=0.000ms (avg=0.000ms), total=3.516ms (avg=0.220ms), ops=16
+  layer[10]: compute=2.769ms (avg=0.173ms), comm=0.000ms (avg=0.000ms), total=2.769ms (avg=0.173ms), ops=16
+  layer[11]: compute=2.591ms (avg=0.162ms), comm=0.000ms (avg=0.000ms), total=2.591ms (avg=0.162ms), ops=16
+  layer[12]: compute=2.602ms (avg=0.163ms), comm=0.000ms (avg=0.000ms), total=2.602ms (avg=0.163ms), ops=16
+  layer[13]: compute=2.629ms (avg=0.164ms), comm=0.000ms (avg=0.000ms), total=2.629ms (avg=0.164ms), ops=16
+  layer[14]: compute=2.564ms (avg=0.160ms), comm=0.000ms (avg=0.000ms), total=2.564ms (avg=0.160ms), ops=16
+  layer[15]: compute=2.549ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.549ms (avg=0.159ms), ops=16
+  layer[lm_head]: compute=8.667ms (avg=4.334ms), comm=0.000ms (avg=0.000ms), total=8.667ms (avg=4.334ms), ops=2
+| epoch   1 |     8/ 5167 batches | lr 0.00 | ms/batch 526.78 | loss  0.21 | ppl     1.23
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 10
+  layer[embed]: compute=0.189ms (avg=0.095ms), comm=0.000ms (avg=0.000ms), total=0.189ms (avg=0.095ms), ops=2
+  layer[0]: compute=2.549ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.549ms (avg=0.159ms), ops=16
+  layer[1]: compute=6.219ms (avg=0.389ms), comm=0.000ms (avg=0.000ms), total=6.219ms (avg=0.389ms), ops=16
+  layer[2]: compute=4.804ms (avg=0.300ms), comm=0.000ms (avg=0.000ms), total=4.804ms (avg=0.300ms), ops=16
+  layer[3]: compute=2.413ms (avg=0.151ms), comm=0.000ms (avg=0.000ms), total=2.413ms (avg=0.151ms), ops=16
+  layer[4]: compute=13.540ms (avg=0.846ms), comm=0.000ms (avg=0.000ms), total=13.540ms (avg=0.846ms), ops=16
+  layer[5]: compute=8.690ms (avg=0.543ms), comm=0.000ms (avg=0.000ms), total=8.690ms (avg=0.543ms), ops=16
+  layer[6]: compute=2.568ms (avg=0.161ms), comm=0.000ms (avg=0.000ms), total=2.568ms (avg=0.161ms), ops=16
+  layer[7]: compute=8.890ms (avg=0.556ms), comm=0.000ms (avg=0.000ms), total=8.890ms (avg=0.556ms), ops=16
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 10
+  layer[8]: compute=2.969ms (avg=0.186ms), comm=0.000ms (avg=0.000ms), total=2.969ms (avg=0.186ms), ops=16
+  layer[9]: compute=11.344ms (avg=0.709ms), comm=0.000ms (avg=0.000ms), total=11.344ms (avg=0.709ms), ops=16
+  layer[10]: compute=5.164ms (avg=0.323ms), comm=0.000ms (avg=0.000ms), total=5.164ms (avg=0.323ms), ops=16
+  layer[11]: compute=11.563ms (avg=0.723ms), comm=0.000ms (avg=0.000ms), total=11.563ms (avg=0.723ms), ops=16
+  layer[12]: compute=14.880ms (avg=0.930ms), comm=0.000ms (avg=0.000ms), total=14.880ms (avg=0.930ms), ops=16
+  layer[13]: compute=35.791ms (avg=2.237ms), comm=0.000ms (avg=0.000ms), total=35.791ms (avg=2.237ms), ops=16
+  layer[14]: compute=5.381ms (avg=0.336ms), comm=0.000ms (avg=0.000ms), total=5.381ms (avg=0.336ms), ops=16
+  layer[15]: compute=15.003ms (avg=0.938ms), comm=0.000ms (avg=0.000ms), total=15.003ms (avg=0.938ms), ops=16
+  layer[lm_head]: compute=8.669ms (avg=4.335ms), comm=0.000ms (avg=0.000ms), total=8.669ms (avg=4.335ms), ops=2
+| epoch   1 |     9/ 5167 batches | lr 0.00 | ms/batch 610.22 | loss  0.18 | ppl     1.20
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 11
+  layer[embed]: compute=0.194ms (avg=0.097ms), comm=0.000ms (avg=0.000ms), total=0.194ms (avg=0.097ms), ops=2
+  layer[0]: compute=2.562ms (avg=0.160ms), comm=0.000ms (avg=0.000ms), total=2.562ms (avg=0.160ms), ops=16
+  layer[1]: compute=2.798ms (avg=0.175ms), comm=0.000ms (avg=0.000ms), total=2.798ms (avg=0.175ms), ops=16
+  layer[2]: compute=2.613ms (avg=0.163ms), comm=0.000ms (avg=0.000ms), total=2.613ms (avg=0.163ms), ops=16
+  layer[3]: compute=2.813ms (avg=0.176ms), comm=0.000ms (avg=0.000ms), total=2.813ms (avg=0.176ms), ops=16
+  layer[4]: compute=3.614ms (avg=0.226ms), comm=0.000ms (avg=0.000ms), total=3.614ms (avg=0.226ms), ops=16
+  layer[5]: compute=3.065ms (avg=0.192ms), comm=0.000ms (avg=0.000ms), total=3.065ms (avg=0.192ms), ops=16
+  layer[6]: compute=2.302ms (avg=0.144ms), comm=0.000ms (avg=0.000ms), total=2.302ms (avg=0.144ms), ops=16
+  layer[7]: compute=2.640ms (avg=0.165ms), comm=0.000ms (avg=0.000ms), total=2.640ms (avg=0.165ms), ops=16
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 11
+  layer[8]: compute=3.140ms (avg=0.196ms), comm=0.000ms (avg=0.000ms), total=3.140ms (avg=0.196ms), ops=16
+  layer[9]: compute=2.975ms (avg=0.186ms), comm=0.000ms (avg=0.000ms), total=2.975ms (avg=0.186ms), ops=16
+  layer[10]: compute=2.561ms (avg=0.160ms), comm=0.000ms (avg=0.000ms), total=2.561ms (avg=0.160ms), ops=16
+  layer[11]: compute=2.528ms (avg=0.158ms), comm=0.000ms (avg=0.000ms), total=2.528ms (avg=0.158ms), ops=16
+  layer[12]: compute=2.524ms (avg=0.158ms), comm=0.000ms (avg=0.000ms), total=2.524ms (avg=0.158ms), ops=16
+  layer[13]: compute=2.655ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.655ms (avg=0.166ms), ops=16
+  layer[14]: compute=2.633ms (avg=0.165ms), comm=0.000ms (avg=0.000ms), total=2.633ms (avg=0.165ms), ops=16
+  layer[15]: compute=2.508ms (avg=0.157ms), comm=0.000ms (avg=0.000ms), total=2.508ms (avg=0.157ms), ops=16
+  layer[lm_head]: compute=8.594ms (avg=4.297ms), comm=0.000ms (avg=0.000ms), total=8.594ms (avg=4.297ms), ops=2
+| epoch   1 |    10/ 5167 batches | lr 0.00 | ms/batch 427.45 | loss  0.17 | ppl     1.19
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 12
+  layer[8]: compute=2.647ms (avg=0.165ms), comm=0.000ms (avg=0.000ms), total=2.647ms (avg=0.165ms), ops=16
+  layer[9]: compute=2.845ms (avg=0.178ms), comm=0.000ms (avg=0.000ms), total=2.845ms (avg=0.178ms), ops=16
+  layer[10]: compute=2.527ms (avg=0.158ms), comm=0.000ms (avg=0.000ms), total=2.527ms (avg=0.158ms), ops=16
+  layer[11]: compute=2.543ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.543ms (avg=0.159ms), ops=16
+  layer[12]: compute=2.555ms (avg=0.160ms), comm=0.000ms (avg=0.000ms), total=2.555ms (avg=0.160ms), ops=16
+  layer[13]: compute=2.480ms (avg=0.155ms), comm=0.000ms (avg=0.000ms), total=2.480ms (avg=0.155ms), ops=16
+  layer[14]: compute=2.595ms (avg=0.162ms), comm=0.000ms (avg=0.000ms), total=2.595ms (avg=0.162ms), ops=16
+  layer[15]: compute=2.493ms (avg=0.156ms), comm=0.000ms (avg=0.000ms), total=2.493ms (avg=0.156ms), ops=16
+  layer[lm_head]: compute=8.531ms (avg=4.265ms), comm=0.000ms (avg=0.000ms), total=8.531ms (avg=4.265ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 12
+  layer[embed]: compute=0.184ms (avg=0.092ms), comm=0.000ms (avg=0.000ms), total=0.184ms (avg=0.092ms), ops=2
+  layer[0]: compute=2.575ms (avg=0.161ms), comm=0.000ms (avg=0.000ms), total=2.575ms (avg=0.161ms), ops=16
+  layer[1]: compute=2.697ms (avg=0.169ms), comm=0.000ms (avg=0.000ms), total=2.697ms (avg=0.169ms), ops=16
+  layer[2]: compute=2.419ms (avg=0.151ms), comm=0.000ms (avg=0.000ms), total=2.419ms (avg=0.151ms), ops=16
+  layer[3]: compute=2.332ms (avg=0.146ms), comm=0.000ms (avg=0.000ms), total=2.332ms (avg=0.146ms), ops=16
+  layer[4]: compute=2.701ms (avg=0.169ms), comm=0.000ms (avg=0.000ms), total=2.701ms (avg=0.169ms), ops=16
+  layer[5]: compute=2.400ms (avg=0.150ms), comm=0.000ms (avg=0.000ms), total=2.400ms (avg=0.150ms), ops=16
+  layer[6]: compute=2.294ms (avg=0.143ms), comm=0.000ms (avg=0.000ms), total=2.294ms (avg=0.143ms), ops=16
+  layer[7]: compute=2.700ms (avg=0.169ms), comm=0.000ms (avg=0.000ms), total=2.700ms (avg=0.169ms), ops=16
+| epoch   1 |    11/ 5167 batches | lr 0.00 | ms/batch 477.33 | loss  0.16 | ppl     1.18
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 13
+  layer[8]: compute=2.418ms (avg=0.151ms), comm=0.000ms (avg=0.000ms), total=2.418ms (avg=0.151ms), ops=16
+  layer[9]: compute=1.780ms (avg=0.111ms), comm=0.000ms (avg=0.000ms), total=1.780ms (avg=0.111ms), ops=16
+  layer[10]: compute=1.551ms (avg=0.097ms), comm=0.000ms (avg=0.000ms), total=1.551ms (avg=0.097ms), ops=16
+  layer[11]: compute=1.676ms (avg=0.105ms), comm=0.000ms (avg=0.000ms), total=1.676ms (avg=0.105ms), ops=16
+  layer[12]: compute=1.675ms (avg=0.105ms), comm=0.000ms (avg=0.000ms), total=1.675ms (avg=0.105ms), ops=16
+  layer[13]: compute=1.687ms (avg=0.105ms), comm=0.000ms (avg=0.000ms), total=1.687ms (avg=0.105ms), ops=16
+  layer[14]: compute=1.675ms (avg=0.105ms), comm=0.000ms (avg=0.000ms), total=1.675ms (avg=0.105ms), ops=16
+  layer[15]: compute=1.675ms (avg=0.105ms), comm=0.000ms (avg=0.000ms), total=1.675ms (avg=0.105ms), ops=16
+  layer[lm_head]: compute=7.742ms (avg=3.871ms), comm=0.000ms (avg=0.000ms), total=7.742ms (avg=3.871ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 13
+  layer[embed]: compute=0.196ms (avg=0.098ms), comm=0.000ms (avg=0.000ms), total=0.196ms (avg=0.098ms), ops=2
+  layer[0]: compute=1.896ms (avg=0.119ms), comm=0.000ms (avg=0.000ms), total=1.896ms (avg=0.119ms), ops=16
+  layer[1]: compute=1.790ms (avg=0.112ms), comm=0.000ms (avg=0.000ms), total=1.790ms (avg=0.112ms), ops=16
+  layer[2]: compute=1.745ms (avg=0.109ms), comm=0.000ms (avg=0.000ms), total=1.745ms (avg=0.109ms), ops=16
+  layer[3]: compute=1.711ms (avg=0.107ms), comm=0.000ms (avg=0.000ms), total=1.711ms (avg=0.107ms), ops=16
+  layer[4]: compute=1.969ms (avg=0.123ms), comm=0.000ms (avg=0.000ms), total=1.969ms (avg=0.123ms), ops=16
+  layer[5]: compute=1.853ms (avg=0.116ms), comm=0.000ms (avg=0.000ms), total=1.853ms (avg=0.116ms), ops=16
+  layer[6]: compute=1.699ms (avg=0.106ms), comm=0.000ms (avg=0.000ms), total=1.699ms (avg=0.106ms), ops=16
+  layer[7]: compute=1.946ms (avg=0.122ms), comm=0.000ms (avg=0.000ms), total=1.946ms (avg=0.122ms), ops=16
+| epoch   1 |    12/ 5167 batches | lr 0.00 | ms/batch 421.95 | loss  0.66 | ppl     1.94
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 14
+  layer[8]: compute=1.922ms (avg=0.120ms), comm=0.000ms (avg=0.000ms), total=1.922ms (avg=0.120ms), ops=16
+  layer[9]: compute=1.694ms (avg=0.106ms), comm=0.000ms (avg=0.000ms), total=1.694ms (avg=0.106ms), ops=16
+  layer[10]: compute=1.601ms (avg=0.100ms), comm=0.000ms (avg=0.000ms), total=1.601ms (avg=0.100ms), ops=16
+  layer[11]: compute=1.690ms (avg=0.106ms), comm=0.000ms (avg=0.000ms), total=1.690ms (avg=0.106ms), ops=16
+  layer[12]: compute=1.699ms (avg=0.106ms), comm=0.000ms (avg=0.000ms), total=1.699ms (avg=0.106ms), ops=16
+  layer[13]: compute=1.695ms (avg=0.106ms), comm=0.000ms (avg=0.000ms), total=1.695ms (avg=0.106ms), ops=16
+  layer[14]: compute=1.690ms (avg=0.106ms), comm=0.000ms (avg=0.000ms), total=1.690ms (avg=0.106ms), ops=16
+  layer[15]: compute=1.681ms (avg=0.105ms), comm=0.000ms (avg=0.000ms), total=1.681ms (avg=0.105ms), ops=16
+  layer[lm_head]: compute=7.669ms (avg=3.834ms), comm=0.000ms (avg=0.000ms), total=7.669ms (avg=3.834ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 14
+  layer[embed]: compute=0.222ms (avg=0.111ms), comm=0.000ms (avg=0.000ms), total=0.222ms (avg=0.111ms), ops=2
+  layer[0]: compute=1.918ms (avg=0.120ms), comm=0.000ms (avg=0.000ms), total=1.918ms (avg=0.120ms), ops=16
+  layer[1]: compute=2.473ms (avg=0.155ms), comm=0.000ms (avg=0.000ms), total=2.473ms (avg=0.155ms), ops=16
+  layer[2]: compute=1.853ms (avg=0.116ms), comm=0.000ms (avg=0.000ms), total=1.853ms (avg=0.116ms), ops=16
+  layer[3]: compute=1.713ms (avg=0.107ms), comm=0.000ms (avg=0.000ms), total=1.713ms (avg=0.107ms), ops=16
+  layer[4]: compute=1.963ms (avg=0.123ms), comm=0.000ms (avg=0.000ms), total=1.963ms (avg=0.123ms), ops=16
+  layer[5]: compute=1.939ms (avg=0.121ms), comm=0.000ms (avg=0.000ms), total=1.939ms (avg=0.121ms), ops=16
+  layer[6]: compute=1.737ms (avg=0.109ms), comm=0.000ms (avg=0.000ms), total=1.737ms (avg=0.109ms), ops=16
+  layer[7]: compute=1.962ms (avg=0.123ms), comm=0.000ms (avg=0.000ms), total=1.962ms (avg=0.123ms), ops=16
+| epoch   1 |    13/ 5167 batches | lr 0.00 | ms/batch 389.94 | loss  0.27 | ppl     1.31
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 15
+  layer[8]: compute=1.941ms (avg=0.121ms), comm=0.000ms (avg=0.000ms), total=1.941ms (avg=0.121ms), ops=16
+  layer[9]: compute=1.686ms (avg=0.105ms), comm=0.000ms (avg=0.000ms), total=1.686ms (avg=0.105ms), ops=16
+  layer[10]: compute=1.558ms (avg=0.097ms), comm=0.000ms (avg=0.000ms), total=1.558ms (avg=0.097ms), ops=16
+  layer[11]: compute=1.680ms (avg=0.105ms), comm=0.000ms (avg=0.000ms), total=1.680ms (avg=0.105ms), ops=16
+  layer[12]: compute=1.705ms (avg=0.107ms), comm=0.000ms (avg=0.000ms), total=1.705ms (avg=0.107ms), ops=16
+  layer[13]: compute=1.689ms (avg=0.106ms), comm=0.000ms (avg=0.000ms), total=1.689ms (avg=0.106ms), ops=16
+  layer[14]: compute=1.677ms (avg=0.105ms), comm=0.000ms (avg=0.000ms), total=1.677ms (avg=0.105ms), ops=16
+  layer[15]: compute=1.670ms (avg=0.104ms), comm=0.000ms (avg=0.000ms), total=1.670ms (avg=0.104ms), ops=16
+  layer[lm_head]: compute=7.701ms (avg=3.850ms), comm=0.000ms (avg=0.000ms), total=7.701ms (avg=3.850ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 15
+  layer[embed]: compute=0.197ms (avg=0.098ms), comm=0.000ms (avg=0.000ms), total=0.197ms (avg=0.098ms), ops=2
+  layer[0]: compute=1.854ms (avg=0.116ms), comm=0.000ms (avg=0.000ms), total=1.854ms (avg=0.116ms), ops=16
+  layer[1]: compute=2.299ms (avg=0.144ms), comm=0.000ms (avg=0.000ms), total=2.299ms (avg=0.144ms), ops=16
+  layer[2]: compute=1.850ms (avg=0.116ms), comm=0.000ms (avg=0.000ms), total=1.850ms (avg=0.116ms), ops=16
+  layer[3]: compute=1.701ms (avg=0.106ms), comm=0.000ms (avg=0.000ms), total=1.701ms (avg=0.106ms), ops=16
+  layer[4]: compute=1.964ms (avg=0.123ms), comm=0.000ms (avg=0.000ms), total=1.964ms (avg=0.123ms), ops=16
+  layer[5]: compute=1.844ms (avg=0.115ms), comm=0.000ms (avg=0.000ms), total=1.844ms (avg=0.115ms), ops=16
+  layer[6]: compute=1.706ms (avg=0.107ms), comm=0.000ms (avg=0.000ms), total=1.706ms (avg=0.107ms), ops=16
+  layer[7]: compute=1.934ms (avg=0.121ms), comm=0.000ms (avg=0.000ms), total=1.934ms (avg=0.121ms), ops=16
+| epoch   1 |    14/ 5167 batches | lr 0.00 | ms/batch 420.92 | loss  0.25 | ppl     1.29
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 16
+  layer[embed]: compute=0.205ms (avg=0.102ms), comm=0.000ms (avg=0.000ms), total=0.205ms (avg=0.102ms), ops=2
+  layer[0]: compute=1.851ms (avg=0.116ms), comm=0.000ms (avg=0.000ms), total=1.851ms (avg=0.116ms), ops=16
+  layer[1]: compute=2.256ms (avg=0.141ms), comm=0.000ms (avg=0.000ms), total=2.256ms (avg=0.141ms), ops=16
+  layer[2]: compute=1.891ms (avg=0.118ms), comm=0.000ms (avg=0.000ms), total=1.891ms (avg=0.118ms), ops=16
+  layer[3]: compute=1.672ms (avg=0.105ms), comm=0.000ms (avg=0.000ms), total=1.672ms (avg=0.105ms), ops=16
+  layer[4]: compute=1.920ms (avg=0.120ms), comm=0.000ms (avg=0.000ms), total=1.920ms (avg=0.120ms), ops=16
+  layer[5]: compute=1.804ms (avg=0.113ms), comm=0.000ms (avg=0.000ms), total=1.804ms (avg=0.113ms), ops=16
+  layer[6]: compute=1.679ms (avg=0.105ms), comm=0.000ms (avg=0.000ms), total=1.679ms (avg=0.105ms), ops=16
+  layer[7]: compute=1.897ms (avg=0.119ms), comm=0.000ms (avg=0.000ms), total=1.897ms (avg=0.119ms), ops=16
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 16
+  layer[8]: compute=1.924ms (avg=0.120ms), comm=0.000ms (avg=0.000ms), total=1.924ms (avg=0.120ms), ops=16
+  layer[9]: compute=1.654ms (avg=0.103ms), comm=0.000ms (avg=0.000ms), total=1.654ms (avg=0.103ms), ops=16
+  layer[10]: compute=1.565ms (avg=0.098ms), comm=0.000ms (avg=0.000ms), total=1.565ms (avg=0.098ms), ops=16
+  layer[11]: compute=1.681ms (avg=0.105ms), comm=0.000ms (avg=0.000ms), total=1.681ms (avg=0.105ms), ops=16
+  layer[12]: compute=1.672ms (avg=0.105ms), comm=0.000ms (avg=0.000ms), total=1.672ms (avg=0.105ms), ops=16
+  layer[13]: compute=1.687ms (avg=0.105ms), comm=0.000ms (avg=0.000ms), total=1.687ms (avg=0.105ms), ops=16
+  layer[14]: compute=1.678ms (avg=0.105ms), comm=0.000ms (avg=0.000ms), total=1.678ms (avg=0.105ms), ops=16
+  layer[15]: compute=1.671ms (avg=0.104ms), comm=0.000ms (avg=0.000ms), total=1.671ms (avg=0.104ms), ops=16
+  layer[lm_head]: compute=7.706ms (avg=3.853ms), comm=0.000ms (avg=0.000ms), total=7.706ms (avg=3.853ms), ops=2
+| epoch   1 |    15/ 5167 batches | lr 0.00 | ms/batch 368.38 | loss  0.24 | ppl     1.27
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 17
+  layer[8]: compute=3.102ms (avg=0.194ms), comm=0.000ms (avg=0.000ms), total=3.102ms (avg=0.194ms), ops=16
+  layer[9]: compute=2.651ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.651ms (avg=0.166ms), ops=16
+  layer[10]: compute=2.413ms (avg=0.151ms), comm=0.000ms (avg=0.000ms), total=2.413ms (avg=0.151ms), ops=16
+  layer[11]: compute=2.498ms (avg=0.156ms), comm=0.000ms (avg=0.000ms), total=2.498ms (avg=0.156ms), ops=16
+  layer[12]: compute=2.424ms (avg=0.151ms), comm=0.000ms (avg=0.000ms), total=2.424ms (avg=0.151ms), ops=16
+  layer[13]: compute=2.381ms (avg=0.149ms), comm=0.000ms (avg=0.000ms), total=2.381ms (avg=0.149ms), ops=16
+  layer[14]: compute=2.417ms (avg=0.151ms), comm=0.000ms (avg=0.000ms), total=2.417ms (avg=0.151ms), ops=16
+  layer[15]: compute=2.404ms (avg=0.150ms), comm=0.000ms (avg=0.000ms), total=2.404ms (avg=0.150ms), ops=16
+  layer[lm_head]: compute=9.023ms (avg=4.512ms), comm=0.000ms (avg=0.000ms), total=9.023ms (avg=4.512ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 17
+  layer[embed]: compute=0.193ms (avg=0.096ms), comm=0.000ms (avg=0.000ms), total=0.193ms (avg=0.096ms), ops=2
+  layer[0]: compute=3.416ms (avg=0.214ms), comm=0.000ms (avg=0.000ms), total=3.416ms (avg=0.214ms), ops=16
+  layer[1]: compute=2.783ms (avg=0.174ms), comm=0.000ms (avg=0.000ms), total=2.783ms (avg=0.174ms), ops=16
+  layer[2]: compute=2.568ms (avg=0.161ms), comm=0.000ms (avg=0.000ms), total=2.568ms (avg=0.161ms), ops=16
+  layer[3]: compute=2.730ms (avg=0.171ms), comm=0.000ms (avg=0.000ms), total=2.730ms (avg=0.171ms), ops=16
+  layer[4]: compute=2.697ms (avg=0.169ms), comm=0.000ms (avg=0.000ms), total=2.697ms (avg=0.169ms), ops=16
+  layer[5]: compute=2.623ms (avg=0.164ms), comm=0.000ms (avg=0.000ms), total=2.623ms (avg=0.164ms), ops=16
+  layer[6]: compute=2.577ms (avg=0.161ms), comm=0.000ms (avg=0.000ms), total=2.577ms (avg=0.161ms), ops=16
+  layer[7]: compute=2.760ms (avg=0.172ms), comm=0.000ms (avg=0.000ms), total=2.760ms (avg=0.172ms), ops=16
+| epoch   1 |    16/ 5167 batches | lr 0.00 | ms/batch 403.17 | loss  0.27 | ppl     1.31
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 18
+  layer[8]: compute=2.770ms (avg=0.173ms), comm=0.000ms (avg=0.000ms), total=2.770ms (avg=0.173ms), ops=16
+  layer[9]: compute=2.475ms (avg=0.155ms), comm=0.000ms (avg=0.000ms), total=2.475ms (avg=0.155ms), ops=16
+  layer[10]: compute=2.476ms (avg=0.155ms), comm=0.000ms (avg=0.000ms), total=2.476ms (avg=0.155ms), ops=16
+  layer[11]: compute=2.536ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.536ms (avg=0.159ms), ops=16
+  layer[12]: compute=2.393ms (avg=0.150ms), comm=0.000ms (avg=0.000ms), total=2.393ms (avg=0.150ms), ops=16
+  layer[13]: compute=2.392ms (avg=0.150ms), comm=0.000ms (avg=0.000ms), total=2.392ms (avg=0.150ms), ops=16
+  layer[14]: compute=3.956ms (avg=0.247ms), comm=0.000ms (avg=0.000ms), total=3.956ms (avg=0.247ms), ops=16
+  layer[15]: compute=2.684ms (avg=0.168ms), comm=0.000ms (avg=0.000ms), total=2.684ms (avg=0.168ms), ops=16
+  layer[lm_head]: compute=9.116ms (avg=4.558ms), comm=0.000ms (avg=0.000ms), total=9.116ms (avg=4.558ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 18
+  layer[embed]: compute=0.188ms (avg=0.094ms), comm=0.000ms (avg=0.000ms), total=0.188ms (avg=0.094ms), ops=2
+  layer[0]: compute=3.263ms (avg=0.204ms), comm=0.000ms (avg=0.000ms), total=3.263ms (avg=0.204ms), ops=16
+  layer[1]: compute=2.835ms (avg=0.177ms), comm=0.000ms (avg=0.000ms), total=2.835ms (avg=0.177ms), ops=16
+  layer[2]: compute=2.666ms (avg=0.167ms), comm=0.000ms (avg=0.000ms), total=2.666ms (avg=0.167ms), ops=16
+  layer[3]: compute=2.681ms (avg=0.168ms), comm=0.000ms (avg=0.000ms), total=2.681ms (avg=0.168ms), ops=16
+  layer[4]: compute=2.613ms (avg=0.163ms), comm=0.000ms (avg=0.000ms), total=2.613ms (avg=0.163ms), ops=16
+  layer[5]: compute=2.626ms (avg=0.164ms), comm=0.000ms (avg=0.000ms), total=2.626ms (avg=0.164ms), ops=16
+  layer[6]: compute=2.827ms (avg=0.177ms), comm=0.000ms (avg=0.000ms), total=2.827ms (avg=0.177ms), ops=16
+  layer[7]: compute=5.240ms (avg=0.327ms), comm=0.000ms (avg=0.000ms), total=5.240ms (avg=0.327ms), ops=16
+| epoch   1 |    17/ 5167 batches | lr 0.00 | ms/batch 415.86 | loss  0.10 | ppl     1.10
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 19
+  layer[8]: compute=2.801ms (avg=0.175ms), comm=0.000ms (avg=0.000ms), total=2.801ms (avg=0.175ms), ops=16
+  layer[9]: compute=3.043ms (avg=0.190ms), comm=0.000ms (avg=0.000ms), total=3.043ms (avg=0.190ms), ops=16
+  layer[10]: compute=3.098ms (avg=0.194ms), comm=0.000ms (avg=0.000ms), total=3.098ms (avg=0.194ms), ops=16
+  layer[11]: compute=2.552ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.552ms (avg=0.159ms), ops=16
+  layer[12]: compute=2.416ms (avg=0.151ms), comm=0.000ms (avg=0.000ms), total=2.416ms (avg=0.151ms), ops=16
+  layer[13]: compute=2.352ms (avg=0.147ms), comm=0.000ms (avg=0.000ms), total=2.352ms (avg=0.147ms), ops=16
+  layer[14]: compute=2.367ms (avg=0.148ms), comm=0.000ms (avg=0.000ms), total=2.367ms (avg=0.148ms), ops=16
+  layer[15]: compute=2.380ms (avg=0.149ms), comm=0.000ms (avg=0.000ms), total=2.380ms (avg=0.149ms), ops=16
+  layer[lm_head]: compute=9.102ms (avg=4.551ms), comm=0.000ms (avg=0.000ms), total=9.102ms (avg=4.551ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 19
+  layer[embed]: compute=0.191ms (avg=0.096ms), comm=0.000ms (avg=0.000ms), total=0.191ms (avg=0.096ms), ops=2
+  layer[0]: compute=3.123ms (avg=0.195ms), comm=0.000ms (avg=0.000ms), total=3.123ms (avg=0.195ms), ops=16
+  layer[1]: compute=2.768ms (avg=0.173ms), comm=0.000ms (avg=0.000ms), total=2.768ms (avg=0.173ms), ops=16
+  layer[2]: compute=2.630ms (avg=0.164ms), comm=0.000ms (avg=0.000ms), total=2.630ms (avg=0.164ms), ops=16
+  layer[3]: compute=2.639ms (avg=0.165ms), comm=0.000ms (avg=0.000ms), total=2.639ms (avg=0.165ms), ops=16
+  layer[4]: compute=2.909ms (avg=0.182ms), comm=0.000ms (avg=0.000ms), total=2.909ms (avg=0.182ms), ops=16
+  layer[5]: compute=2.723ms (avg=0.170ms), comm=0.000ms (avg=0.000ms), total=2.723ms (avg=0.170ms), ops=16
+  layer[6]: compute=2.772ms (avg=0.173ms), comm=0.000ms (avg=0.000ms), total=2.772ms (avg=0.173ms), ops=16
+  layer[7]: compute=2.669ms (avg=0.167ms), comm=0.000ms (avg=0.000ms), total=2.669ms (avg=0.167ms), ops=16
+| epoch   1 |    18/ 5167 batches | lr 0.00 | ms/batch 397.35 | loss  0.08 | ppl     1.09
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 20
+  layer[8]: compute=2.749ms (avg=0.172ms), comm=0.000ms (avg=0.000ms), total=2.749ms (avg=0.172ms), ops=16
+  layer[9]: compute=2.485ms (avg=0.155ms), comm=0.000ms (avg=0.000ms), total=2.485ms (avg=0.155ms), ops=16
+  layer[10]: compute=2.366ms (avg=0.148ms), comm=0.000ms (avg=0.000ms), total=2.366ms (avg=0.148ms), ops=16
+  layer[11]: compute=2.470ms (avg=0.154ms), comm=0.000ms (avg=0.000ms), total=2.470ms (avg=0.154ms), ops=16
+  layer[12]: compute=2.398ms (avg=0.150ms), comm=0.000ms (avg=0.000ms), total=2.398ms (avg=0.150ms), ops=16
+  layer[13]: compute=2.410ms (avg=0.151ms), comm=0.000ms (avg=0.000ms), total=2.410ms (avg=0.151ms), ops=16
+  layer[14]: compute=2.410ms (avg=0.151ms), comm=0.000ms (avg=0.000ms), total=2.410ms (avg=0.151ms), ops=16
+  layer[15]: compute=2.408ms (avg=0.150ms), comm=0.000ms (avg=0.000ms), total=2.408ms (avg=0.150ms), ops=16
+  layer[lm_head]: compute=9.145ms (avg=4.573ms), comm=0.000ms (avg=0.000ms), total=9.145ms (avg=4.573ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 20
+  layer[embed]: compute=0.195ms (avg=0.097ms), comm=0.000ms (avg=0.000ms), total=0.195ms (avg=0.097ms), ops=2
+  layer[0]: compute=3.198ms (avg=0.200ms), comm=0.000ms (avg=0.000ms), total=3.198ms (avg=0.200ms), ops=16
+  layer[1]: compute=2.869ms (avg=0.179ms), comm=0.000ms (avg=0.000ms), total=2.869ms (avg=0.179ms), ops=16
+  layer[2]: compute=2.702ms (avg=0.169ms), comm=0.000ms (avg=0.000ms), total=2.702ms (avg=0.169ms), ops=16
+  layer[3]: compute=2.648ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.648ms (avg=0.166ms), ops=16
+  layer[4]: compute=2.687ms (avg=0.168ms), comm=0.000ms (avg=0.000ms), total=2.687ms (avg=0.168ms), ops=16
+  layer[5]: compute=2.577ms (avg=0.161ms), comm=0.000ms (avg=0.000ms), total=2.577ms (avg=0.161ms), ops=16
+  layer[6]: compute=2.653ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.653ms (avg=0.166ms), ops=16
+  layer[7]: compute=2.790ms (avg=0.174ms), comm=0.000ms (avg=0.000ms), total=2.790ms (avg=0.174ms), ops=16
+| epoch   1 |    19/ 5167 batches | lr 0.00 | ms/batch 399.06 | loss  0.08 | ppl     1.08
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 21
+  layer[8]: compute=2.767ms (avg=0.173ms), comm=0.000ms (avg=0.000ms), total=2.767ms (avg=0.173ms), ops=16
+  layer[9]: compute=2.595ms (avg=0.162ms), comm=0.000ms (avg=0.000ms), total=2.595ms (avg=0.162ms), ops=16
+  layer[10]: compute=2.638ms (avg=0.165ms), comm=0.000ms (avg=0.000ms), total=2.638ms (avg=0.165ms), ops=16
+  layer[11]: compute=2.549ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.549ms (avg=0.159ms), ops=16
+  layer[12]: compute=2.426ms (avg=0.152ms), comm=0.000ms (avg=0.000ms), total=2.426ms (avg=0.152ms), ops=16
+  layer[13]: compute=2.744ms (avg=0.172ms), comm=0.000ms (avg=0.000ms), total=2.744ms (avg=0.172ms), ops=16
+  layer[14]: compute=2.467ms (avg=0.154ms), comm=0.000ms (avg=0.000ms), total=2.467ms (avg=0.154ms), ops=16
+  layer[15]: compute=7.331ms (avg=0.458ms), comm=0.000ms (avg=0.000ms), total=7.331ms (avg=0.458ms), ops=16
+  layer[lm_head]: compute=9.039ms (avg=4.519ms), comm=0.000ms (avg=0.000ms), total=9.039ms (avg=4.519ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 21
+  layer[embed]: compute=0.185ms (avg=0.093ms), comm=0.000ms (avg=0.000ms), total=0.185ms (avg=0.093ms), ops=2
+  layer[0]: compute=3.268ms (avg=0.204ms), comm=0.000ms (avg=0.000ms), total=3.268ms (avg=0.204ms), ops=16
+  layer[1]: compute=6.230ms (avg=0.389ms), comm=0.000ms (avg=0.000ms), total=6.230ms (avg=0.389ms), ops=16
+  layer[2]: compute=3.231ms (avg=0.202ms), comm=0.000ms (avg=0.000ms), total=3.231ms (avg=0.202ms), ops=16
+  layer[3]: compute=2.654ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.654ms (avg=0.166ms), ops=16
+  layer[4]: compute=3.423ms (avg=0.214ms), comm=0.000ms (avg=0.000ms), total=3.423ms (avg=0.214ms), ops=16
+  layer[5]: compute=3.210ms (avg=0.201ms), comm=0.000ms (avg=0.000ms), total=3.210ms (avg=0.201ms), ops=16
+  layer[6]: compute=4.488ms (avg=0.281ms), comm=0.000ms (avg=0.000ms), total=4.488ms (avg=0.281ms), ops=16
+  layer[7]: compute=2.616ms (avg=0.164ms), comm=0.000ms (avg=0.000ms), total=2.616ms (avg=0.164ms), ops=16
+| epoch   1 |    20/ 5167 batches | lr 0.00 | ms/batch 408.24 | loss  0.07 | ppl     1.07
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 22
+  layer[8]: compute=2.798ms (avg=0.175ms), comm=0.000ms (avg=0.000ms), total=2.798ms (avg=0.175ms), ops=16
+  layer[9]: compute=2.501ms (avg=0.156ms), comm=0.000ms (avg=0.000ms), total=2.501ms (avg=0.156ms), ops=16
+  layer[10]: compute=2.495ms (avg=0.156ms), comm=0.000ms (avg=0.000ms), total=2.495ms (avg=0.156ms), ops=16
+  layer[11]: compute=2.515ms (avg=0.157ms), comm=0.000ms (avg=0.000ms), total=2.515ms (avg=0.157ms), ops=16
+  layer[12]: compute=2.439ms (avg=0.152ms), comm=0.000ms (avg=0.000ms), total=2.439ms (avg=0.152ms), ops=16
+  layer[13]: compute=2.443ms (avg=0.153ms), comm=0.000ms (avg=0.000ms), total=2.443ms (avg=0.153ms), ops=16
+  layer[14]: compute=2.388ms (avg=0.149ms), comm=0.000ms (avg=0.000ms), total=2.388ms (avg=0.149ms), ops=16
+  layer[15]: compute=2.479ms (avg=0.155ms), comm=0.000ms (avg=0.000ms), total=2.479ms (avg=0.155ms), ops=16
+  layer[lm_head]: compute=9.140ms (avg=4.570ms), comm=0.000ms (avg=0.000ms), total=9.140ms (avg=4.570ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 22
+  layer[embed]: compute=0.191ms (avg=0.096ms), comm=0.000ms (avg=0.000ms), total=0.191ms (avg=0.096ms), ops=2
+  layer[0]: compute=3.301ms (avg=0.206ms), comm=0.000ms (avg=0.000ms), total=3.301ms (avg=0.206ms), ops=16
+  layer[1]: compute=2.890ms (avg=0.181ms), comm=0.000ms (avg=0.000ms), total=2.890ms (avg=0.181ms), ops=16
+  layer[2]: compute=3.425ms (avg=0.214ms), comm=0.000ms (avg=0.000ms), total=3.425ms (avg=0.214ms), ops=16
+  layer[3]: compute=3.569ms (avg=0.223ms), comm=0.000ms (avg=0.000ms), total=3.569ms (avg=0.223ms), ops=16
+  layer[4]: compute=3.492ms (avg=0.218ms), comm=0.000ms (avg=0.000ms), total=3.492ms (avg=0.218ms), ops=16
+  layer[5]: compute=2.646ms (avg=0.165ms), comm=0.000ms (avg=0.000ms), total=2.646ms (avg=0.165ms), ops=16
+  layer[6]: compute=2.559ms (avg=0.160ms), comm=0.000ms (avg=0.000ms), total=2.559ms (avg=0.160ms), ops=16
+  layer[7]: compute=2.547ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.547ms (avg=0.159ms), ops=16
+| epoch   1 |    21/ 5167 batches | lr 0.00 | ms/batch 386.54 | loss  0.06 | ppl     1.06
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 23
+  layer[8]: compute=2.062ms (avg=0.129ms), comm=0.000ms (avg=0.000ms), total=2.062ms (avg=0.129ms), ops=16
+  layer[9]: compute=1.717ms (avg=0.107ms), comm=0.000ms (avg=0.000ms), total=1.717ms (avg=0.107ms), ops=16
+  layer[10]: compute=1.715ms (avg=0.107ms), comm=0.000ms (avg=0.000ms), total=1.715ms (avg=0.107ms), ops=16
+  layer[11]: compute=1.794ms (avg=0.112ms), comm=0.000ms (avg=0.000ms), total=1.794ms (avg=0.112ms), ops=16
+  layer[12]: compute=1.876ms (avg=0.117ms), comm=0.000ms (avg=0.000ms), total=1.876ms (avg=0.117ms), ops=16
+  layer[13]: compute=1.720ms (avg=0.108ms), comm=0.000ms (avg=0.000ms), total=1.720ms (avg=0.108ms), ops=16
+  layer[14]: compute=1.753ms (avg=0.110ms), comm=0.000ms (avg=0.000ms), total=1.753ms (avg=0.110ms), ops=16
+  layer[15]: compute=1.714ms (avg=0.107ms), comm=0.000ms (avg=0.000ms), total=1.714ms (avg=0.107ms), ops=16
+  layer[lm_head]: compute=7.759ms (avg=3.879ms), comm=0.000ms (avg=0.000ms), total=7.759ms (avg=3.879ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 23
+  layer[embed]: compute=0.190ms (avg=0.095ms), comm=0.000ms (avg=0.000ms), total=0.190ms (avg=0.095ms), ops=2
+  layer[0]: compute=2.111ms (avg=0.132ms), comm=0.000ms (avg=0.000ms), total=2.111ms (avg=0.132ms), ops=16
+  layer[1]: compute=2.529ms (avg=0.158ms), comm=0.000ms (avg=0.000ms), total=2.529ms (avg=0.158ms), ops=16
+  layer[2]: compute=2.005ms (avg=0.125ms), comm=0.000ms (avg=0.000ms), total=2.005ms (avg=0.125ms), ops=16
+  layer[3]: compute=1.990ms (avg=0.124ms), comm=0.000ms (avg=0.000ms), total=1.990ms (avg=0.124ms), ops=16
+  layer[4]: compute=2.003ms (avg=0.125ms), comm=0.000ms (avg=0.000ms), total=2.003ms (avg=0.125ms), ops=16
+  layer[5]: compute=2.059ms (avg=0.129ms), comm=0.000ms (avg=0.000ms), total=2.059ms (avg=0.129ms), ops=16
+  layer[6]: compute=2.022ms (avg=0.126ms), comm=0.000ms (avg=0.000ms), total=2.022ms (avg=0.126ms), ops=16
+  layer[7]: compute=1.983ms (avg=0.124ms), comm=0.000ms (avg=0.000ms), total=1.983ms (avg=0.124ms), ops=16
+| epoch   1 |    22/ 5167 batches | lr 0.00 | ms/batch 361.24 | loss  0.51 | ppl     1.66
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 24
+  layer[8]: compute=1.994ms (avg=0.125ms), comm=0.000ms (avg=0.000ms), total=1.994ms (avg=0.125ms), ops=16
+  layer[9]: compute=1.751ms (avg=0.109ms), comm=0.000ms (avg=0.000ms), total=1.751ms (avg=0.109ms), ops=16
+  layer[10]: compute=1.626ms (avg=0.102ms), comm=0.000ms (avg=0.000ms), total=1.626ms (avg=0.102ms), ops=16
+  layer[11]: compute=1.639ms (avg=0.102ms), comm=0.000ms (avg=0.000ms), total=1.639ms (avg=0.102ms), ops=16
+  layer[12]: compute=1.709ms (avg=0.107ms), comm=0.000ms (avg=0.000ms), total=1.709ms (avg=0.107ms), ops=16
+  layer[13]: compute=1.730ms (avg=0.108ms), comm=0.000ms (avg=0.000ms), total=1.730ms (avg=0.108ms), ops=16
+  layer[14]: compute=1.780ms (avg=0.111ms), comm=0.000ms (avg=0.000ms), total=1.780ms (avg=0.111ms), ops=16
+  layer[15]: compute=1.739ms (avg=0.109ms), comm=0.000ms (avg=0.000ms), total=1.739ms (avg=0.109ms), ops=16
+  layer[lm_head]: compute=7.777ms (avg=3.889ms), comm=0.000ms (avg=0.000ms), total=7.777ms (avg=3.889ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 24
+  layer[embed]: compute=0.175ms (avg=0.088ms), comm=0.000ms (avg=0.000ms), total=0.175ms (avg=0.088ms), ops=2
+  layer[0]: compute=2.039ms (avg=0.127ms), comm=0.000ms (avg=0.000ms), total=2.039ms (avg=0.127ms), ops=16
+  layer[1]: compute=2.474ms (avg=0.155ms), comm=0.000ms (avg=0.000ms), total=2.474ms (avg=0.155ms), ops=16
+  layer[2]: compute=2.003ms (avg=0.125ms), comm=0.000ms (avg=0.000ms), total=2.003ms (avg=0.125ms), ops=16
+  layer[3]: compute=2.000ms (avg=0.125ms), comm=0.000ms (avg=0.000ms), total=2.000ms (avg=0.125ms), ops=16
+  layer[4]: compute=2.179ms (avg=0.136ms), comm=0.000ms (avg=0.000ms), total=2.179ms (avg=0.136ms), ops=16
+  layer[5]: compute=2.036ms (avg=0.127ms), comm=0.000ms (avg=0.000ms), total=2.036ms (avg=0.127ms), ops=16
+  layer[6]: compute=2.004ms (avg=0.125ms), comm=0.000ms (avg=0.000ms), total=2.004ms (avg=0.125ms), ops=16
+  layer[7]: compute=2.007ms (avg=0.125ms), comm=0.000ms (avg=0.000ms), total=2.007ms (avg=0.125ms), ops=16
+| epoch   1 |    23/ 5167 batches | lr 0.00 | ms/batch 424.98 | loss  0.17 | ppl     1.19
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 25
+  layer[8]: compute=2.777ms (avg=0.174ms), comm=0.000ms (avg=0.000ms), total=2.777ms (avg=0.174ms), ops=16
+  layer[9]: compute=2.326ms (avg=0.145ms), comm=0.000ms (avg=0.000ms), total=2.326ms (avg=0.145ms), ops=16
+  layer[10]: compute=2.333ms (avg=0.146ms), comm=0.000ms (avg=0.000ms), total=2.333ms (avg=0.146ms), ops=16
+  layer[11]: compute=2.538ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.538ms (avg=0.159ms), ops=16
+  layer[12]: compute=2.716ms (avg=0.170ms), comm=0.000ms (avg=0.000ms), total=2.716ms (avg=0.170ms), ops=16
+  layer[13]: compute=2.439ms (avg=0.152ms), comm=0.000ms (avg=0.000ms), total=2.439ms (avg=0.152ms), ops=16
+  layer[14]: compute=2.392ms (avg=0.150ms), comm=0.000ms (avg=0.000ms), total=2.392ms (avg=0.150ms), ops=16
+  layer[15]: compute=2.359ms (avg=0.147ms), comm=0.000ms (avg=0.000ms), total=2.359ms (avg=0.147ms), ops=16
+  layer[lm_head]: compute=8.842ms (avg=4.421ms), comm=0.000ms (avg=0.000ms), total=8.842ms (avg=4.421ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 25
+  layer[embed]: compute=0.188ms (avg=0.094ms), comm=0.000ms (avg=0.000ms), total=0.188ms (avg=0.094ms), ops=2
+  layer[0]: compute=3.006ms (avg=0.188ms), comm=0.000ms (avg=0.000ms), total=3.006ms (avg=0.188ms), ops=16
+  layer[1]: compute=2.536ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.536ms (avg=0.159ms), ops=16
+  layer[2]: compute=2.358ms (avg=0.147ms), comm=0.000ms (avg=0.000ms), total=2.358ms (avg=0.147ms), ops=16
+  layer[3]: compute=2.706ms (avg=0.169ms), comm=0.000ms (avg=0.000ms), total=2.706ms (avg=0.169ms), ops=16
+  layer[4]: compute=2.367ms (avg=0.148ms), comm=0.000ms (avg=0.000ms), total=2.367ms (avg=0.148ms), ops=16
+  layer[5]: compute=2.346ms (avg=0.147ms), comm=0.000ms (avg=0.000ms), total=2.346ms (avg=0.147ms), ops=16
+  layer[6]: compute=2.715ms (avg=0.170ms), comm=0.000ms (avg=0.000ms), total=2.715ms (avg=0.170ms), ops=16
+  layer[7]: compute=2.347ms (avg=0.147ms), comm=0.000ms (avg=0.000ms), total=2.347ms (avg=0.147ms), ops=16
+| epoch   1 |    24/ 5167 batches | lr 0.00 | ms/batch 368.92 | loss  2.59 | ppl    13.36
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 26
+  layer[8]: compute=2.725ms (avg=0.170ms), comm=0.000ms (avg=0.000ms), total=2.725ms (avg=0.170ms), ops=16
+  layer[9]: compute=2.342ms (avg=0.146ms), comm=0.000ms (avg=0.000ms), total=2.342ms (avg=0.146ms), ops=16
+  layer[10]: compute=2.342ms (avg=0.146ms), comm=0.000ms (avg=0.000ms), total=2.342ms (avg=0.146ms), ops=16
+  layer[11]: compute=2.630ms (avg=0.164ms), comm=0.000ms (avg=0.000ms), total=2.630ms (avg=0.164ms), ops=16
+  layer[12]: compute=2.996ms (avg=0.187ms), comm=0.000ms (avg=0.000ms), total=2.996ms (avg=0.187ms), ops=16
+  layer[13]: compute=2.468ms (avg=0.154ms), comm=0.000ms (avg=0.000ms), total=2.468ms (avg=0.154ms), ops=16
+  layer[14]: compute=2.338ms (avg=0.146ms), comm=0.000ms (avg=0.000ms), total=2.338ms (avg=0.146ms), ops=16
+  layer[15]: compute=2.349ms (avg=0.147ms), comm=0.000ms (avg=0.000ms), total=2.349ms (avg=0.147ms), ops=16
+  layer[lm_head]: compute=8.911ms (avg=4.455ms), comm=0.000ms (avg=0.000ms), total=8.911ms (avg=4.455ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 26
+  layer[embed]: compute=0.185ms (avg=0.093ms), comm=0.000ms (avg=0.000ms), total=0.185ms (avg=0.093ms), ops=2
+  layer[0]: compute=2.765ms (avg=0.173ms), comm=0.000ms (avg=0.000ms), total=2.765ms (avg=0.173ms), ops=16
+  layer[1]: compute=2.372ms (avg=0.148ms), comm=0.000ms (avg=0.000ms), total=2.372ms (avg=0.148ms), ops=16
+  layer[2]: compute=2.366ms (avg=0.148ms), comm=0.000ms (avg=0.000ms), total=2.366ms (avg=0.148ms), ops=16
+  layer[3]: compute=2.772ms (avg=0.173ms), comm=0.000ms (avg=0.000ms), total=2.772ms (avg=0.173ms), ops=16
+  layer[4]: compute=2.435ms (avg=0.152ms), comm=0.000ms (avg=0.000ms), total=2.435ms (avg=0.152ms), ops=16
+  layer[5]: compute=2.374ms (avg=0.148ms), comm=0.000ms (avg=0.000ms), total=2.374ms (avg=0.148ms), ops=16
+  layer[6]: compute=2.735ms (avg=0.171ms), comm=0.000ms (avg=0.000ms), total=2.735ms (avg=0.171ms), ops=16
+  layer[7]: compute=2.331ms (avg=0.146ms), comm=0.000ms (avg=0.000ms), total=2.331ms (avg=0.146ms), ops=16
+| epoch   1 |    25/ 5167 batches | lr 0.00 | ms/batch 377.11 | loss  0.73 | ppl     2.08
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 27
+  layer[8]: compute=2.874ms (avg=0.180ms), comm=0.000ms (avg=0.000ms), total=2.874ms (avg=0.180ms), ops=16
+  layer[9]: compute=2.352ms (avg=0.147ms), comm=0.000ms (avg=0.000ms), total=2.352ms (avg=0.147ms), ops=16
+  layer[10]: compute=2.337ms (avg=0.146ms), comm=0.000ms (avg=0.000ms), total=2.337ms (avg=0.146ms), ops=16
+  layer[11]: compute=2.572ms (avg=0.161ms), comm=0.000ms (avg=0.000ms), total=2.572ms (avg=0.161ms), ops=16
+  layer[12]: compute=2.562ms (avg=0.160ms), comm=0.000ms (avg=0.000ms), total=2.562ms (avg=0.160ms), ops=16
+  layer[13]: compute=2.430ms (avg=0.152ms), comm=0.000ms (avg=0.000ms), total=2.430ms (avg=0.152ms), ops=16
+  layer[14]: compute=2.339ms (avg=0.146ms), comm=0.000ms (avg=0.000ms), total=2.339ms (avg=0.146ms), ops=16
+  layer[15]: compute=2.360ms (avg=0.148ms), comm=0.000ms (avg=0.000ms), total=2.360ms (avg=0.148ms), ops=16
+  layer[lm_head]: compute=8.909ms (avg=4.454ms), comm=0.000ms (avg=0.000ms), total=8.909ms (avg=4.454ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 27
+  layer[embed]: compute=0.190ms (avg=0.095ms), comm=0.000ms (avg=0.000ms), total=0.190ms (avg=0.095ms), ops=2
+  layer[0]: compute=2.783ms (avg=0.174ms), comm=0.000ms (avg=0.000ms), total=2.783ms (avg=0.174ms), ops=16
+  layer[1]: compute=2.447ms (avg=0.153ms), comm=0.000ms (avg=0.000ms), total=2.447ms (avg=0.153ms), ops=16
+  layer[2]: compute=2.383ms (avg=0.149ms), comm=0.000ms (avg=0.000ms), total=2.383ms (avg=0.149ms), ops=16
+  layer[3]: compute=2.703ms (avg=0.169ms), comm=0.000ms (avg=0.000ms), total=2.703ms (avg=0.169ms), ops=16
+  layer[4]: compute=2.448ms (avg=0.153ms), comm=0.000ms (avg=0.000ms), total=2.448ms (avg=0.153ms), ops=16
+  layer[5]: compute=2.357ms (avg=0.147ms), comm=0.000ms (avg=0.000ms), total=2.357ms (avg=0.147ms), ops=16
+  layer[6]: compute=2.691ms (avg=0.168ms), comm=0.000ms (avg=0.000ms), total=2.691ms (avg=0.168ms), ops=16
+  layer[7]: compute=2.447ms (avg=0.153ms), comm=0.000ms (avg=0.000ms), total=2.447ms (avg=0.153ms), ops=16
+| epoch   1 |    26/ 5167 batches | lr 0.00 | ms/batch 421.23 | loss  0.11 | ppl     1.12
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 28
+  layer[8]: compute=2.746ms (avg=0.172ms), comm=0.000ms (avg=0.000ms), total=2.746ms (avg=0.172ms), ops=16
+  layer[9]: compute=2.347ms (avg=0.147ms), comm=0.000ms (avg=0.000ms), total=2.347ms (avg=0.147ms), ops=16
+  layer[10]: compute=2.336ms (avg=0.146ms), comm=0.000ms (avg=0.000ms), total=2.336ms (avg=0.146ms), ops=16
+  layer[11]: compute=2.567ms (avg=0.160ms), comm=0.000ms (avg=0.000ms), total=2.567ms (avg=0.160ms), ops=16
+  layer[12]: compute=2.632ms (avg=0.164ms), comm=0.000ms (avg=0.000ms), total=2.632ms (avg=0.164ms), ops=16
+  layer[13]: compute=2.345ms (avg=0.147ms), comm=0.000ms (avg=0.000ms), total=2.345ms (avg=0.147ms), ops=16
+  layer[14]: compute=2.345ms (avg=0.147ms), comm=0.000ms (avg=0.000ms), total=2.345ms (avg=0.147ms), ops=16
+  layer[15]: compute=2.393ms (avg=0.150ms), comm=0.000ms (avg=0.000ms), total=2.393ms (avg=0.150ms), ops=16
+  layer[lm_head]: compute=8.834ms (avg=4.417ms), comm=0.000ms (avg=0.000ms), total=8.834ms (avg=4.417ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 28
+  layer[embed]: compute=0.189ms (avg=0.095ms), comm=0.000ms (avg=0.000ms), total=0.189ms (avg=0.095ms), ops=2
+  layer[0]: compute=2.782ms (avg=0.174ms), comm=0.000ms (avg=0.000ms), total=2.782ms (avg=0.174ms), ops=16
+  layer[1]: compute=2.371ms (avg=0.148ms), comm=0.000ms (avg=0.000ms), total=2.371ms (avg=0.148ms), ops=16
+  layer[2]: compute=2.373ms (avg=0.148ms), comm=0.000ms (avg=0.000ms), total=2.373ms (avg=0.148ms), ops=16
+  layer[3]: compute=2.736ms (avg=0.171ms), comm=0.000ms (avg=0.000ms), total=2.736ms (avg=0.171ms), ops=16
+  layer[4]: compute=2.439ms (avg=0.152ms), comm=0.000ms (avg=0.000ms), total=2.439ms (avg=0.152ms), ops=16
+  layer[5]: compute=2.358ms (avg=0.147ms), comm=0.000ms (avg=0.000ms), total=2.358ms (avg=0.147ms), ops=16
+  layer[6]: compute=2.689ms (avg=0.168ms), comm=0.000ms (avg=0.000ms), total=2.689ms (avg=0.168ms), ops=16
+  layer[7]: compute=2.509ms (avg=0.157ms), comm=0.000ms (avg=0.000ms), total=2.509ms (avg=0.157ms), ops=16
+| epoch   1 |    27/ 5167 batches | lr 0.00 | ms/batch 410.66 | loss  0.08 | ppl     1.09
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 29
+  layer[8]: compute=3.059ms (avg=0.191ms), comm=0.000ms (avg=0.000ms), total=3.059ms (avg=0.191ms), ops=16
+  layer[9]: compute=2.871ms (avg=0.179ms), comm=0.000ms (avg=0.000ms), total=2.871ms (avg=0.179ms), ops=16
+  layer[10]: compute=2.600ms (avg=0.162ms), comm=0.000ms (avg=0.000ms), total=2.600ms (avg=0.162ms), ops=16
+  layer[11]: compute=2.648ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.648ms (avg=0.166ms), ops=16
+  layer[12]: compute=2.662ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.662ms (avg=0.166ms), ops=16
+  layer[13]: compute=2.654ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.654ms (avg=0.166ms), ops=16
+  layer[14]: compute=2.603ms (avg=0.163ms), comm=0.000ms (avg=0.000ms), total=2.603ms (avg=0.163ms), ops=16
+  layer[15]: compute=2.607ms (avg=0.163ms), comm=0.000ms (avg=0.000ms), total=2.607ms (avg=0.163ms), ops=16
+  layer[lm_head]: compute=8.305ms (avg=4.152ms), comm=0.000ms (avg=0.000ms), total=8.305ms (avg=4.152ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 29
+  layer[embed]: compute=0.376ms (avg=0.188ms), comm=0.000ms (avg=0.000ms), total=0.376ms (avg=0.188ms), ops=2
+  layer[0]: compute=2.919ms (avg=0.182ms), comm=0.000ms (avg=0.000ms), total=2.919ms (avg=0.182ms), ops=16
+  layer[1]: compute=2.924ms (avg=0.183ms), comm=0.000ms (avg=0.000ms), total=2.924ms (avg=0.183ms), ops=16
+  layer[2]: compute=2.572ms (avg=0.161ms), comm=0.000ms (avg=0.000ms), total=2.572ms (avg=0.161ms), ops=16
+  layer[3]: compute=2.601ms (avg=0.163ms), comm=0.000ms (avg=0.000ms), total=2.601ms (avg=0.163ms), ops=16
+  layer[4]: compute=2.628ms (avg=0.164ms), comm=0.000ms (avg=0.000ms), total=2.628ms (avg=0.164ms), ops=16
+  layer[5]: compute=2.617ms (avg=0.164ms), comm=0.000ms (avg=0.000ms), total=2.617ms (avg=0.164ms), ops=16
+  layer[6]: compute=2.565ms (avg=0.160ms), comm=0.000ms (avg=0.000ms), total=2.565ms (avg=0.160ms), ops=16
+  layer[7]: compute=2.596ms (avg=0.162ms), comm=0.000ms (avg=0.000ms), total=2.596ms (avg=0.162ms), ops=16
+| epoch   1 |    28/ 5167 batches | lr 0.00 | ms/batch 382.88 | loss  0.18 | ppl     1.19
+[rank:1 stage:1] transformer-block(module) forward time (no send/recv) - step 30
+  layer[8]: compute=5.342ms (avg=0.334ms), comm=0.000ms (avg=0.000ms), total=5.342ms (avg=0.334ms), ops=16
+  layer[9]: compute=2.450ms (avg=0.153ms), comm=0.000ms (avg=0.000ms), total=2.450ms (avg=0.153ms), ops=16
+  layer[10]: compute=2.677ms (avg=0.167ms), comm=0.000ms (avg=0.000ms), total=2.677ms (avg=0.167ms), ops=16
+  layer[11]: compute=2.685ms (avg=0.168ms), comm=0.000ms (avg=0.000ms), total=2.685ms (avg=0.168ms), ops=16
+  layer[12]: compute=2.662ms (avg=0.166ms), comm=0.000ms (avg=0.000ms), total=2.662ms (avg=0.166ms), ops=16
+  layer[13]: compute=3.431ms (avg=0.214ms), comm=0.000ms (avg=0.000ms), total=3.431ms (avg=0.214ms), ops=16
+  layer[14]: compute=3.264ms (avg=0.204ms), comm=0.000ms (avg=0.000ms), total=3.264ms (avg=0.204ms), ops=16
+  layer[15]: compute=2.845ms (avg=0.178ms), comm=0.000ms (avg=0.000ms), total=2.845ms (avg=0.178ms), ops=16
+  layer[lm_head]: compute=8.124ms (avg=4.062ms), comm=0.000ms (avg=0.000ms), total=8.124ms (avg=4.062ms), ops=2
+[rank:0 stage:0] transformer-block(module) forward time (no send/recv) - step 30
+  layer[embed]: compute=0.373ms (avg=0.186ms), comm=0.000ms (avg=0.000ms), total=0.373ms (avg=0.186ms), ops=2
+  layer[0]: compute=2.563ms (avg=0.160ms), comm=0.000ms (avg=0.000ms), total=2.563ms (avg=0.160ms), ops=16
+  layer[1]: compute=2.819ms (avg=0.176ms), comm=0.000ms (avg=0.000ms), total=2.819ms (avg=0.176ms), ops=16
+  layer[2]: compute=2.538ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.538ms (avg=0.159ms), ops=16
+  layer[3]: compute=2.628ms (avg=0.164ms), comm=0.000ms (avg=0.000ms), total=2.628ms (avg=0.164ms), ops=16
+  layer[4]: compute=2.565ms (avg=0.160ms), comm=0.000ms (avg=0.000ms), total=2.565ms (avg=0.160ms), ops=16
+  layer[5]: compute=2.591ms (avg=0.162ms), comm=0.000ms (avg=0.000ms), total=2.591ms (avg=0.162ms), ops=16
+  layer[6]: compute=2.588ms (avg=0.162ms), comm=0.000ms (avg=0.000ms), total=2.588ms (avg=0.162ms), ops=16
+  layer[7]: compute=2.542ms (avg=0.159ms), comm=0.000ms (avg=0.000ms), total=2.542ms (avg=0.159ms), ops=16
+| epoch   1 |    29/ 5167 batches | lr 0.00 | ms/batch 441.58 | loss  0.02 | ppl     1.02
+| epoch   1 |    30/ 5167 batches | lr 0.00 | ms/batch 375.95 | loss  0.01 | ppl     1.01
+[rank:1 stage:1] Layer profile saved to: ./_profiles/llama-3.2-1b_A100_tp1_stage1_mbs1.npy
+[rank:1, run completed ...
+Time elapsed: 15.409 sec 
+[rank:0 stage:0] Layer profile saved to: ./_profiles/llama-3.2-1b_A100_tp1_stage0_mbs1.npy
+[rank:0, run completed ...
+[rank0]:[W114 07:17:33.900848329 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+[rank1]:[W114 07:17:34.735618718 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())

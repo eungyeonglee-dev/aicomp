@@ -172,7 +172,7 @@ def train():
             with torch.cuda.nvtx.range("comm.prepare_labels"):
                 labels = optimus_p.move_labels2last_stage(labels)
 
-            with torch.cuda.nvtx.range("fwdbwd"):
+            with torch.cuda.nvtx.range("optimus_p.run"):
                 optimus_p.optimizer.zero_grad()
                 optimus_p.run(data, labels, mode=pp_schedule)
 

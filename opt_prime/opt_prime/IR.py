@@ -608,7 +608,8 @@ class IR(object):
             if n.op == 'call_module':
                 cnt = cnt + 1
         
-            if cnt == segment:
+            # if cnt == segment:
+            if cnt >= segment and 'mlp_down_proj' in n.name:
                 self.metadata_range.append((k, n.name))
                 k = k + 1
                 cnt = 0

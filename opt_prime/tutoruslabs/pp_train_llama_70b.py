@@ -165,9 +165,9 @@ def save_exit_code(exit_code: int, run_id: str, elapsed_time: float = None):
                 f.write(f"{exit_code},{elapsed_time:.3f}")
             else:
                 f.write(str(exit_code))
-        print(f"[{ts()}][rank:0] EXIT_CODE {exit_code} saved to {log_path}")
+        log(f"[rank:0] EXIT_CODE {exit_code} saved to {log_path}")
     except Exception as e:
-        print(f"[{ts()}][rank:0] Failed to save EXIT_CODE: {e}")
+        log(f"[rank:0] Failed to save EXIT_CODE: {e}")
 
 
 def save_profile_result(result: dict, output_path: str = ""):
@@ -182,9 +182,9 @@ def save_profile_result(result: dict, output_path: str = ""):
     try:
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=2)
-        print(f"[{ts()}][rank:0] Profile results saved to {output_path}")
+        log(f"[rank:0] Profile results saved to {output_path}")
     except Exception as e:
-        print(f"[{ts()}][rank:0] Failed to save profile results: {e}")
+        log(f"[rank:0] Failed to save profile results: {e}")
 
 
 def gather_and_print_combined_profile(block_profiler, warmup_steps: int, world_size: int, rank: int, gloo_group=None):
@@ -731,7 +731,7 @@ master_port = os.getenv("MASTER_PORT")
 timeout = datetime.timedelta(hours=1)
 init_method = f"tcp://{master_addr}:{master_port}"
 
-print(f"[{ts()}] rank:{rank}, world_size:{world_size}, init_method:{init_method}")
+log(f" rank:{rank}, world_size:{world_size}, init_method:{init_method}")
 
 dist.init_process_group("nccl", rank=rank, world_size=world_size, init_method=init_method, timeout=timeout)
 group_gloo = dist.new_group(backend="gloo", timeout=timeout)
@@ -1021,15 +1021,15 @@ try:
     EXIT_CODE = 0
 
 except torch.cuda.OutOfMemoryError as e:
-    print(f"[{ts()}] ERROR: OOM - {e}")
+    log(f" ERROR: OOM - {e}")
     EXIT_CODE = 10
 
 except dist.DistBackendError as e:
-    print(f"[{ts()}] ERROR: Distributed communication failed - {e}")
+    log(f" ERROR: Distributed communication failed - {e}")
     EXIT_CODE = 20
 
 except Exception as e:
-    print(f"[{ts()}] ERROR: {e}")
+    log(f" ERROR: {e}")
     import traceback
     traceback.print_exc()
     EXIT_CODE = 30

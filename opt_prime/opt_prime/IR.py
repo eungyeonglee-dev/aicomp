@@ -494,7 +494,7 @@ class IR(object):
     def print_graph_all_nodes(self, rank: int = 0):
         if int(os.environ.get('RANK', 0)) != rank:
             return
-        log(f"\n{'='*80}")
+        log(f"{'='*80}")
         log(f" FX graph")
         log(f"{'='*80}")
         module_idx = 0

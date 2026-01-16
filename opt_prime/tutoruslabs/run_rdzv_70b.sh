@@ -32,19 +32,18 @@ USE_CACHE="${6:-True}"
 PP_SIZE="${7:-${PP_SIZE:-2}}"
 TP_SIZE="${8:-${TP_SIZE:-1}}"
 DP_SIZE="${9:-${DP_SIZE:-1}}"
-PROFILE_MODE="${10:-}"  # "profile" to enable
 
 WORLD_SIZE=$(( NNODES * NPROC_PER_NODE ))
 MAX_TIME=18000
 
 # Batch settings
 BATCH_SIZES=(32)
-MICRO_BATCH_SIZES=(1 2 4 8 16)
+MICRO_BATCH_SIZES=(32)
 
 # Profile settings (when PROFILE_MODE="profile")
-PROFILE_STEPS=50
-PROFILE_WARMUP=10
-NUM_HIDDEN_LAYERS=16
+PROFILE_STEPS=10
+PROFILE_WARMUP=50
+NUM_HIDDEN_LAYERS=4
 
 RESULT_DIR="results"
 mkdir -p "$RESULT_DIR"
@@ -105,7 +104,7 @@ if [ ${#COMBINATIONS[@]} -gt 1 ]; then
 fi
 
 echo "================================================="
-echo " Mode: $([ "$PROFILE_MODE" = "profile" ] && echo "PROFILE" || echo "TRAINING")"
+echo " Mode: profile"
 echo " Model: $MODEL_NAME"
 echo " World Size: $WORLD_SIZE (${NNODES} nodes x ${NPROC_PER_NODE} GPUs)"
 echo " PP/TP/DP combinations:"
@@ -132,7 +131,6 @@ for BATCH in "${BATCH_SIZES[@]}"; do
       read PP TP DP <<<"$COMBO"
 
       RUN_ID="${MODEL_FILENAME}-${BATCH}-${MICRO_BATCH}-${PP}-${TP}-${DP}"
-      [ "$PROFILE_MODE" = "profile" ] && RUN_ID="${RUN_ID}-profile"
       
       COUNTER=$((COUNTER+1))
       RDZV_PORT=$((29500 + (COUNTER % 200)))
@@ -140,7 +138,7 @@ for BATCH in "${BATCH_SIZES[@]}"; do
 
       echo "================================================="
       echo "RUN_ID            : $RUN_ID"
-      echo "Mode              : $([ "$PROFILE_MODE" = "profile" ] && echo "PROFILE" || echo "TRAINING")"
+      echo "Mode              : profile"
       echo "Batch/Micro       : $BATCH / $MICRO_BATCH"
       echo "PP/TP/DP          : $PP / $TP / $DP"
       echo "RDZV              : ${MASTER_ADDR}:${RDZV_PORT}"
@@ -158,11 +156,7 @@ for BATCH in "${BATCH_SIZES[@]}"; do
 
       # Build command args
       PROFILE_ARGS=""
-      if [ "$PROFILE_MODE" = "profile" ]; then
-        PROFILE_ARGS="--profile_mode --profile_steps $PROFILE_STEPS --profile_warmup_steps $PROFILE_WARMUP --num_hidden_layers $NUM_HIDDEN_LAYERS"
-      elif [ "$PROFILE_MODE" = "profile_fx" ]; then
-        PROFILE_ARGS="--profile_mode --profile_fx --profile_steps $PROFILE_STEPS --profile_warmup_steps $PROFILE_WARMUP --num_hidden_layers $NUM_HIDDEN_LAYERS"
-      fi
+      PROFILE_ARGS="--profile_steps $PROFILE_STEPS --profile_warmup_steps $PROFILE_WARMUP --num_hidden_layers $NUM_HIDDEN_LAYERS"
 
       SECONDS=0
       timeout ${MAX_TIME}s env CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 \
@@ -215,23 +209,13 @@ for BATCH in "${BATCH_SIZES[@]}"; do
 
       # Record result (master only)
       if [ "$NODE_RANK" -eq 0 ]; then
-        if [ "$PROFILE_MODE" != "profile" ]; then
-          # Training mode: record to CSV
-          if [ "$EXIT_CODE" -eq 0 ]; then
-            echo "${BATCH},${MICRO_BATCH},${PP},${TP},${DP},${ELAPSED_SEC}" >> "$RESULT_FILEPATH"
-            echo "SUCCESS → ${ELAPSED_SEC}s"
-          else
-            STATUS_STR=$(status_from_exit "$EXIT_CODE")
-            echo "${BATCH},${MICRO_BATCH},${PP},${TP},${DP},${STATUS_STR}" >> "$RESULT_FILEPATH"
-            echo "FAILED (exit=$EXIT_CODE) → '${STATUS_STR}'"
-          fi
+        if [ "$EXIT_CODE" -eq 0 ]; then
+          echo "${BATCH},${MICRO_BATCH},${PP},${TP},${DP},${ELAPSED_SEC}" >> "$RESULT_FILEPATH"
+          echo "SUCCESS → ${ELAPSED_SEC}s"
         else
-          # Profile mode: result is in JSON file
-          if [ "$EXIT_CODE" -eq 0 ]; then
-            echo "PROFILE SUCCESS → results/profile_${RUN_ID}.json"
-          else
-            echo "PROFILE FAILED (exit=$EXIT_CODE)"
-          fi
+          STATUS_STR=$(status_from_exit "$EXIT_CODE")
+          echo "${BATCH},${MICRO_BATCH},${PP},${TP},${DP},${STATUS_STR}" >> "$RESULT_FILEPATH"
+          echo "FAILED (exit=$EXIT_CODE) → '${STATUS_STR}'"
         fi
       fi
 

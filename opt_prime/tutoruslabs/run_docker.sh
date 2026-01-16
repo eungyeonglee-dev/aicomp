@@ -69,7 +69,7 @@ echo "===> Network interfaces:"
 docker exec $CONTAINER_NAME hostname -I
 
 # ============================================================================
-# 4. Parse arguments
+# 4. Parse arguments (with defaults)
 # ============================================================================
 MODEL_SIZE=$1
 NODE_RANK=$2
@@ -80,7 +80,6 @@ USE_CACHE=$6
 PP_SIZE=$7
 TP_SIZE=$8
 DP_SIZE=$9
-PROFILE_MODE=${10:-}  # "profile" to enable profiling
 
 # Set MODEL_NAME based on MODEL_SIZE
 case "$MODEL_SIZE" in
@@ -110,27 +109,14 @@ esac
 # ============================================================================
 echo ""
 echo "================================================="
-if [ "$PROFILE_MODE" = "profile" ]; then
-    MODE_STR="PROFILE (Hook-based)"
-elif [ "$PROFILE_MODE" = "profile_fx" ]; then
-    MODE_STR="PROFILE (FX Interpreter)"
-else
-    MODE_STR="TRAINING"
-fi
-echo " Mode: $MODE_STR"
+echo " Mode: profile"
 echo " Model: $MODEL_NAME"
 echo " PP=$PP_SIZE, TP=$TP_SIZE, DP=$DP_SIZE"
 echo "================================================="
 
 # Create log file names
 TIMESTAMP=$(date +%Y%m%d%H%M%S)
-if [ "$PROFILE_MODE" = "profile" ]; then
-    LOGFILE="./results/${TIMESTAMP}_profile.log"
-elif [ "$PROFILE_MODE" = "profile_fx" ]; then
-    LOGFILE="./results/${TIMESTAMP}_profile_fx.log"
-else
-    LOGFILE="./results/${TIMESTAMP}.log"
-fi
+LOGFILE="./results/${TIMESTAMP}.log"
 GPULOGFILE="./results/${TIMESTAMP}_gpustats.log"
 MEMLOGFILE="./results/${TIMESTAMP}_memstats.log"
 
@@ -140,14 +126,6 @@ echo "     GPULOGFILE: $GPULOGFILE"
 echo "     MEMLOGFILE: $MEMLOGFILE"
 
 echo "===> Running $CONTAINER_NAME"
-
-# Build profile argument
-PROFILE_ARG=""
-if [ "$PROFILE_MODE" = "profile" ]; then
-    PROFILE_ARG="profile"
-elif [ "$PROFILE_MODE" = "profile_fx" ]; then
-    PROFILE_ARG="profile_fx"
-fi
 
 docker exec -it $CONTAINER_NAME \
     /bin/bash -lc "cd /workspace/aicomp/opt_prime/tutoruslabs && \
@@ -159,10 +137,11 @@ docker exec -it $CONTAINER_NAME \
     (while true; do echo \"===== \$(date '+%F %T') =====\"; gpustat --no-color || true; echo; sleep 1; done) >> \"\$GPULOGFILE\" 2>&1 & GPUSTAT_PID=\$!; \
     (while true; do echo \"===== \$(date '+%F %T') =====\"; free -h || true; echo; sleep 1; done) >> \"\$MEMLOGFILE\" 2>&1 & MEMSTAT_PID=\$!; \
     trap \"kill \$GPUSTAT_PID \$MEMSTAT_PID 2>/dev/null || true\" EXIT INT TERM; \
-    bash ./run_rdzv_70b.sh \"\$MODEL_NAME\" \"\$NODE_RANK\" \"\$MASTER_ADDR\" \"\$NNODES\" \"\$NPROC_PER_NODE\" \"\$USE_CACHE\" \"\$PP_SIZE\" \"\$TP_SIZE\" \"\$DP_SIZE\" \"\$PROFILE_ARG\" 2>&1 | tee \"\$LOGFILE\""
+    bash ./run_rdzv_70b.sh \"\$MODEL_NAME\" \"\$NODE_RANK\" \"\$MASTER_ADDR\" \"\$NNODES\" \"\$NPROC_PER_NODE\" \"\$USE_CACHE\" \"\$PP_SIZE\" \"\$TP_SIZE\" \"\$DP_SIZE\" 2>&1 | tee \"\$LOGFILE\""
 
 echo ""
 echo "================================================="
 echo " Completed!"
 echo " Check logs in results/ directory"
 echo "================================================="
+

@@ -1,0 +1,2145 @@
+Using specified PP/TP/DP: PP=8, TP=1, DP=1
+=================================================
+ Mode: profile
+ Model: meta-llama/Llama-3.2-1B
+ World Size: 8 (1 nodes x 8 GPUs)
+ PP/TP/DP combinations:
+   PP=8, TP=1, DP=1
+=================================================
+=================================================
+RUN_ID            : Llama-3.2-1B-8-1-8-1-1
+Mode              : profile
+Batch/Micro       : 8 / 1
+PP/TP/DP          : 8 / 1 / 1
+RDZV              : 192.168.100.108:29501
+=================================================
+W0126 05:22:45.674000 57 site-packages/torch/distributed/run.py:793] 
+W0126 05:22:45.674000 57 site-packages/torch/distributed/run.py:793] *****************************************
+W0126 05:22:45.674000 57 site-packages/torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0126 05:22:45.674000 57 site-packages/torch/distributed/run.py:793] *****************************************
+[2026-01-26 05:22:48]  rank:2, world_size:8, init_method:tcp://192.168.100.108:29501
+[2026-01-26 05:22:48]  rank:7, world_size:8, init_method:tcp://192.168.100.108:29501
+[2026-01-26 05:22:48]  rank:0, world_size:8, init_method:tcp://192.168.100.108:29501
+[2026-01-26 05:22:48]  rank:5, world_size:8, init_method:tcp://192.168.100.108:29501
+[2026-01-26 05:22:48]  rank:3, world_size:8, init_method:tcp://192.168.100.108:29501
+[2026-01-26 05:22:48]  rank:6, world_size:8, init_method:tcp://192.168.100.108:29501
+[2026-01-26 05:22:48]  rank:4, world_size:8, init_method:tcp://192.168.100.108:29501
+[2026-01-26 05:22:48]  rank:1, world_size:8, init_method:tcp://192.168.100.108:29501
+[2026-01-26 05:22:51] [rank:1] torch=2.5.0+cu124, transformers=4.46.2 ✓
+[2026-01-26 05:22:51] [rank:5] torch=2.5.0+cu124, transformers=4.46.2 ✓[2026-01-26 05:22:51] [rank:2] torch=2.5.0+cu124, transformers=4.46.2 ✓
+
+[2026-01-26 05:22:51] [rank:0] torch=2.5.0+cu124, transformers=4.46.2 ✓
+[2026-01-26 05:22:51] [rank:3] torch=2.5.0+cu124, transformers=4.46.2 ✓
+[2026-01-26 05:22:51] [rank:4] torch=2.5.0+cu124, transformers=4.46.2 ✓
+[2026-01-26 05:22:51] [rank:7] torch=2.5.0+cu124, transformers=4.46.2 ✓
+[2026-01-26 05:22:51] [rank:6] torch=2.5.0+cu124, transformers=4.46.2 ✓
+[2026-01-26 05:22:51] [local_rank:4] Waiting for rank 0...
+[2026-01-26 05:22:51] > Tokenizer loaded from: /root/.cache/huggingface/hub/models--meta-llama--Llama-3.3-70B-Instruct/snapshots/6f6073b423013f6a7d4d9f39144961bfbfbc386b
+[2026-01-26 05:22:51] ===> Model loading...
+[2026-01-26 05:22:51] > Model: meta-llama/Llama-3.2-1B (1B architecture)
+[2026-01-26 05:22:51] > Config: hidden_size=2048, intermediate_size=8192, num_attention_heads=32, num_key_value_heads=8
+[2026-01-26 05:22:51] > Using 8 layers (full model: 16 layers)
+[2026-01-26 05:22:51] > Tokenizer vocab_size: 128000, Using: 128256
+[2026-01-26 05:22:51] [local_rank:1] Waiting for rank 0...
+[2026-01-26 05:22:51] [local_rank:7] Waiting for rank 0...
+[2026-01-26 05:22:51] [local_rank:3] Waiting for rank 0...
+[2026-01-26 05:22:51] [local_rank:2] Waiting for rank 0...
+[2026-01-26 05:22:51] [local_rank:6] Waiting for rank 0...
+[2026-01-26 05:22:51] [local_rank:5] Waiting for rank 0...
+[2026-01-26 05:23:01] > [PROFILE MODE] 8-layer Llama 1B model
+[2026-01-26 05:23:01] > Total parameters: 1,011,910,656
+[2026-01-26 05:23:01] > PP=8, TP=1, DP=1
+[2026-01-26 05:23:01] > GBS=8, MBS=1, #MB=8
+[2026-01-26 05:23:01] [rank:0] Available GPUs per server: 8
+[2026-01-26 05:23:01] [rank:0] GPU mode is used.
+[2026-01-26 05:23:01] [rank:0] Communication already initialized
+[2026-01-26 05:23:01] [rank:0] Optimus_p init: world_size=8
+[2026-01-26 05:23:01] [rank:0] Optimus_p init: PP=8, DP=1, TP=1
+[2026-01-26 05:23:01] [rank:0] Optimus_p init: IR=IR_Anal.PARALLEL, use_gpu=True
+[2026-01-26 05:23:01] [rank:0] before init_device_mesh
+[2026-01-26 05:23:01] [rank:0] after init_device_mesh
+[2026-01-26 05:23:01] [rank:0] pp group:DeviceMesh('cuda', [0, 1, 2, 3, 4, 5, 6, 7], mesh_dim_names=('pp',))
+[2026-01-26 05:23:01] [rank:0] tp group:DeviceMesh('cuda', [0], mesh_dim_names=('tp',))
+[2026-01-26 05:23:01] [rank:0] dp group:DeviceMesh('cuda', [0], mesh_dim_names=('dp',))
+[2026-01-26 05:23:01] [rank:0] stage2rank = {0: [0], 1: [1], 2: [2], 3: [3], 4: [4], 5: [5], 6: [6], 7: [7]}
+[2026-01-26 05:23:01] [rank:0] Using GPU ... cuda:0
+[2026-01-26 05:23:01] [rank:0] model class name: LlamaForCausalLM
+[2026-01-26 05:23:01] [rank:0] split method: simple
+length:809, modcnt:66, num_stage:8, segment:8
+[2026-01-26 05:23:01] [rank:0] first metadata_range: [(0, 'model_layers_0_mlp_down_proj'), (1, 'model_layers_1_mlp_down_proj'), (2, 'model_layers_2_mlp_down_proj'), (3, 'model_layers_3_mlp_down_proj'), (4, 'model_layers_4_mlp_down_proj'), (5, 'model_layers_5_mlp_down_proj'), (6, 'model_layers_6_mlp_down_proj'), (7, 'model_layers_7_mlp_down_proj')]
+[2026-01-26 05:23:01] [rank:0] last_node[stage#0] = model_layers_0_mlp_down_proj
+[2026-01-26 05:23:01] [rank:0] last_node[stage#1] = model_layers_1_mlp_down_proj
+[2026-01-26 05:23:01] [rank:0] last_node[stage#2] = model_layers_2_mlp_down_proj
+[2026-01-26 05:23:01] [rank:0] last_node[stage#3] = model_layers_3_mlp_down_proj
+[2026-01-26 05:23:01] [rank:0] last_node[stage#4] = model_layers_4_mlp_down_proj
+[2026-01-26 05:23:01] [rank:0] last_node[stage#5] = model_layers_5_mlp_down_proj
+[2026-01-26 05:23:01] [rank:0] last_node[stage#6] = model_layers_6_mlp_down_proj
+[2026-01-26 05:23:01] [rank:0] last_node[stage#7] = model_layers_7_mlp_down_proj
+[2026-01-26 05:23:01] [rank:0] second metadata_range
+[2026-01-26 05:23:01] [rank:0] last_node[stage#0] = submod_0
+[2026-01-26 05:23:01] [rank:0] last_node[stage#1] = submod_1
+[2026-01-26 05:23:01] [rank:0] last_node[stage#2] = submod_2
+[2026-01-26 05:23:01] [rank:0] last_node[stage#3] = submod_3
+[2026-01-26 05:23:01] [rank:0] last_node[stage#4] = submod_4
+[2026-01-26 05:23:01] [rank:0] last_node[stage#5] = submod_5
+[2026-01-26 05:23:01] [rank:0] last_node[stage#6] = submod_6
+[2026-01-26 05:23:01] [rank:0] last_node[stage#7] = submod_7
+ ### Rank:0, name:submod_0, move submod_0 to cuda:0
+[2026-01-26 05:23:01] ================================================================================
+[2026-01-26 05:23:01]  FX graph
+[2026-01-26 05:23:01] ================================================================================
+[2026-01-26 05:23:01]       placeholder     | input_ids                           | input_ids
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01] [  0] call_module     | model_embed_tokens                  | model.embed_tokens
+[2026-01-26 05:23:01]        args: (%input_ids
+[2026-01-26 05:23:01]       call_method     | size                                | size
+[2026-01-26 05:23:01]        args: (%model_embed_tokens
+[2026-01-26 05:23:01]       call_function   | getitem                             | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size, 1
+[2026-01-26 05:23:01]       call_function   | add                                 | <built-in function add>
+[2026-01-26 05:23:01]        args: (0, %getitem
+[2026-01-26 05:23:01]       call_function   | getattr_1                           | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%model_embed_tokens, device
+[2026-01-26 05:23:01]       call_function   | arange                              | <built-in method arange of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (0, %add
+[2026-01-26 05:23:01]       call_method     | unsqueeze                           | unsqueeze
+[2026-01-26 05:23:01]        args: (%arange, 0
+[2026-01-26 05:23:01]       call_method     | size_1                              | size
+[2026-01-26 05:23:01]        args: (%model_embed_tokens
+[2026-01-26 05:23:01]       call_function   | getitem_1                           | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_1, 0
+[2026-01-26 05:23:01]       call_method     | size_2                              | size
+[2026-01-26 05:23:01]        args: (%model_embed_tokens
+[2026-01-26 05:23:01]       call_function   | getitem_2                           | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_2, 1
+[2026-01-26 05:23:01]       call_function   | add_1                               | <built-in function add>
+[2026-01-26 05:23:01]        args: (%getitem_2, 0
+[2026-01-26 05:23:01]       call_function   | eq_1                                | <built-in function eq>
+[2026-01-26 05:23:01]        args: (%getitem_2, 1
+[2026-01-26 05:23:01]       call_function   | eq_2                                | <built-in function eq>
+[2026-01-26 05:23:01]        args: (%add_1, %getitem_2
+[2026-01-26 05:23:01]       get_attr        | model_rotary_emb_inv_freq           | model.rotary_emb.inv_freq
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getitem_3                           | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%model_rotary_emb_inv_freq, (None, slice(None, None, None)
+[2026-01-26 05:23:01]       call_method     | float_1                             | float
+[2026-01-26 05:23:01]        args: (%getitem_3
+[2026-01-26 05:23:01]       call_method     | size_3                              | size
+[2026-01-26 05:23:01]        args: (%unsqueeze
+[2026-01-26 05:23:01]       call_function   | getitem_4                           | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_3, 0
+[2026-01-26 05:23:01]       call_method     | expand                              | expand
+[2026-01-26 05:23:01]        args: (%float_1, %getitem_4, -1, 1
+[2026-01-26 05:23:01]       call_function   | getitem_5                           | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%unsqueeze, (slice(None, None, None), None
+[2026-01-26 05:23:01]       call_method     | float_2                             | float
+[2026-01-26 05:23:01]        args: (%getitem_5
+[2026-01-26 05:23:01]       call_method     | float_3                             | float
+[2026-01-26 05:23:01]        args: (%expand
+[2026-01-26 05:23:01]       call_method     | float_4                             | float
+[2026-01-26 05:23:01]        args: (%float_2
+[2026-01-26 05:23:01]       call_function   | matmul                              | <built-in function matmul>
+[2026-01-26 05:23:01]        args: (%float_3, %float_4
+[2026-01-26 05:23:01]       call_method     | transpose                           | transpose
+[2026-01-26 05:23:01]        args: (%matmul, 1, 2
+[2026-01-26 05:23:01]       call_function   | cat                                 | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((transpose, transpose)
+[2026-01-26 05:23:01]       call_method     | cos                                 | cos
+[2026-01-26 05:23:01]        args: (%cat
+[2026-01-26 05:23:01]       call_method     | sin                                 | sin
+[2026-01-26 05:23:01]        args: (%cat
+[2026-01-26 05:23:01]       call_function   | mul                                 | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cos, 1.0
+[2026-01-26 05:23:01]       call_function   | mul_1                               | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%sin, 1.0
+[2026-01-26 05:23:01]       call_function   | getattr_2                           | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%model_embed_tokens, dtype
+[2026-01-26 05:23:01]       call_method     | to                                  | to
+[2026-01-26 05:23:01]        args: (%mul
+[2026-01-26 05:23:01]       call_function   | getattr_3                           | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%model_embed_tokens, dtype
+[2026-01-26 05:23:01]       call_method     | to_1                                | to
+[2026-01-26 05:23:01]        args: (%mul_1
+[2026-01-26 05:23:01]       call_method     | to_2                                | to
+[2026-01-26 05:23:01]        args: (%model_embed_tokens, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_1                               | pow
+[2026-01-26 05:23:01]        args: (%to_2, 2
+[2026-01-26 05:23:01]       call_method     | mean                                | mean
+[2026-01-26 05:23:01]        args: (%pow_1, -1
+[2026-01-26 05:23:01]       call_function   | add_2                               | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt                               | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_2
+[2026-01-26 05:23:01]       call_function   | mul_2                               | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_2, %rsqrt
+[2026-01-26 05:23:01]       get_attr        | model_layers_0_input_layernorm_weight | model.layers.0.input_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_4                           | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%model_embed_tokens, dtype
+[2026-01-26 05:23:01]       call_method     | to_3                                | to
+[2026-01-26 05:23:01]        args: (%mul_2, %getattr_4
+[2026-01-26 05:23:01]       call_function   | mul_3                               | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_0_input_layernorm_weight, %to_3
+[2026-01-26 05:23:01]       call_method     | size_4                              | size
+[2026-01-26 05:23:01]        args: (%mul_3
+[2026-01-26 05:23:01]       call_function   | getitem_6                           | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_4, 0
+[2026-01-26 05:23:01]       call_function   | getitem_7                           | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_4, 1
+[2026-01-26 05:23:01]       call_function   | getitem_8                           | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_4, 2
+[2026-01-26 05:23:01] [  1] call_module     | model_layers_0_self_attn_q_proj     | model.layers.0.self_attn.q_proj
+[2026-01-26 05:23:01]        args: (%mul_3
+[2026-01-26 05:23:01] [  2] call_module     | model_layers_0_self_attn_k_proj     | model.layers.0.self_attn.k_proj
+[2026-01-26 05:23:01]        args: (%mul_3
+[2026-01-26 05:23:01] [  3] call_module     | model_layers_0_self_attn_v_proj     | model.layers.0.self_attn.v_proj
+[2026-01-26 05:23:01]        args: (%mul_3
+[2026-01-26 05:23:01]       call_method     | view                                | view
+[2026-01-26 05:23:01]        args: (%model_layers_0_self_attn_q_proj, %getitem_6, %getitem_7, 32, 64
+[2026-01-26 05:23:01]       call_method     | transpose_1                         | transpose
+[2026-01-26 05:23:01]        args: (%view, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_1                              | view
+[2026-01-26 05:23:01]        args: (%model_layers_0_self_attn_k_proj, %getitem_6, %getitem_7, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_2                         | transpose
+[2026-01-26 05:23:01]        args: (%view_1, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_2                              | view
+[2026-01-26 05:23:01]        args: (%model_layers_0_self_attn_v_proj, %getitem_6, %getitem_7, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_3                         | transpose
+[2026-01-26 05:23:01]        args: (%view_2, 1, 2
+[2026-01-26 05:23:01]       call_method     | unsqueeze_1                         | unsqueeze
+[2026-01-26 05:23:01]        args: (%to, 1
+[2026-01-26 05:23:01]       call_method     | unsqueeze_2                         | unsqueeze
+[2026-01-26 05:23:01]        args: (%to_1, 1
+[2026-01-26 05:23:01]       call_function   | mul_4                               | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_1, %unsqueeze_1
+[2026-01-26 05:23:01]       call_method     | size_5                              | size
+[2026-01-26 05:23:01]        args: (%transpose_1
+[2026-01-26 05:23:01]       call_function   | getitem_9                           | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_5, -1
+[2026-01-26 05:23:01]       call_function   | floordiv                            | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_9, 2
+[2026-01-26 05:23:01]       call_function   | getitem_10                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_1, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_6                              | size
+[2026-01-26 05:23:01]        args: (%transpose_1
+[2026-01-26 05:23:01]       call_function   | getitem_11                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_6, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_1                          | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_11, 2
+[2026-01-26 05:23:01]       call_function   | getitem_12                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_1, (Ellipsis, slice(floordiv_1, N
+[2026-01-26 05:23:01]       call_function   | neg                                 | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_12
+[2026-01-26 05:23:01]       call_function   | cat_1                               | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg, getitem_10)
+[2026-01-26 05:23:01]       call_function   | mul_5                               | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_1, %unsqueeze_2
+[2026-01-26 05:23:01]       call_function   | add_3                               | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_4, %mul_5
+[2026-01-26 05:23:01]       call_function   | mul_6                               | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_2, %unsqueeze_1
+[2026-01-26 05:23:01]       call_method     | size_7                              | size
+[2026-01-26 05:23:01]        args: (%transpose_2
+[2026-01-26 05:23:01]       call_function   | getitem_13                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_7, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_2                          | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_13, 2
+[2026-01-26 05:23:01]       call_function   | getitem_14                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_2, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_8                              | size
+[2026-01-26 05:23:01]        args: (%transpose_2
+[2026-01-26 05:23:01]       call_function   | getitem_15                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_8, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_3                          | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_15, 2
+[2026-01-26 05:23:01]       call_function   | getitem_16                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_2, (Ellipsis, slice(floordiv_3, N
+[2026-01-26 05:23:01]       call_function   | neg_1                               | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_16
+[2026-01-26 05:23:01]       call_function   | cat_2                               | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg_1, getitem_14)
+[2026-01-26 05:23:01]       call_function   | mul_7                               | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_2, %unsqueeze_2
+[2026-01-26 05:23:01]       call_function   | add_4                               | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_6, %mul_7
+[2026-01-26 05:23:01]       call_method     | size_9                              | size
+[2026-01-26 05:23:01]        args: (%add_4
+[2026-01-26 05:23:01]       call_function   | getitem_17                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_9, 0
+[2026-01-26 05:23:01]       call_function   | getitem_18                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_9, 1
+[2026-01-26 05:23:01]       call_function   | getitem_19                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_9, 2
+[2026-01-26 05:23:01]       call_function   | getitem_20                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_9, 3
+[2026-01-26 05:23:01]       call_function   | getitem_21                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%add_4, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_1                            | expand
+[2026-01-26 05:23:01]        args: (%getitem_21, %getitem_17, %getitem_18, 4, %getitem_19, %getitem_20
+[2026-01-26 05:23:01]       call_function   | mul_8                               | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_18, 4
+[2026-01-26 05:23:01]       call_method     | reshape                             | reshape
+[2026-01-26 05:23:01]        args: (%expand_1, %getitem_17, %mul_8, %getitem_19, %getitem_20
+[2026-01-26 05:23:01]       call_method     | size_10                             | size
+[2026-01-26 05:23:01]        args: (%transpose_3
+[2026-01-26 05:23:01]       call_function   | getitem_22                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_10, 0
+[2026-01-26 05:23:01]       call_function   | getitem_23                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_10, 1
+[2026-01-26 05:23:01]       call_function   | getitem_24                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_10, 2
+[2026-01-26 05:23:01]       call_function   | getitem_25                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_10, 3
+[2026-01-26 05:23:01]       call_function   | getitem_26                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_3, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_2                            | expand
+[2026-01-26 05:23:01]        args: (%getitem_26, %getitem_22, %getitem_23, 4, %getitem_24, %getitem_25
+[2026-01-26 05:23:01]       call_function   | mul_9                               | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_23, 4
+[2026-01-26 05:23:01]       call_method     | reshape_1                           | reshape
+[2026-01-26 05:23:01]        args: (%expand_2, %getitem_22, %mul_9, %getitem_24, %getitem_25
+[2026-01-26 05:23:01]       call_function   | getattr_5                           | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_3, device
+[2026-01-26 05:23:01]       call_function   | getattr_6                           | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%getattr_5, type
+[2026-01-26 05:23:01]       call_function   | eq_3                                | <built-in function eq>
+[2026-01-26 05:23:01]        args: (%getattr_6, cuda
+[2026-01-26 05:23:01]       call_function   | gt                                  | <built-in function gt>
+[2026-01-26 05:23:01]        args: (%getitem_7, 1
+[2026-01-26 05:23:01]       call_function   | scaled_dot_product_attention        | <built-in function scaled_dot_product_attention>
+[2026-01-26 05:23:01]        args: (%add_3, %reshape, %reshape_1
+[2026-01-26 05:23:01]       call_method     | transpose_4                         | transpose
+[2026-01-26 05:23:01]        args: (%scaled_dot_product_attention, 1, 2
+[2026-01-26 05:23:01]       call_method     | contiguous                          | contiguous
+[2026-01-26 05:23:01]        args: (%transpose_4
+[2026-01-26 05:23:01]       call_method     | view_3                              | view
+[2026-01-26 05:23:01]        args: (%contiguous, %getitem_6, %getitem_7, -1
+[2026-01-26 05:23:01] [  4] call_module     | model_layers_0_self_attn_o_proj     | model.layers.0.self_attn.o_proj
+[2026-01-26 05:23:01]        args: (%view_3
+[2026-01-26 05:23:01]       call_function   | add_5                               | <built-in function add>
+[2026-01-26 05:23:01]        args: (%model_embed_tokens, %model_layers_0_self_attn_o_proj
+[2026-01-26 05:23:01]       call_method     | to_4                                | to
+[2026-01-26 05:23:01]        args: (%add_5, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_2                               | pow
+[2026-01-26 05:23:01]        args: (%to_4, 2
+[2026-01-26 05:23:01]       call_method     | mean_1                              | mean
+[2026-01-26 05:23:01]        args: (%pow_2, -1
+[2026-01-26 05:23:01]       call_function   | add_6                               | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_1, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_1                             | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_6
+[2026-01-26 05:23:01]       call_function   | mul_10                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_4, %rsqrt_1
+[2026-01-26 05:23:01]       get_attr        | model_layers_0_post_attention_layernorm_weight | model.layers.0.post_attention_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_7                           | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_5, dtype
+[2026-01-26 05:23:01]       call_method     | to_5                                | to
+[2026-01-26 05:23:01]        args: (%mul_10, %getattr_7
+[2026-01-26 05:23:01]       call_function   | mul_11                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_0_post_attention_layernorm_weight, %to_5
+[2026-01-26 05:23:01] [  5] call_module     | model_layers_0_mlp_gate_proj        | model.layers.0.mlp.gate_proj
+[2026-01-26 05:23:01]        args: (%mul_11
+[2026-01-26 05:23:01] [  6] call_module     | model_layers_0_mlp_act_fn           | model.layers.0.mlp.act_fn
+[2026-01-26 05:23:01]        args: (%model_layers_0_mlp_gate_proj
+[2026-01-26 05:23:01] [  7] call_module     | model_layers_0_mlp_up_proj          | model.layers.0.mlp.up_proj
+[2026-01-26 05:23:01]        args: (%mul_11
+[2026-01-26 05:23:01]       call_function   | mul_12                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_0_mlp_act_fn, %model_layers_0_mlp_up_proj
+[2026-01-26 05:23:01] [  8] call_module     | model_layers_0_mlp_down_proj        | model.layers.0.mlp.down_proj
+[2026-01-26 05:23:01]        args: (%mul_12
+[2026-01-26 05:23:01]       call_function   | add_7                               | <built-in function add>
+[2026-01-26 05:23:01]        args: (%add_5, %model_layers_0_mlp_down_proj
+[2026-01-26 05:23:01]       call_method     | to_6                                | to
+[2026-01-26 05:23:01]        args: (%add_7, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_3                               | pow
+[2026-01-26 05:23:01]        args: (%to_6, 2
+[2026-01-26 05:23:01]       call_method     | mean_2                              | mean
+[2026-01-26 05:23:01]        args: (%pow_3, -1
+[2026-01-26 05:23:01]       call_function   | add_8                               | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_2, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_2                             | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_8
+[2026-01-26 05:23:01]       call_function   | mul_13                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_6, %rsqrt_2
+[2026-01-26 05:23:01]       get_attr        | model_layers_1_input_layernorm_weight | model.layers.1.input_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_8                           | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_7, dtype
+[2026-01-26 05:23:01]       call_method     | to_7                                | to
+[2026-01-26 05:23:01]        args: (%mul_13, %getattr_8
+[2026-01-26 05:23:01]       call_function   | mul_14                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_1_input_layernorm_weight, %to_7
+[2026-01-26 05:23:01]       call_method     | size_11                             | size
+[2026-01-26 05:23:01]        args: (%mul_14
+[2026-01-26 05:23:01]       call_function   | getitem_27                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_11, 0
+[2026-01-26 05:23:01]       call_function   | getitem_28                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_11, 1
+[2026-01-26 05:23:01]       call_function   | getitem_29                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_11, 2
+[2026-01-26 05:23:01] [  9] call_module     | model_layers_1_self_attn_q_proj     | model.layers.1.self_attn.q_proj
+[2026-01-26 05:23:01]        args: (%mul_14
+[2026-01-26 05:23:01] [ 10] call_module     | model_layers_1_self_attn_k_proj     | model.layers.1.self_attn.k_proj
+[2026-01-26 05:23:01]        args: (%mul_14
+[2026-01-26 05:23:01] [ 11] call_module     | model_layers_1_self_attn_v_proj     | model.layers.1.self_attn.v_proj
+[2026-01-26 05:23:01]        args: (%mul_14
+[2026-01-26 05:23:01]       call_method     | view_4                              | view
+[2026-01-26 05:23:01]        args: (%model_layers_1_self_attn_q_proj, %getitem_27, %getitem_28, 32, 64
+[2026-01-26 05:23:01]       call_method     | transpose_5                         | transpose
+[2026-01-26 05:23:01]        args: (%view_4, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_5                              | view
+[2026-01-26 05:23:01]        args: (%model_layers_1_self_attn_k_proj, %getitem_27, %getitem_28, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_6                         | transpose
+[2026-01-26 05:23:01]        args: (%view_5, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_6                              | view
+[2026-01-26 05:23:01]        args: (%model_layers_1_self_attn_v_proj, %getitem_27, %getitem_28, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_7                         | transpose
+[2026-01-26 05:23:01]        args: (%view_6, 1, 2
+[2026-01-26 05:23:01]       call_method     | unsqueeze_3                         | unsqueeze
+[2026-01-26 05:23:01]        args: (%to, 1
+[2026-01-26 05:23:01]       call_method     | unsqueeze_4                         | unsqueeze
+[2026-01-26 05:23:01]        args: (%to_1, 1
+[2026-01-26 05:23:01]       call_function   | mul_15                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_5, %unsqueeze_3
+[2026-01-26 05:23:01]       call_method     | size_12                             | size
+[2026-01-26 05:23:01]        args: (%transpose_5
+[2026-01-26 05:23:01]       call_function   | getitem_30                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_12, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_4                          | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_30, 2
+[2026-01-26 05:23:01]       call_function   | getitem_31                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_5, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_13                             | size
+[2026-01-26 05:23:01]        args: (%transpose_5
+[2026-01-26 05:23:01]       call_function   | getitem_32                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_13, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_5                          | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_32, 2
+[2026-01-26 05:23:01]       call_function   | getitem_33                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_5, (Ellipsis, slice(floordiv_5, N
+[2026-01-26 05:23:01]       call_function   | neg_2                               | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_33
+[2026-01-26 05:23:01]       call_function   | cat_3                               | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg_2, getitem_31)
+[2026-01-26 05:23:01]       call_function   | mul_16                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_3, %unsqueeze_4
+[2026-01-26 05:23:01]       call_function   | add_9                               | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_15, %mul_16
+[2026-01-26 05:23:01]       call_function   | mul_17                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_6, %unsqueeze_3
+[2026-01-26 05:23:01]       call_method     | size_14                             | size
+[2026-01-26 05:23:01]        args: (%transpose_6
+[2026-01-26 05:23:01]       call_function   | getitem_34                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_14, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_6                          | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_34, 2
+[2026-01-26 05:23:01]       call_function   | getitem_35                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_6, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_15                             | size
+[2026-01-26 05:23:01]        args: (%transpose_6
+[2026-01-26 05:23:01]       call_function   | getitem_36                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_15, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_7                          | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_36, 2
+[2026-01-26 05:23:01]       call_function   | getitem_37                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_6, (Ellipsis, slice(floordiv_7, N
+[2026-01-26 05:23:01]       call_function   | neg_3                               | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_37
+[2026-01-26 05:23:01]       call_function   | cat_4                               | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg_3, getitem_35)
+[2026-01-26 05:23:01]       call_function   | mul_18                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_4, %unsqueeze_4
+[2026-01-26 05:23:01]       call_function   | add_10                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_17, %mul_18
+[2026-01-26 05:23:01]       call_method     | size_16                             | size
+[2026-01-26 05:23:01]        args: (%add_10
+[2026-01-26 05:23:01]       call_function   | getitem_38                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_16, 0
+[2026-01-26 05:23:01]       call_function   | getitem_39                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_16, 1
+[2026-01-26 05:23:01]       call_function   | getitem_40                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_16, 2
+[2026-01-26 05:23:01]       call_function   | getitem_41                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_16, 3
+[2026-01-26 05:23:01]       call_function   | getitem_42                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%add_10, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_3                            | expand
+[2026-01-26 05:23:01]        args: (%getitem_42, %getitem_38, %getitem_39, 4, %getitem_40, %getitem_41
+[2026-01-26 05:23:01]       call_function   | mul_19                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_39, 4
+[2026-01-26 05:23:01]       call_method     | reshape_2                           | reshape
+[2026-01-26 05:23:01]        args: (%expand_3, %getitem_38, %mul_19, %getitem_40, %getitem_41
+[2026-01-26 05:23:01]       call_method     | size_17                             | size
+[2026-01-26 05:23:01]        args: (%transpose_7
+[2026-01-26 05:23:01]       call_function   | getitem_43                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_17, 0
+[2026-01-26 05:23:01]       call_function   | getitem_44                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_17, 1
+[2026-01-26 05:23:01]       call_function   | getitem_45                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_17, 2
+[2026-01-26 05:23:01]       call_function   | getitem_46                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_17, 3
+[2026-01-26 05:23:01]       call_function   | getitem_47                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_7, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_4                            | expand
+[2026-01-26 05:23:01]        args: (%getitem_47, %getitem_43, %getitem_44, 4, %getitem_45, %getitem_46
+[2026-01-26 05:23:01]       call_function   | mul_20                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_44, 4
+[2026-01-26 05:23:01]       call_method     | reshape_3                           | reshape
+[2026-01-26 05:23:01]        args: (%expand_4, %getitem_43, %mul_20, %getitem_45, %getitem_46
+[2026-01-26 05:23:01]       call_function   | getattr_9                           | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_9, device
+[2026-01-26 05:23:01]       call_function   | getattr_10                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%getattr_9, type
+[2026-01-26 05:23:01]       call_function   | eq_4                                | <built-in function eq>
+[2026-01-26 05:23:01]        args: (%getattr_10, cuda
+[2026-01-26 05:23:01]       call_function   | gt_1                                | <built-in function gt>
+[2026-01-26 05:23:01]        args: (%getitem_28, 1
+[2026-01-26 05:23:01]       call_function   | scaled_dot_product_attention_1      | <built-in function scaled_dot_product_attention>
+[2026-01-26 05:23:01]        args: (%add_9, %reshape_2, %reshape_3
+[2026-01-26 05:23:01]       call_method     | transpose_8                         | transpose
+[2026-01-26 05:23:01]        args: (%scaled_dot_product_attention_1, 1, 2
+[2026-01-26 05:23:01]       call_method     | contiguous_1                        | contiguous
+[2026-01-26 05:23:01]        args: (%transpose_8
+[2026-01-26 05:23:01]       call_method     | view_7                              | view
+[2026-01-26 05:23:01]        args: (%contiguous_1, %getitem_27, %getitem_28, -1
+[2026-01-26 05:23:01] [ 12] call_module     | model_layers_1_self_attn_o_proj     | model.layers.1.self_attn.o_proj
+[2026-01-26 05:23:01]        args: (%view_7
+[2026-01-26 05:23:01]       call_function   | add_11                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%add_7, %model_layers_1_self_attn_o_proj
+[2026-01-26 05:23:01]       call_method     | to_8                                | to
+[2026-01-26 05:23:01]        args: (%add_11, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_4                               | pow
+[2026-01-26 05:23:01]        args: (%to_8, 2
+[2026-01-26 05:23:01]       call_method     | mean_3                              | mean
+[2026-01-26 05:23:01]        args: (%pow_4, -1
+[2026-01-26 05:23:01]       call_function   | add_12                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_3, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_3                             | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_12
+[2026-01-26 05:23:01]       call_function   | mul_21                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_8, %rsqrt_3
+[2026-01-26 05:23:01]       get_attr        | model_layers_1_post_attention_layernorm_weight | model.layers.1.post_attention_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_11                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_11, dtype
+[2026-01-26 05:23:01]       call_method     | to_9                                | to
+[2026-01-26 05:23:01]        args: (%mul_21, %getattr_11
+[2026-01-26 05:23:01]       call_function   | mul_22                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_1_post_attention_layernorm_weight, %to_9
+[2026-01-26 05:23:01] [ 13] call_module     | model_layers_1_mlp_gate_proj        | model.layers.1.mlp.gate_proj
+[2026-01-26 05:23:01]        args: (%mul_22
+[2026-01-26 05:23:01] [ 14] call_module     | model_layers_1_mlp_act_fn           | model.layers.1.mlp.act_fn
+[2026-01-26 05:23:01]        args: (%model_layers_1_mlp_gate_proj
+[2026-01-26 05:23:01] [ 15] call_module     | model_layers_1_mlp_up_proj          | model.layers.1.mlp.up_proj
+[2026-01-26 05:23:01]        args: (%mul_22
+[2026-01-26 05:23:01]       call_function   | mul_23                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_1_mlp_act_fn, %model_layers_1_mlp_up_proj
+[2026-01-26 05:23:01] [ 16] call_module     | model_layers_1_mlp_down_proj        | model.layers.1.mlp.down_proj
+[2026-01-26 05:23:01]        args: (%mul_23
+[2026-01-26 05:23:01]       call_function   | add_13                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%add_11, %model_layers_1_mlp_down_proj
+[2026-01-26 05:23:01]       call_method     | to_10                               | to
+[2026-01-26 05:23:01]        args: (%add_13, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_5                               | pow
+[2026-01-26 05:23:01]        args: (%to_10, 2
+[2026-01-26 05:23:01]       call_method     | mean_4                              | mean
+[2026-01-26 05:23:01]        args: (%pow_5, -1
+[2026-01-26 05:23:01]       call_function   | add_14                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_4, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_4                             | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_14
+[2026-01-26 05:23:01]       call_function   | mul_24                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_10, %rsqrt_4
+[2026-01-26 05:23:01]       get_attr        | model_layers_2_input_layernorm_weight | model.layers.2.input_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_12                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_13, dtype
+[2026-01-26 05:23:01]       call_method     | to_11                               | to
+[2026-01-26 05:23:01]        args: (%mul_24, %getattr_12
+[2026-01-26 05:23:01]       call_function   | mul_25                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_2_input_layernorm_weight, %to_11
+[2026-01-26 05:23:01]       call_method     | size_18                             | size
+[2026-01-26 05:23:01]        args: (%mul_25
+[2026-01-26 05:23:01]       call_function   | getitem_48                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_18, 0
+[2026-01-26 05:23:01]       call_function   | getitem_49                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_18, 1
+[2026-01-26 05:23:01]       call_function   | getitem_50                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_18, 2
+[2026-01-26 05:23:01] [ 17] call_module     | model_layers_2_self_attn_q_proj     | model.layers.2.self_attn.q_proj
+[2026-01-26 05:23:01]        args: (%mul_25
+[2026-01-26 05:23:01] [ 18] call_module     | model_layers_2_self_attn_k_proj     | model.layers.2.self_attn.k_proj
+[2026-01-26 05:23:01]        args: (%mul_25
+[2026-01-26 05:23:01] [ 19] call_module     | model_layers_2_self_attn_v_proj     | model.layers.2.self_attn.v_proj
+[2026-01-26 05:23:01]        args: (%mul_25
+[2026-01-26 05:23:01]       call_method     | view_8                              | view
+[2026-01-26 05:23:01]        args: (%model_layers_2_self_attn_q_proj, %getitem_48, %getitem_49, 32, 64
+[2026-01-26 05:23:01]       call_method     | transpose_9                         | transpose
+[2026-01-26 05:23:01]        args: (%view_8, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_9                              | view
+[2026-01-26 05:23:01]        args: (%model_layers_2_self_attn_k_proj, %getitem_48, %getitem_49, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_10                        | transpose
+[2026-01-26 05:23:01]        args: (%view_9, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_10                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_2_self_attn_v_proj, %getitem_48, %getitem_49, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_11                        | transpose
+[2026-01-26 05:23:01]        args: (%view_10, 1, 2
+[2026-01-26 05:23:01]       call_method     | unsqueeze_5                         | unsqueeze
+[2026-01-26 05:23:01]        args: (%to, 1
+[2026-01-26 05:23:01]       call_method     | unsqueeze_6                         | unsqueeze
+[2026-01-26 05:23:01]        args: (%to_1, 1
+[2026-01-26 05:23:01]       call_function   | mul_26                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_9, %unsqueeze_5
+[2026-01-26 05:23:01]       call_method     | size_19                             | size
+[2026-01-26 05:23:01]        args: (%transpose_9
+[2026-01-26 05:23:01]       call_function   | getitem_51                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_19, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_8                          | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_51, 2
+[2026-01-26 05:23:01]       call_function   | getitem_52                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_9, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_20                             | size
+[2026-01-26 05:23:01]        args: (%transpose_9
+[2026-01-26 05:23:01]       call_function   | getitem_53                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_20, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_9                          | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_53, 2
+[2026-01-26 05:23:01]       call_function   | getitem_54                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_9, (Ellipsis, slice(floordiv_9, N
+[2026-01-26 05:23:01]       call_function   | neg_4                               | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_54
+[2026-01-26 05:23:01]       call_function   | cat_5                               | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg_4, getitem_52)
+[2026-01-26 05:23:01]       call_function   | mul_27                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_5, %unsqueeze_6
+[2026-01-26 05:23:01]       call_function   | add_15                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_26, %mul_27
+[2026-01-26 05:23:01]       call_function   | mul_28                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_10, %unsqueeze_5
+[2026-01-26 05:23:01]       call_method     | size_21                             | size
+[2026-01-26 05:23:01]        args: (%transpose_10
+[2026-01-26 05:23:01]       call_function   | getitem_55                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_21, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_10                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_55, 2
+[2026-01-26 05:23:01]       call_function   | getitem_56                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_10, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_22                             | size
+[2026-01-26 05:23:01]        args: (%transpose_10
+[2026-01-26 05:23:01]       call_function   | getitem_57                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_22, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_11                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_57, 2
+[2026-01-26 05:23:01]       call_function   | getitem_58                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_10, (Ellipsis, slice(floordiv_11, 
+[2026-01-26 05:23:01]       call_function   | neg_5                               | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_58
+[2026-01-26 05:23:01]       call_function   | cat_6                               | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg_5, getitem_56)
+[2026-01-26 05:23:01]       call_function   | mul_29                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_6, %unsqueeze_6
+[2026-01-26 05:23:01]       call_function   | add_16                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_28, %mul_29
+[2026-01-26 05:23:01]       call_method     | size_23                             | size
+[2026-01-26 05:23:01]        args: (%add_16
+[2026-01-26 05:23:01]       call_function   | getitem_59                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_23, 0
+[2026-01-26 05:23:01]       call_function   | getitem_60                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_23, 1
+[2026-01-26 05:23:01]       call_function   | getitem_61                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_23, 2
+[2026-01-26 05:23:01]       call_function   | getitem_62                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_23, 3
+[2026-01-26 05:23:01]       call_function   | getitem_63                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%add_16, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_5                            | expand
+[2026-01-26 05:23:01]        args: (%getitem_63, %getitem_59, %getitem_60, 4, %getitem_61, %getitem_62
+[2026-01-26 05:23:01]       call_function   | mul_30                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_60, 4
+[2026-01-26 05:23:01]       call_method     | reshape_4                           | reshape
+[2026-01-26 05:23:01]        args: (%expand_5, %getitem_59, %mul_30, %getitem_61, %getitem_62
+[2026-01-26 05:23:01]       call_method     | size_24                             | size
+[2026-01-26 05:23:01]        args: (%transpose_11
+[2026-01-26 05:23:01]       call_function   | getitem_64                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_24, 0
+[2026-01-26 05:23:01]       call_function   | getitem_65                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_24, 1
+[2026-01-26 05:23:01]       call_function   | getitem_66                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_24, 2
+[2026-01-26 05:23:01]       call_function   | getitem_67                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_24, 3
+[2026-01-26 05:23:01]       call_function   | getitem_68                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_11, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_6                            | expand
+[2026-01-26 05:23:01]        args: (%getitem_68, %getitem_64, %getitem_65, 4, %getitem_66, %getitem_67
+[2026-01-26 05:23:01]       call_function   | mul_31                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_65, 4
+[2026-01-26 05:23:01]       call_method     | reshape_5                           | reshape
+[2026-01-26 05:23:01]        args: (%expand_6, %getitem_64, %mul_31, %getitem_66, %getitem_67
+[2026-01-26 05:23:01]       call_function   | getattr_13                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_15, device
+[2026-01-26 05:23:01]       call_function   | getattr_14                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%getattr_13, type
+[2026-01-26 05:23:01]       call_function   | eq_5                                | <built-in function eq>
+[2026-01-26 05:23:01]        args: (%getattr_14, cuda
+[2026-01-26 05:23:01]       call_function   | gt_2                                | <built-in function gt>
+[2026-01-26 05:23:01]        args: (%getitem_49, 1
+[2026-01-26 05:23:01]       call_function   | scaled_dot_product_attention_2      | <built-in function scaled_dot_product_attention>
+[2026-01-26 05:23:01]        args: (%add_15, %reshape_4, %reshape_5
+[2026-01-26 05:23:01]       call_method     | transpose_12                        | transpose
+[2026-01-26 05:23:01]        args: (%scaled_dot_product_attention_2, 1, 2
+[2026-01-26 05:23:01]       call_method     | contiguous_2                        | contiguous
+[2026-01-26 05:23:01]        args: (%transpose_12
+[2026-01-26 05:23:01]       call_method     | view_11                             | view
+[2026-01-26 05:23:01]        args: (%contiguous_2, %getitem_48, %getitem_49, -1
+[2026-01-26 05:23:01] [ 20] call_module     | model_layers_2_self_attn_o_proj     | model.layers.2.self_attn.o_proj
+[2026-01-26 05:23:01]        args: (%view_11
+[2026-01-26 05:23:01]       call_function   | add_17                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%add_13, %model_layers_2_self_attn_o_proj
+[2026-01-26 05:23:01]       call_method     | to_12                               | to
+[2026-01-26 05:23:01]        args: (%add_17, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_6                               | pow
+[2026-01-26 05:23:01]        args: (%to_12, 2
+[2026-01-26 05:23:01]       call_method     | mean_5                              | mean
+[2026-01-26 05:23:01]        args: (%pow_6, -1
+[2026-01-26 05:23:01]       call_function   | add_18                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_5, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_5                             | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_18
+[2026-01-26 05:23:01]       call_function   | mul_32                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_12, %rsqrt_5
+[2026-01-26 05:23:01]       get_attr        | model_layers_2_post_attention_layernorm_weight | model.layers.2.post_attention_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_15                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_17, dtype
+[2026-01-26 05:23:01]       call_method     | to_13                               | to
+[2026-01-26 05:23:01]        args: (%mul_32, %getattr_15
+[2026-01-26 05:23:01]       call_function   | mul_33                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_2_post_attention_layernorm_weight, %to_13
+[2026-01-26 05:23:01] [ 21] call_module     | model_layers_2_mlp_gate_proj        | model.layers.2.mlp.gate_proj
+[2026-01-26 05:23:01]        args: (%mul_33
+[2026-01-26 05:23:01] [ 22] call_module     | model_layers_2_mlp_act_fn           | model.layers.2.mlp.act_fn
+[2026-01-26 05:23:01]        args: (%model_layers_2_mlp_gate_proj
+[2026-01-26 05:23:01] [ 23] call_module     | model_layers_2_mlp_up_proj          | model.layers.2.mlp.up_proj
+[2026-01-26 05:23:01]        args: (%mul_33
+[2026-01-26 05:23:01]       call_function   | mul_34                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_2_mlp_act_fn, %model_layers_2_mlp_up_proj
+[2026-01-26 05:23:01] [ 24] call_module     | model_layers_2_mlp_down_proj        | model.layers.2.mlp.down_proj
+[2026-01-26 05:23:01]        args: (%mul_34
+[2026-01-26 05:23:01]       call_function   | add_19                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%add_17, %model_layers_2_mlp_down_proj
+[2026-01-26 05:23:01]       call_method     | to_14                               | to
+[2026-01-26 05:23:01]        args: (%add_19, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_7                               | pow
+[2026-01-26 05:23:01]        args: (%to_14, 2
+[2026-01-26 05:23:01]       call_method     | mean_6                              | mean
+[2026-01-26 05:23:01]        args: (%pow_7, -1
+[2026-01-26 05:23:01]       call_function   | add_20                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_6, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_6                             | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_20
+[2026-01-26 05:23:01]       call_function   | mul_35                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_14, %rsqrt_6
+[2026-01-26 05:23:01]       get_attr        | model_layers_3_input_layernorm_weight | model.layers.3.input_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_16                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_19, dtype
+[2026-01-26 05:23:01]       call_method     | to_15                               | to
+[2026-01-26 05:23:01]        args: (%mul_35, %getattr_16
+[2026-01-26 05:23:01]       call_function   | mul_36                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_3_input_layernorm_weight, %to_15
+[2026-01-26 05:23:01]       call_method     | size_25                             | size
+[2026-01-26 05:23:01]        args: (%mul_36
+[2026-01-26 05:23:01]       call_function   | getitem_69                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_25, 0
+[2026-01-26 05:23:01]       call_function   | getitem_70                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_25, 1
+[2026-01-26 05:23:01]       call_function   | getitem_71                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_25, 2
+[2026-01-26 05:23:01] [ 25] call_module     | model_layers_3_self_attn_q_proj     | model.layers.3.self_attn.q_proj
+[2026-01-26 05:23:01]        args: (%mul_36
+[2026-01-26 05:23:01] [ 26] call_module     | model_layers_3_self_attn_k_proj     | model.layers.3.self_attn.k_proj
+[2026-01-26 05:23:01]        args: (%mul_36
+[2026-01-26 05:23:01] [ 27] call_module     | model_layers_3_self_attn_v_proj     | model.layers.3.self_attn.v_proj
+[2026-01-26 05:23:01]        args: (%mul_36
+[2026-01-26 05:23:01]       call_method     | view_12                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_3_self_attn_q_proj, %getitem_69, %getitem_70, 32, 64
+[2026-01-26 05:23:01]       call_method     | transpose_13                        | transpose
+[2026-01-26 05:23:01]        args: (%view_12, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_13                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_3_self_attn_k_proj, %getitem_69, %getitem_70, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_14                        | transpose
+[2026-01-26 05:23:01]        args: (%view_13, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_14                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_3_self_attn_v_proj, %getitem_69, %getitem_70, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_15                        | transpose
+[2026-01-26 05:23:01]        args: (%view_14, 1, 2
+[2026-01-26 05:23:01]       call_method     | unsqueeze_7                         | unsqueeze
+[2026-01-26 05:23:01]        args: (%to, 1
+[2026-01-26 05:23:01]       call_method     | unsqueeze_8                         | unsqueeze
+[2026-01-26 05:23:01]        args: (%to_1, 1
+[2026-01-26 05:23:01]       call_function   | mul_37                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_13, %unsqueeze_7
+[2026-01-26 05:23:01]       call_method     | size_26                             | size
+[2026-01-26 05:23:01]        args: (%transpose_13
+[2026-01-26 05:23:01]       call_function   | getitem_72                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_26, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_12                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_72, 2
+[2026-01-26 05:23:01]       call_function   | getitem_73                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_13, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_27                             | size
+[2026-01-26 05:23:01]        args: (%transpose_13
+[2026-01-26 05:23:01]       call_function   | getitem_74                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_27, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_13                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_74, 2
+[2026-01-26 05:23:01]       call_function   | getitem_75                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_13, (Ellipsis, slice(floordiv_13, 
+[2026-01-26 05:23:01]       call_function   | neg_6                               | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_75
+[2026-01-26 05:23:01]       call_function   | cat_7                               | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg_6, getitem_73)
+[2026-01-26 05:23:01]       call_function   | mul_38                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_7, %unsqueeze_8
+[2026-01-26 05:23:01]       call_function   | add_21                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_37, %mul_38
+[2026-01-26 05:23:01]       call_function   | mul_39                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_14, %unsqueeze_7
+[2026-01-26 05:23:01]       call_method     | size_28                             | size
+[2026-01-26 05:23:01]        args: (%transpose_14
+[2026-01-26 05:23:01]       call_function   | getitem_76                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_28, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_14                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_76, 2
+[2026-01-26 05:23:01]       call_function   | getitem_77                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_14, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_29                             | size
+[2026-01-26 05:23:01]        args: (%transpose_14
+[2026-01-26 05:23:01]       call_function   | getitem_78                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_29, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_15                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_78, 2
+[2026-01-26 05:23:01]       call_function   | getitem_79                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_14, (Ellipsis, slice(floordiv_15, 
+[2026-01-26 05:23:01]       call_function   | neg_7                               | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_79
+[2026-01-26 05:23:01]       call_function   | cat_8                               | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg_7, getitem_77)
+[2026-01-26 05:23:01]       call_function   | mul_40                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_8, %unsqueeze_8
+[2026-01-26 05:23:01]       call_function   | add_22                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_39, %mul_40
+[2026-01-26 05:23:01]       call_method     | size_30                             | size
+[2026-01-26 05:23:01]        args: (%add_22
+[2026-01-26 05:23:01]       call_function   | getitem_80                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_30, 0
+[2026-01-26 05:23:01]       call_function   | getitem_81                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_30, 1
+[2026-01-26 05:23:01]       call_function   | getitem_82                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_30, 2
+[2026-01-26 05:23:01]       call_function   | getitem_83                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_30, 3
+[2026-01-26 05:23:01]       call_function   | getitem_84                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%add_22, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_7                            | expand
+[2026-01-26 05:23:01]        args: (%getitem_84, %getitem_80, %getitem_81, 4, %getitem_82, %getitem_83
+[2026-01-26 05:23:01]       call_function   | mul_41                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_81, 4
+[2026-01-26 05:23:01]       call_method     | reshape_6                           | reshape
+[2026-01-26 05:23:01]        args: (%expand_7, %getitem_80, %mul_41, %getitem_82, %getitem_83
+[2026-01-26 05:23:01]       call_method     | size_31                             | size
+[2026-01-26 05:23:01]        args: (%transpose_15
+[2026-01-26 05:23:01]       call_function   | getitem_85                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_31, 0
+[2026-01-26 05:23:01]       call_function   | getitem_86                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_31, 1
+[2026-01-26 05:23:01]       call_function   | getitem_87                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_31, 2
+[2026-01-26 05:23:01]       call_function   | getitem_88                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_31, 3
+[2026-01-26 05:23:01]       call_function   | getitem_89                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_15, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_8                            | expand
+[2026-01-26 05:23:01]        args: (%getitem_89, %getitem_85, %getitem_86, 4, %getitem_87, %getitem_88
+[2026-01-26 05:23:01]       call_function   | mul_42                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_86, 4
+[2026-01-26 05:23:01]       call_method     | reshape_7                           | reshape
+[2026-01-26 05:23:01]        args: (%expand_8, %getitem_85, %mul_42, %getitem_87, %getitem_88
+[2026-01-26 05:23:01]       call_function   | getattr_17                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_21, device
+[2026-01-26 05:23:01]       call_function   | getattr_18                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%getattr_17, type
+[2026-01-26 05:23:01]       call_function   | eq_6                                | <built-in function eq>
+[2026-01-26 05:23:01]        args: (%getattr_18, cuda
+[2026-01-26 05:23:01]       call_function   | gt_3                                | <built-in function gt>
+[2026-01-26 05:23:01]        args: (%getitem_70, 1
+[2026-01-26 05:23:01]       call_function   | scaled_dot_product_attention_3      | <built-in function scaled_dot_product_attention>
+[2026-01-26 05:23:01]        args: (%add_21, %reshape_6, %reshape_7
+[2026-01-26 05:23:01]       call_method     | transpose_16                        | transpose
+[2026-01-26 05:23:01]        args: (%scaled_dot_product_attention_3, 1, 2
+[2026-01-26 05:23:01]       call_method     | contiguous_3                        | contiguous
+[2026-01-26 05:23:01]        args: (%transpose_16
+[2026-01-26 05:23:01]       call_method     | view_15                             | view
+[2026-01-26 05:23:01]        args: (%contiguous_3, %getitem_69, %getitem_70, -1
+[2026-01-26 05:23:01] [ 28] call_module     | model_layers_3_self_attn_o_proj     | model.layers.3.self_attn.o_proj
+[2026-01-26 05:23:01]        args: (%view_15
+[2026-01-26 05:23:01]       call_function   | add_23                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%add_19, %model_layers_3_self_attn_o_proj
+[2026-01-26 05:23:01]       call_method     | to_16                               | to
+[2026-01-26 05:23:01]        args: (%add_23, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_8                               | pow
+[2026-01-26 05:23:01]        args: (%to_16, 2
+[2026-01-26 05:23:01]       call_method     | mean_7                              | mean
+[2026-01-26 05:23:01]        args: (%pow_8, -1
+[2026-01-26 05:23:01]       call_function   | add_24                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_7, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_7                             | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_24
+[2026-01-26 05:23:01]       call_function   | mul_43                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_16, %rsqrt_7
+[2026-01-26 05:23:01]       get_attr        | model_layers_3_post_attention_layernorm_weight | model.layers.3.post_attention_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_19                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_23, dtype
+[2026-01-26 05:23:01]       call_method     | to_17                               | to
+[2026-01-26 05:23:01]        args: (%mul_43, %getattr_19
+[2026-01-26 05:23:01]       call_function   | mul_44                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_3_post_attention_layernorm_weight, %to_17
+[2026-01-26 05:23:01] [ 29] call_module     | model_layers_3_mlp_gate_proj        | model.layers.3.mlp.gate_proj
+[2026-01-26 05:23:01]        args: (%mul_44
+[2026-01-26 05:23:01] [ 30] call_module     | model_layers_3_mlp_act_fn           | model.layers.3.mlp.act_fn
+[2026-01-26 05:23:01]        args: (%model_layers_3_mlp_gate_proj
+[2026-01-26 05:23:01] [ 31] call_module     | model_layers_3_mlp_up_proj          | model.layers.3.mlp.up_proj
+[2026-01-26 05:23:01]        args: (%mul_44
+[2026-01-26 05:23:01]       call_function   | mul_45                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_3_mlp_act_fn, %model_layers_3_mlp_up_proj
+[2026-01-26 05:23:01] [ 32] call_module     | model_layers_3_mlp_down_proj        | model.layers.3.mlp.down_proj
+[2026-01-26 05:23:01]        args: (%mul_45
+[2026-01-26 05:23:01]       call_function   | add_25                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%add_23, %model_layers_3_mlp_down_proj
+[2026-01-26 05:23:01]       call_method     | to_18                               | to
+[2026-01-26 05:23:01]        args: (%add_25, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_9                               | pow
+[2026-01-26 05:23:01]        args: (%to_18, 2
+[2026-01-26 05:23:01]       call_method     | mean_8                              | mean
+[2026-01-26 05:23:01]        args: (%pow_9, -1
+[2026-01-26 05:23:01]       call_function   | add_26                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_8, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_8                             | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_26
+[2026-01-26 05:23:01]       call_function   | mul_46                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_18, %rsqrt_8
+[2026-01-26 05:23:01]       get_attr        | model_layers_4_input_layernorm_weight | model.layers.4.input_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_20                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_25, dtype
+[2026-01-26 05:23:01]       call_method     | to_19                               | to
+[2026-01-26 05:23:01]        args: (%mul_46, %getattr_20
+[2026-01-26 05:23:01]       call_function   | mul_47                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_4_input_layernorm_weight, %to_19
+[2026-01-26 05:23:01]       call_method     | size_32                             | size
+[2026-01-26 05:23:01]        args: (%mul_47
+[2026-01-26 05:23:01]       call_function   | getitem_90                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_32, 0
+[2026-01-26 05:23:01]       call_function   | getitem_91                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_32, 1
+[2026-01-26 05:23:01]       call_function   | getitem_92                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_32, 2
+[2026-01-26 05:23:01] [ 33] call_module     | model_layers_4_self_attn_q_proj     | model.layers.4.self_attn.q_proj
+[2026-01-26 05:23:01]        args: (%mul_47
+[2026-01-26 05:23:01] [ 34] call_module     | model_layers_4_self_attn_k_proj     | model.layers.4.self_attn.k_proj
+[2026-01-26 05:23:01]        args: (%mul_47
+[2026-01-26 05:23:01] [ 35] call_module     | model_layers_4_self_attn_v_proj     | model.layers.4.self_attn.v_proj
+[2026-01-26 05:23:01]        args: (%mul_47
+[2026-01-26 05:23:01]       call_method     | view_16                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_4_self_attn_q_proj, %getitem_90, %getitem_91, 32, 64
+[2026-01-26 05:23:01]       call_method     | transpose_17                        | transpose
+[2026-01-26 05:23:01]        args: (%view_16, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_17                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_4_self_attn_k_proj, %getitem_90, %getitem_91, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_18                        | transpose
+[2026-01-26 05:23:01]        args: (%view_17, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_18                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_4_self_attn_v_proj, %getitem_90, %getitem_91, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_19                        | transpose
+[2026-01-26 05:23:01]        args: (%view_18, 1, 2
+[2026-01-26 05:23:01]       call_method     | unsqueeze_9                         | unsqueeze
+[2026-01-26 05:23:01]        args: (%to, 1
+[2026-01-26 05:23:01]       call_method     | unsqueeze_10                        | unsqueeze
+[2026-01-26 05:23:01]        args: (%to_1, 1
+[2026-01-26 05:23:01]       call_function   | mul_48                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_17, %unsqueeze_9
+[2026-01-26 05:23:01]       call_method     | size_33                             | size
+[2026-01-26 05:23:01]        args: (%transpose_17
+[2026-01-26 05:23:01]       call_function   | getitem_93                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_33, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_16                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_93, 2
+[2026-01-26 05:23:01]       call_function   | getitem_94                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_17, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_34                             | size
+[2026-01-26 05:23:01]        args: (%transpose_17
+[2026-01-26 05:23:01]       call_function   | getitem_95                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_34, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_17                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_95, 2
+[2026-01-26 05:23:01]       call_function   | getitem_96                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_17, (Ellipsis, slice(floordiv_17, 
+[2026-01-26 05:23:01]       call_function   | neg_8                               | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_96
+[2026-01-26 05:23:01]       call_function   | cat_9                               | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg_8, getitem_94)
+[2026-01-26 05:23:01]       call_function   | mul_49                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_9, %unsqueeze_10
+[2026-01-26 05:23:01]       call_function   | add_27                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_48, %mul_49
+[2026-01-26 05:23:01]       call_function   | mul_50                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_18, %unsqueeze_9
+[2026-01-26 05:23:01]       call_method     | size_35                             | size
+[2026-01-26 05:23:01]        args: (%transpose_18
+[2026-01-26 05:23:01]       call_function   | getitem_97                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_35, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_18                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_97, 2
+[2026-01-26 05:23:01]       call_function   | getitem_98                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_18, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_36                             | size
+[2026-01-26 05:23:01]        args: (%transpose_18
+[2026-01-26 05:23:01]       call_function   | getitem_99                          | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_36, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_19                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_99, 2
+[2026-01-26 05:23:01]       call_function   | getitem_100                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_18, (Ellipsis, slice(floordiv_19, 
+[2026-01-26 05:23:01]       call_function   | neg_9                               | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_100
+[2026-01-26 05:23:01]       call_function   | cat_10                              | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg_9, getitem_98)
+[2026-01-26 05:23:01]       call_function   | mul_51                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_10, %unsqueeze_10
+[2026-01-26 05:23:01]       call_function   | add_28                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_50, %mul_51
+[2026-01-26 05:23:01]       call_method     | size_37                             | size
+[2026-01-26 05:23:01]        args: (%add_28
+[2026-01-26 05:23:01]       call_function   | getitem_101                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_37, 0
+[2026-01-26 05:23:01]       call_function   | getitem_102                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_37, 1
+[2026-01-26 05:23:01]       call_function   | getitem_103                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_37, 2
+[2026-01-26 05:23:01]       call_function   | getitem_104                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_37, 3
+[2026-01-26 05:23:01]       call_function   | getitem_105                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%add_28, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_9                            | expand
+[2026-01-26 05:23:01]        args: (%getitem_105, %getitem_101, %getitem_102, 4, %getitem_103, %getitem_104
+[2026-01-26 05:23:01]       call_function   | mul_52                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_102, 4
+[2026-01-26 05:23:01]       call_method     | reshape_8                           | reshape
+[2026-01-26 05:23:01]        args: (%expand_9, %getitem_101, %mul_52, %getitem_103, %getitem_104
+[2026-01-26 05:23:01]       call_method     | size_38                             | size
+[2026-01-26 05:23:01]        args: (%transpose_19
+[2026-01-26 05:23:01]       call_function   | getitem_106                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_38, 0
+[2026-01-26 05:23:01]       call_function   | getitem_107                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_38, 1
+[2026-01-26 05:23:01]       call_function   | getitem_108                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_38, 2
+[2026-01-26 05:23:01]       call_function   | getitem_109                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_38, 3
+[2026-01-26 05:23:01]       call_function   | getitem_110                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_19, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_10                           | expand
+[2026-01-26 05:23:01]        args: (%getitem_110, %getitem_106, %getitem_107, 4, %getitem_108, %getitem_109
+[2026-01-26 05:23:01]       call_function   | mul_53                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_107, 4
+[2026-01-26 05:23:01]       call_method     | reshape_9                           | reshape
+[2026-01-26 05:23:01]        args: (%expand_10, %getitem_106, %mul_53, %getitem_108, %getitem_109
+[2026-01-26 05:23:01]       call_function   | getattr_21                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_27, device
+[2026-01-26 05:23:01]       call_function   | getattr_22                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%getattr_21, type
+[2026-01-26 05:23:01]       call_function   | eq_7                                | <built-in function eq>
+[2026-01-26 05:23:01]        args: (%getattr_22, cuda
+[2026-01-26 05:23:01]       call_function   | gt_4                                | <built-in function gt>
+[2026-01-26 05:23:01]        args: (%getitem_91, 1
+[2026-01-26 05:23:01]       call_function   | scaled_dot_product_attention_4      | <built-in function scaled_dot_product_attention>
+[2026-01-26 05:23:01]        args: (%add_27, %reshape_8, %reshape_9
+[2026-01-26 05:23:01]       call_method     | transpose_20                        | transpose
+[2026-01-26 05:23:01]        args: (%scaled_dot_product_attention_4, 1, 2
+[2026-01-26 05:23:01]       call_method     | contiguous_4                        | contiguous
+[2026-01-26 05:23:01]        args: (%transpose_20
+[2026-01-26 05:23:01]       call_method     | view_19                             | view
+[2026-01-26 05:23:01]        args: (%contiguous_4, %getitem_90, %getitem_91, -1
+[2026-01-26 05:23:01] [ 36] call_module     | model_layers_4_self_attn_o_proj     | model.layers.4.self_attn.o_proj
+[2026-01-26 05:23:01]        args: (%view_19
+[2026-01-26 05:23:01]       call_function   | add_29                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%add_25, %model_layers_4_self_attn_o_proj
+[2026-01-26 05:23:01]       call_method     | to_20                               | to
+[2026-01-26 05:23:01]        args: (%add_29, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_10                              | pow
+[2026-01-26 05:23:01]        args: (%to_20, 2
+[2026-01-26 05:23:01]       call_method     | mean_9                              | mean
+[2026-01-26 05:23:01]        args: (%pow_10, -1
+[2026-01-26 05:23:01]       call_function   | add_30                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_9, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_9                             | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_30
+[2026-01-26 05:23:01]       call_function   | mul_54                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_20, %rsqrt_9
+[2026-01-26 05:23:01]       get_attr        | model_layers_4_post_attention_layernorm_weight | model.layers.4.post_attention_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_23                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_29, dtype
+[2026-01-26 05:23:01]       call_method     | to_21                               | to
+[2026-01-26 05:23:01]        args: (%mul_54, %getattr_23
+[2026-01-26 05:23:01]       call_function   | mul_55                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_4_post_attention_layernorm_weight, %to_21
+[2026-01-26 05:23:01] [ 37] call_module     | model_layers_4_mlp_gate_proj        | model.layers.4.mlp.gate_proj
+[2026-01-26 05:23:01]        args: (%mul_55
+[2026-01-26 05:23:01] [ 38] call_module     | model_layers_4_mlp_act_fn           | model.layers.4.mlp.act_fn
+[2026-01-26 05:23:01]        args: (%model_layers_4_mlp_gate_proj
+[2026-01-26 05:23:01] [ 39] call_module     | model_layers_4_mlp_up_proj          | model.layers.4.mlp.up_proj
+[2026-01-26 05:23:01]        args: (%mul_55
+[2026-01-26 05:23:01]       call_function   | mul_56                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_4_mlp_act_fn, %model_layers_4_mlp_up_proj
+[2026-01-26 05:23:01] [ 40] call_module     | model_layers_4_mlp_down_proj        | model.layers.4.mlp.down_proj
+[2026-01-26 05:23:01]        args: (%mul_56
+[2026-01-26 05:23:01]       call_function   | add_31                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%add_29, %model_layers_4_mlp_down_proj
+[2026-01-26 05:23:01]       call_method     | to_22                               | to
+[2026-01-26 05:23:01]        args: (%add_31, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_11                              | pow
+[2026-01-26 05:23:01]        args: (%to_22, 2
+[2026-01-26 05:23:01]       call_method     | mean_10                             | mean
+[2026-01-26 05:23:01]        args: (%pow_11, -1
+[2026-01-26 05:23:01]       call_function   | add_32                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_10, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_10                            | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_32
+[2026-01-26 05:23:01]       call_function   | mul_57                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_22, %rsqrt_10
+[2026-01-26 05:23:01]       get_attr        | model_layers_5_input_layernorm_weight | model.layers.5.input_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_24                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_31, dtype
+[2026-01-26 05:23:01]       call_method     | to_23                               | to
+[2026-01-26 05:23:01]        args: (%mul_57, %getattr_24
+[2026-01-26 05:23:01]       call_function   | mul_58                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_5_input_layernorm_weight, %to_23
+[2026-01-26 05:23:01]       call_method     | size_39                             | size
+[2026-01-26 05:23:01]        args: (%mul_58
+[2026-01-26 05:23:01]       call_function   | getitem_111                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_39, 0
+[2026-01-26 05:23:01]       call_function   | getitem_112                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_39, 1
+[2026-01-26 05:23:01]       call_function   | getitem_113                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_39, 2
+[2026-01-26 05:23:01] [ 41] call_module     | model_layers_5_self_attn_q_proj     | model.layers.5.self_attn.q_proj
+[2026-01-26 05:23:01]        args: (%mul_58
+[2026-01-26 05:23:01] [ 42] call_module     | model_layers_5_self_attn_k_proj     | model.layers.5.self_attn.k_proj
+[2026-01-26 05:23:01]        args: (%mul_58
+[2026-01-26 05:23:01] [ 43] call_module     | model_layers_5_self_attn_v_proj     | model.layers.5.self_attn.v_proj
+[2026-01-26 05:23:01]        args: (%mul_58
+[2026-01-26 05:23:01]       call_method     | view_20                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_5_self_attn_q_proj, %getitem_111, %getitem_112, 32, 64
+[2026-01-26 05:23:01]       call_method     | transpose_21                        | transpose
+[2026-01-26 05:23:01]        args: (%view_20, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_21                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_5_self_attn_k_proj, %getitem_111, %getitem_112, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_22                        | transpose
+[2026-01-26 05:23:01]        args: (%view_21, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_22                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_5_self_attn_v_proj, %getitem_111, %getitem_112, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_23                        | transpose
+[2026-01-26 05:23:01]        args: (%view_22, 1, 2
+[2026-01-26 05:23:01]       call_method     | unsqueeze_11                        | unsqueeze
+[2026-01-26 05:23:01]        args: (%to, 1
+[2026-01-26 05:23:01]       call_method     | unsqueeze_12                        | unsqueeze
+[2026-01-26 05:23:01]        args: (%to_1, 1
+[2026-01-26 05:23:01]       call_function   | mul_59                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_21, %unsqueeze_11
+[2026-01-26 05:23:01]       call_method     | size_40                             | size
+[2026-01-26 05:23:01]        args: (%transpose_21
+[2026-01-26 05:23:01]       call_function   | getitem_114                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_40, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_20                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_114, 2
+[2026-01-26 05:23:01]       call_function   | getitem_115                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_21, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_41                             | size
+[2026-01-26 05:23:01]        args: (%transpose_21
+[2026-01-26 05:23:01]       call_function   | getitem_116                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_41, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_21                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_116, 2
+[2026-01-26 05:23:01]       call_function   | getitem_117                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_21, (Ellipsis, slice(floordiv_21, 
+[2026-01-26 05:23:01]       call_function   | neg_10                              | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_117
+[2026-01-26 05:23:01]       call_function   | cat_11                              | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg_10, getitem_115)
+[2026-01-26 05:23:01]       call_function   | mul_60                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_11, %unsqueeze_12
+[2026-01-26 05:23:01]       call_function   | add_33                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_59, %mul_60
+[2026-01-26 05:23:01]       call_function   | mul_61                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_22, %unsqueeze_11
+[2026-01-26 05:23:01]       call_method     | size_42                             | size
+[2026-01-26 05:23:01]        args: (%transpose_22
+[2026-01-26 05:23:01]       call_function   | getitem_118                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_42, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_22                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_118, 2
+[2026-01-26 05:23:01]       call_function   | getitem_119                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_22, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_43                             | size
+[2026-01-26 05:23:01]        args: (%transpose_22
+[2026-01-26 05:23:01]       call_function   | getitem_120                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_43, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_23                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_120, 2
+[2026-01-26 05:23:01]       call_function   | getitem_121                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_22, (Ellipsis, slice(floordiv_23, 
+[2026-01-26 05:23:01]       call_function   | neg_11                              | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_121
+[2026-01-26 05:23:01]       call_function   | cat_12                              | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg_11, getitem_119)
+[2026-01-26 05:23:01]       call_function   | mul_62                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_12, %unsqueeze_12
+[2026-01-26 05:23:01]       call_function   | add_34                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_61, %mul_62
+[2026-01-26 05:23:01]       call_method     | size_44                             | size
+[2026-01-26 05:23:01]        args: (%add_34
+[2026-01-26 05:23:01]       call_function   | getitem_122                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_44, 0
+[2026-01-26 05:23:01]       call_function   | getitem_123                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_44, 1
+[2026-01-26 05:23:01]       call_function   | getitem_124                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_44, 2
+[2026-01-26 05:23:01]       call_function   | getitem_125                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_44, 3
+[2026-01-26 05:23:01]       call_function   | getitem_126                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%add_34, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_11                           | expand
+[2026-01-26 05:23:01]        args: (%getitem_126, %getitem_122, %getitem_123, 4, %getitem_124, %getitem_125
+[2026-01-26 05:23:01]       call_function   | mul_63                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_123, 4
+[2026-01-26 05:23:01]       call_method     | reshape_10                          | reshape
+[2026-01-26 05:23:01]        args: (%expand_11, %getitem_122, %mul_63, %getitem_124, %getitem_125
+[2026-01-26 05:23:01]       call_method     | size_45                             | size
+[2026-01-26 05:23:01]        args: (%transpose_23
+[2026-01-26 05:23:01]       call_function   | getitem_127                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_45, 0
+[2026-01-26 05:23:01]       call_function   | getitem_128                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_45, 1
+[2026-01-26 05:23:01]       call_function   | getitem_129                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_45, 2
+[2026-01-26 05:23:01]       call_function   | getitem_130                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_45, 3
+[2026-01-26 05:23:01]       call_function   | getitem_131                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_23, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_12                           | expand
+[2026-01-26 05:23:01]        args: (%getitem_131, %getitem_127, %getitem_128, 4, %getitem_129, %getitem_130
+[2026-01-26 05:23:01]       call_function   | mul_64                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_128, 4
+[2026-01-26 05:23:01]       call_method     | reshape_11                          | reshape
+[2026-01-26 05:23:01]        args: (%expand_12, %getitem_127, %mul_64, %getitem_129, %getitem_130
+[2026-01-26 05:23:01]       call_function   | getattr_25                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_33, device
+[2026-01-26 05:23:01]       call_function   | getattr_26                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%getattr_25, type
+[2026-01-26 05:23:01]       call_function   | eq_8                                | <built-in function eq>
+[2026-01-26 05:23:01]        args: (%getattr_26, cuda
+[2026-01-26 05:23:01]       call_function   | gt_5                                | <built-in function gt>
+[2026-01-26 05:23:01]        args: (%getitem_112, 1
+[2026-01-26 05:23:01]       call_function   | scaled_dot_product_attention_5      | <built-in function scaled_dot_product_attention>
+[2026-01-26 05:23:01]        args: (%add_33, %reshape_10, %reshape_11
+[2026-01-26 05:23:01]       call_method     | transpose_24                        | transpose
+[2026-01-26 05:23:01]        args: (%scaled_dot_product_attention_5, 1, 2
+[2026-01-26 05:23:01]       call_method     | contiguous_5                        | contiguous
+[2026-01-26 05:23:01]        args: (%transpose_24
+[2026-01-26 05:23:01]       call_method     | view_23                             | view
+[2026-01-26 05:23:01]        args: (%contiguous_5, %getitem_111, %getitem_112, -1
+[2026-01-26 05:23:01] [ 44] call_module     | model_layers_5_self_attn_o_proj     | model.layers.5.self_attn.o_proj
+[2026-01-26 05:23:01]        args: (%view_23
+[2026-01-26 05:23:01]       call_function   | add_35                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%add_31, %model_layers_5_self_attn_o_proj
+[2026-01-26 05:23:01]       call_method     | to_24                               | to
+[2026-01-26 05:23:01]        args: (%add_35, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_12                              | pow
+[2026-01-26 05:23:01]        args: (%to_24, 2
+[2026-01-26 05:23:01]       call_method     | mean_11                             | mean
+[2026-01-26 05:23:01]        args: (%pow_12, -1
+[2026-01-26 05:23:01]       call_function   | add_36                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_11, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_11                            | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_36
+[2026-01-26 05:23:01]       call_function   | mul_65                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_24, %rsqrt_11
+[2026-01-26 05:23:01]       get_attr        | model_layers_5_post_attention_layernorm_weight | model.layers.5.post_attention_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_27                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_35, dtype
+[2026-01-26 05:23:01]       call_method     | to_25                               | to
+[2026-01-26 05:23:01]        args: (%mul_65, %getattr_27
+[2026-01-26 05:23:01]       call_function   | mul_66                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_5_post_attention_layernorm_weight, %to_25
+[2026-01-26 05:23:01] [ 45] call_module     | model_layers_5_mlp_gate_proj        | model.layers.5.mlp.gate_proj
+[2026-01-26 05:23:01]        args: (%mul_66
+[2026-01-26 05:23:01] [ 46] call_module     | model_layers_5_mlp_act_fn           | model.layers.5.mlp.act_fn
+[2026-01-26 05:23:01]        args: (%model_layers_5_mlp_gate_proj
+[2026-01-26 05:23:01] [ 47] call_module     | model_layers_5_mlp_up_proj          | model.layers.5.mlp.up_proj
+[2026-01-26 05:23:01]        args: (%mul_66
+[2026-01-26 05:23:01]       call_function   | mul_67                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_5_mlp_act_fn, %model_layers_5_mlp_up_proj
+[2026-01-26 05:23:01] [ 48] call_module     | model_layers_5_mlp_down_proj        | model.layers.5.mlp.down_proj
+[2026-01-26 05:23:01]        args: (%mul_67
+[2026-01-26 05:23:01]       call_function   | add_37                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%add_35, %model_layers_5_mlp_down_proj
+[2026-01-26 05:23:01]       call_method     | to_26                               | to
+[2026-01-26 05:23:01]        args: (%add_37, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_13                              | pow
+[2026-01-26 05:23:01]        args: (%to_26, 2
+[2026-01-26 05:23:01]       call_method     | mean_12                             | mean
+[2026-01-26 05:23:01]        args: (%pow_13, -1
+[2026-01-26 05:23:01]       call_function   | add_38                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_12, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_12                            | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_38
+[2026-01-26 05:23:01]       call_function   | mul_68                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_26, %rsqrt_12
+[2026-01-26 05:23:01]       get_attr        | model_layers_6_input_layernorm_weight | model.layers.6.input_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_28                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_37, dtype
+[2026-01-26 05:23:01]       call_method     | to_27                               | to
+[2026-01-26 05:23:01]        args: (%mul_68, %getattr_28
+[2026-01-26 05:23:01]       call_function   | mul_69                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_6_input_layernorm_weight, %to_27
+[2026-01-26 05:23:01]       call_method     | size_46                             | size
+[2026-01-26 05:23:01]        args: (%mul_69
+[2026-01-26 05:23:01]       call_function   | getitem_132                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_46, 0
+[2026-01-26 05:23:01]       call_function   | getitem_133                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_46, 1
+[2026-01-26 05:23:01]       call_function   | getitem_134                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_46, 2
+[2026-01-26 05:23:01] [ 49] call_module     | model_layers_6_self_attn_q_proj     | model.layers.6.self_attn.q_proj
+[2026-01-26 05:23:01]        args: (%mul_69
+[2026-01-26 05:23:01] [ 50] call_module     | model_layers_6_self_attn_k_proj     | model.layers.6.self_attn.k_proj
+[2026-01-26 05:23:01]        args: (%mul_69
+[2026-01-26 05:23:01] [ 51] call_module     | model_layers_6_self_attn_v_proj     | model.layers.6.self_attn.v_proj
+[2026-01-26 05:23:01]        args: (%mul_69
+[2026-01-26 05:23:01]       call_method     | view_24                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_6_self_attn_q_proj, %getitem_132, %getitem_133, 32, 64
+[2026-01-26 05:23:01]       call_method     | transpose_25                        | transpose
+[2026-01-26 05:23:01]        args: (%view_24, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_25                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_6_self_attn_k_proj, %getitem_132, %getitem_133, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_26                        | transpose
+[2026-01-26 05:23:01]        args: (%view_25, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_26                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_6_self_attn_v_proj, %getitem_132, %getitem_133, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_27                        | transpose
+[2026-01-26 05:23:01]        args: (%view_26, 1, 2
+[2026-01-26 05:23:01]       call_method     | unsqueeze_13                        | unsqueeze
+[2026-01-26 05:23:01]        args: (%to, 1
+[2026-01-26 05:23:01]       call_method     | unsqueeze_14                        | unsqueeze
+[2026-01-26 05:23:01]        args: (%to_1, 1
+[2026-01-26 05:23:01]       call_function   | mul_70                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_25, %unsqueeze_13
+[2026-01-26 05:23:01]       call_method     | size_47                             | size
+[2026-01-26 05:23:01]        args: (%transpose_25
+[2026-01-26 05:23:01]       call_function   | getitem_135                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_47, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_24                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_135, 2
+[2026-01-26 05:23:01]       call_function   | getitem_136                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_25, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_48                             | size
+[2026-01-26 05:23:01]        args: (%transpose_25
+[2026-01-26 05:23:01]       call_function   | getitem_137                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_48, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_25                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_137, 2
+[2026-01-26 05:23:01]       call_function   | getitem_138                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_25, (Ellipsis, slice(floordiv_25, 
+[2026-01-26 05:23:01]       call_function   | neg_12                              | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_138
+[2026-01-26 05:23:01]       call_function   | cat_13                              | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg_12, getitem_136)
+[2026-01-26 05:23:01]       call_function   | mul_71                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_13, %unsqueeze_14
+[2026-01-26 05:23:01]       call_function   | add_39                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_70, %mul_71
+[2026-01-26 05:23:01]       call_function   | mul_72                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_26, %unsqueeze_13
+[2026-01-26 05:23:01]       call_method     | size_49                             | size
+[2026-01-26 05:23:01]        args: (%transpose_26
+[2026-01-26 05:23:01]       call_function   | getitem_139                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_49, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_26                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_139, 2
+[2026-01-26 05:23:01]       call_function   | getitem_140                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_26, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_50                             | size
+[2026-01-26 05:23:01]        args: (%transpose_26
+[2026-01-26 05:23:01]       call_function   | getitem_141                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_50, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_27                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_141, 2
+[2026-01-26 05:23:01]       call_function   | getitem_142                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_26, (Ellipsis, slice(floordiv_27, 
+[2026-01-26 05:23:01]       call_function   | neg_13                              | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_142
+[2026-01-26 05:23:01]       call_function   | cat_14                              | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg_13, getitem_140)
+[2026-01-26 05:23:01]       call_function   | mul_73                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_14, %unsqueeze_14
+[2026-01-26 05:23:01]       call_function   | add_40                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_72, %mul_73
+[2026-01-26 05:23:01]       call_method     | size_51                             | size
+[2026-01-26 05:23:01]        args: (%add_40
+[2026-01-26 05:23:01]       call_function   | getitem_143                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_51, 0
+[2026-01-26 05:23:01]       call_function   | getitem_144                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_51, 1
+[2026-01-26 05:23:01]       call_function   | getitem_145                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_51, 2
+[2026-01-26 05:23:01]       call_function   | getitem_146                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_51, 3
+[2026-01-26 05:23:01]       call_function   | getitem_147                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%add_40, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_13                           | expand
+[2026-01-26 05:23:01]        args: (%getitem_147, %getitem_143, %getitem_144, 4, %getitem_145, %getitem_146
+[2026-01-26 05:23:01]       call_function   | mul_74                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_144, 4
+[2026-01-26 05:23:01]       call_method     | reshape_12                          | reshape
+[2026-01-26 05:23:01]        args: (%expand_13, %getitem_143, %mul_74, %getitem_145, %getitem_146
+[2026-01-26 05:23:01]       call_method     | size_52                             | size
+[2026-01-26 05:23:01]        args: (%transpose_27
+[2026-01-26 05:23:01]       call_function   | getitem_148                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_52, 0
+[2026-01-26 05:23:01]       call_function   | getitem_149                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_52, 1
+[2026-01-26 05:23:01]       call_function   | getitem_150                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_52, 2
+[2026-01-26 05:23:01]       call_function   | getitem_151                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_52, 3
+[2026-01-26 05:23:01]       call_function   | getitem_152                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_27, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_14                           | expand
+[2026-01-26 05:23:01]        args: (%getitem_152, %getitem_148, %getitem_149, 4, %getitem_150, %getitem_151
+[2026-01-26 05:23:01]       call_function   | mul_75                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_149, 4
+[2026-01-26 05:23:01]       call_method     | reshape_13                          | reshape
+[2026-01-26 05:23:01]        args: (%expand_14, %getitem_148, %mul_75, %getitem_150, %getitem_151
+[2026-01-26 05:23:01]       call_function   | getattr_29                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_39, device
+[2026-01-26 05:23:01]       call_function   | getattr_30                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%getattr_29, type
+[2026-01-26 05:23:01]       call_function   | eq_9                                | <built-in function eq>
+[2026-01-26 05:23:01]        args: (%getattr_30, cuda
+[2026-01-26 05:23:01]       call_function   | gt_6                                | <built-in function gt>
+[2026-01-26 05:23:01]        args: (%getitem_133, 1
+[2026-01-26 05:23:01]       call_function   | scaled_dot_product_attention_6      | <built-in function scaled_dot_product_attention>
+[2026-01-26 05:23:01]        args: (%add_39, %reshape_12, %reshape_13
+[2026-01-26 05:23:01]       call_method     | transpose_28                        | transpose
+[2026-01-26 05:23:01]        args: (%scaled_dot_product_attention_6, 1, 2
+[2026-01-26 05:23:01]       call_method     | contiguous_6                        | contiguous
+[2026-01-26 05:23:01]        args: (%transpose_28
+[2026-01-26 05:23:01]       call_method     | view_27                             | view
+[2026-01-26 05:23:01]        args: (%contiguous_6, %getitem_132, %getitem_133, -1
+[2026-01-26 05:23:01] [ 52] call_module     | model_layers_6_self_attn_o_proj     | model.layers.6.self_attn.o_proj
+[2026-01-26 05:23:01]        args: (%view_27
+[2026-01-26 05:23:01]       call_function   | add_41                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%add_37, %model_layers_6_self_attn_o_proj
+[2026-01-26 05:23:01]       call_method     | to_28                               | to
+[2026-01-26 05:23:01]        args: (%add_41, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_14                              | pow
+[2026-01-26 05:23:01]        args: (%to_28, 2
+[2026-01-26 05:23:01]       call_method     | mean_13                             | mean
+[2026-01-26 05:23:01]        args: (%pow_14, -1
+[2026-01-26 05:23:01]       call_function   | add_42                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_13, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_13                            | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_42
+[2026-01-26 05:23:01]       call_function   | mul_76                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_28, %rsqrt_13
+[2026-01-26 05:23:01]       get_attr        | model_layers_6_post_attention_layernorm_weight | model.layers.6.post_attention_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_31                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_41, dtype
+[2026-01-26 05:23:01]       call_method     | to_29                               | to
+[2026-01-26 05:23:01]        args: (%mul_76, %getattr_31
+[2026-01-26 05:23:01]       call_function   | mul_77                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_6_post_attention_layernorm_weight, %to_29
+[2026-01-26 05:23:01] [ 53] call_module     | model_layers_6_mlp_gate_proj        | model.layers.6.mlp.gate_proj
+[2026-01-26 05:23:01]        args: (%mul_77
+[2026-01-26 05:23:01] [ 54] call_module     | model_layers_6_mlp_act_fn           | model.layers.6.mlp.act_fn
+[2026-01-26 05:23:01]        args: (%model_layers_6_mlp_gate_proj
+[2026-01-26 05:23:01] [ 55] call_module     | model_layers_6_mlp_up_proj          | model.layers.6.mlp.up_proj
+[2026-01-26 05:23:01]        args: (%mul_77
+[2026-01-26 05:23:01]       call_function   | mul_78                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_6_mlp_act_fn, %model_layers_6_mlp_up_proj
+[2026-01-26 05:23:01] [ 56] call_module     | model_layers_6_mlp_down_proj        | model.layers.6.mlp.down_proj
+[2026-01-26 05:23:01]        args: (%mul_78
+[2026-01-26 05:23:01]       call_function   | add_43                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%add_41, %model_layers_6_mlp_down_proj
+[2026-01-26 05:23:01]       call_method     | to_30                               | to
+[2026-01-26 05:23:01]        args: (%add_43, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_15                              | pow
+[2026-01-26 05:23:01]        args: (%to_30, 2
+[2026-01-26 05:23:01]       call_method     | mean_14                             | mean
+[2026-01-26 05:23:01]        args: (%pow_15, -1
+[2026-01-26 05:23:01]       call_function   | add_44                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_14, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_14                            | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_44
+[2026-01-26 05:23:01]       call_function   | mul_79                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_30, %rsqrt_14
+[2026-01-26 05:23:01]       get_attr        | model_layers_7_input_layernorm_weight | model.layers.7.input_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_32                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_43, dtype
+[2026-01-26 05:23:01]       call_method     | to_31                               | to
+[2026-01-26 05:23:01]        args: (%mul_79, %getattr_32
+[2026-01-26 05:23:01]       call_function   | mul_80                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_7_input_layernorm_weight, %to_31
+[2026-01-26 05:23:01]       call_method     | size_53                             | size
+[2026-01-26 05:23:01]        args: (%mul_80
+[2026-01-26 05:23:01]       call_function   | getitem_153                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_53, 0
+[2026-01-26 05:23:01]       call_function   | getitem_154                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_53, 1
+[2026-01-26 05:23:01]       call_function   | getitem_155                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_53, 2
+[2026-01-26 05:23:01] [ 57] call_module     | model_layers_7_self_attn_q_proj     | model.layers.7.self_attn.q_proj
+[2026-01-26 05:23:01]        args: (%mul_80
+[2026-01-26 05:23:01] [ 58] call_module     | model_layers_7_self_attn_k_proj     | model.layers.7.self_attn.k_proj
+[2026-01-26 05:23:01]        args: (%mul_80
+[2026-01-26 05:23:01] [ 59] call_module     | model_layers_7_self_attn_v_proj     | model.layers.7.self_attn.v_proj
+[2026-01-26 05:23:01]        args: (%mul_80
+[2026-01-26 05:23:01]       call_method     | view_28                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_7_self_attn_q_proj, %getitem_153, %getitem_154, 32, 64
+[2026-01-26 05:23:01]       call_method     | transpose_29                        | transpose
+[2026-01-26 05:23:01]        args: (%view_28, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_29                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_7_self_attn_k_proj, %getitem_153, %getitem_154, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_30                        | transpose
+[2026-01-26 05:23:01]        args: (%view_29, 1, 2
+[2026-01-26 05:23:01]       call_method     | view_30                             | view
+[2026-01-26 05:23:01]        args: (%model_layers_7_self_attn_v_proj, %getitem_153, %getitem_154, 8, 64
+[2026-01-26 05:23:01]       call_method     | transpose_31                        | transpose
+[2026-01-26 05:23:01]        args: (%view_30, 1, 2
+[2026-01-26 05:23:01]       call_method     | unsqueeze_15                        | unsqueeze
+[2026-01-26 05:23:01]        args: (%to, 1
+[2026-01-26 05:23:01]       call_method     | unsqueeze_16                        | unsqueeze
+[2026-01-26 05:23:01]        args: (%to_1, 1
+[2026-01-26 05:23:01]       call_function   | mul_81                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_29, %unsqueeze_15
+[2026-01-26 05:23:01]       call_method     | size_54                             | size
+[2026-01-26 05:23:01]        args: (%transpose_29
+[2026-01-26 05:23:01]       call_function   | getitem_156                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_54, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_28                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_156, 2
+[2026-01-26 05:23:01]       call_function   | getitem_157                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_29, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_55                             | size
+[2026-01-26 05:23:01]        args: (%transpose_29
+[2026-01-26 05:23:01]       call_function   | getitem_158                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_55, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_29                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_158, 2
+[2026-01-26 05:23:01]       call_function   | getitem_159                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_29, (Ellipsis, slice(floordiv_29, 
+[2026-01-26 05:23:01]       call_function   | neg_14                              | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_159
+[2026-01-26 05:23:01]       call_function   | cat_15                              | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg_14, getitem_157)
+[2026-01-26 05:23:01]       call_function   | mul_82                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_15, %unsqueeze_16
+[2026-01-26 05:23:01]       call_function   | add_45                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_81, %mul_82
+[2026-01-26 05:23:01]       call_function   | mul_83                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%transpose_30, %unsqueeze_15
+[2026-01-26 05:23:01]       call_method     | size_56                             | size
+[2026-01-26 05:23:01]        args: (%transpose_30
+[2026-01-26 05:23:01]       call_function   | getitem_160                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_56, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_30                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_160, 2
+[2026-01-26 05:23:01]       call_function   | getitem_161                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_30, (Ellipsis, slice(None, floordi
+[2026-01-26 05:23:01]       call_method     | size_57                             | size
+[2026-01-26 05:23:01]        args: (%transpose_30
+[2026-01-26 05:23:01]       call_function   | getitem_162                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_57, -1
+[2026-01-26 05:23:01]       call_function   | floordiv_31                         | <built-in function floordiv>
+[2026-01-26 05:23:01]        args: (%getitem_162, 2
+[2026-01-26 05:23:01]       call_function   | getitem_163                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_30, (Ellipsis, slice(floordiv_31, 
+[2026-01-26 05:23:01]       call_function   | neg_15                              | <built-in function neg>
+[2026-01-26 05:23:01]        args: (%getitem_163
+[2026-01-26 05:23:01]       call_function   | cat_16                              | <built-in method cat of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: ((neg_15, getitem_161)
+[2026-01-26 05:23:01]       call_function   | mul_84                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%cat_16, %unsqueeze_16
+[2026-01-26 05:23:01]       call_function   | add_46                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mul_83, %mul_84
+[2026-01-26 05:23:01]       call_method     | size_58                             | size
+[2026-01-26 05:23:01]        args: (%add_46
+[2026-01-26 05:23:01]       call_function   | getitem_164                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_58, 0
+[2026-01-26 05:23:01]       call_function   | getitem_165                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_58, 1
+[2026-01-26 05:23:01]       call_function   | getitem_166                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_58, 2
+[2026-01-26 05:23:01]       call_function   | getitem_167                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_58, 3
+[2026-01-26 05:23:01]       call_function   | getitem_168                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%add_46, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_15                           | expand
+[2026-01-26 05:23:01]        args: (%getitem_168, %getitem_164, %getitem_165, 4, %getitem_166, %getitem_167
+[2026-01-26 05:23:01]       call_function   | mul_85                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_165, 4
+[2026-01-26 05:23:01]       call_method     | reshape_14                          | reshape
+[2026-01-26 05:23:01]        args: (%expand_15, %getitem_164, %mul_85, %getitem_166, %getitem_167
+[2026-01-26 05:23:01]       call_method     | size_59                             | size
+[2026-01-26 05:23:01]        args: (%transpose_31
+[2026-01-26 05:23:01]       call_function   | getitem_169                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_59, 0
+[2026-01-26 05:23:01]       call_function   | getitem_170                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_59, 1
+[2026-01-26 05:23:01]       call_function   | getitem_171                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_59, 2
+[2026-01-26 05:23:01]       call_function   | getitem_172                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%size_59, 3
+[2026-01-26 05:23:01]       call_function   | getitem_173                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%transpose_31, (slice(None, None, None), slic
+[2026-01-26 05:23:01]       call_method     | expand_16                           | expand
+[2026-01-26 05:23:01]        args: (%getitem_173, %getitem_169, %getitem_170, 4, %getitem_171, %getitem_172
+[2026-01-26 05:23:01]       call_function   | mul_86                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%getitem_170, 4
+[2026-01-26 05:23:01]       call_method     | reshape_15                          | reshape
+[2026-01-26 05:23:01]        args: (%expand_16, %getitem_169, %mul_86, %getitem_171, %getitem_172
+[2026-01-26 05:23:01]       call_function   | getattr_33                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_45, device
+[2026-01-26 05:23:01]       call_function   | getattr_34                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%getattr_33, type
+[2026-01-26 05:23:01]       call_function   | eq_10                               | <built-in function eq>
+[2026-01-26 05:23:01]        args: (%getattr_34, cuda
+[2026-01-26 05:23:01]       call_function   | gt_7                                | <built-in function gt>
+[2026-01-26 05:23:01]        args: (%getitem_154, 1
+[2026-01-26 05:23:01]       call_function   | scaled_dot_product_attention_7      | <built-in function scaled_dot_product_attention>
+[2026-01-26 05:23:01]        args: (%add_45, %reshape_14, %reshape_15
+[2026-01-26 05:23:01]       call_method     | transpose_32                        | transpose
+[2026-01-26 05:23:01]        args: (%scaled_dot_product_attention_7, 1, 2
+[2026-01-26 05:23:01]       call_method     | contiguous_7                        | contiguous
+[2026-01-26 05:23:01]        args: (%transpose_32
+[2026-01-26 05:23:01]       call_method     | view_31                             | view
+[2026-01-26 05:23:01]        args: (%contiguous_7, %getitem_153, %getitem_154, -1
+[2026-01-26 05:23:01] [ 60] call_module     | model_layers_7_self_attn_o_proj     | model.layers.7.self_attn.o_proj
+[2026-01-26 05:23:01]        args: (%view_31
+[2026-01-26 05:23:01]       call_function   | add_47                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%add_43, %model_layers_7_self_attn_o_proj
+[2026-01-26 05:23:01]       call_method     | to_32                               | to
+[2026-01-26 05:23:01]        args: (%add_47, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_16                              | pow
+[2026-01-26 05:23:01]        args: (%to_32, 2
+[2026-01-26 05:23:01]       call_method     | mean_15                             | mean
+[2026-01-26 05:23:01]        args: (%pow_16, -1
+[2026-01-26 05:23:01]       call_function   | add_48                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_15, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_15                            | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_48
+[2026-01-26 05:23:01]       call_function   | mul_87                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_32, %rsqrt_15
+[2026-01-26 05:23:01]       get_attr        | model_layers_7_post_attention_layernorm_weight | model.layers.7.post_attention_layernorm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_35                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_47, dtype
+[2026-01-26 05:23:01]       call_method     | to_33                               | to
+[2026-01-26 05:23:01]        args: (%mul_87, %getattr_35
+[2026-01-26 05:23:01]       call_function   | mul_88                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_7_post_attention_layernorm_weight, %to_33
+[2026-01-26 05:23:01] [ 61] call_module     | model_layers_7_mlp_gate_proj        | model.layers.7.mlp.gate_proj
+[2026-01-26 05:23:01]        args: (%mul_88
+[2026-01-26 05:23:01] [ 62] call_module     | model_layers_7_mlp_act_fn           | model.layers.7.mlp.act_fn
+[2026-01-26 05:23:01]        args: (%model_layers_7_mlp_gate_proj
+[2026-01-26 05:23:01] [ 63] call_module     | model_layers_7_mlp_up_proj          | model.layers.7.mlp.up_proj
+[2026-01-26 05:23:01]        args: (%mul_88
+[2026-01-26 05:23:01]       call_function   | mul_89                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_layers_7_mlp_act_fn, %model_layers_7_mlp_up_proj
+[2026-01-26 05:23:01] [ 64] call_module     | model_layers_7_mlp_down_proj        | model.layers.7.mlp.down_proj
+[2026-01-26 05:23:01]        args: (%mul_89
+[2026-01-26 05:23:01]       call_function   | add_49                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%add_47, %model_layers_7_mlp_down_proj
+[2026-01-26 05:23:01]       call_method     | to_34                               | to
+[2026-01-26 05:23:01]        args: (%add_49, torch.float32
+[2026-01-26 05:23:01]       call_method     | pow_17                              | pow
+[2026-01-26 05:23:01]        args: (%to_34, 2
+[2026-01-26 05:23:01]       call_method     | mean_16                             | mean
+[2026-01-26 05:23:01]        args: (%pow_17, -1
+[2026-01-26 05:23:01]       call_function   | add_50                              | <built-in function add>
+[2026-01-26 05:23:01]        args: (%mean_16, 1e-05
+[2026-01-26 05:23:01]       call_function   | rsqrt_16                            | <built-in method rsqrt of type object at 0x7f805025f240>
+[2026-01-26 05:23:01]        args: (%add_50
+[2026-01-26 05:23:01]       call_function   | mul_90                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%to_34, %rsqrt_16
+[2026-01-26 05:23:01]       get_attr        | model_norm_weight                   | model.norm.weight
+[2026-01-26 05:23:01]        args: (
+[2026-01-26 05:23:01]       call_function   | getattr_36                          | <built-in function getattr>
+[2026-01-26 05:23:01]        args: (%add_49, dtype
+[2026-01-26 05:23:01]       call_method     | to_35                               | to
+[2026-01-26 05:23:01]        args: (%mul_90, %getattr_36
+[2026-01-26 05:23:01]       call_function   | mul_91                              | <built-in function mul>
+[2026-01-26 05:23:01]        args: (%model_norm_weight, %to_35
+[2026-01-26 05:23:01]       call_function   | getitem_174                         | <built-in function getitem>
+[2026-01-26 05:23:01]        args: (%mul_91, (slice(None, None, None), slic
+[2026-01-26 05:23:01] [ 65] call_module     | lm_head                             | lm_head
+[2026-01-26 05:23:01]        args: (%getitem_174
+[2026-01-26 05:23:01]       output          | output                              | output
+[2026-01-26 05:23:01]        args: ({'logits': lm_head}
+[2026-01-26 05:23:02] [rank:0] clean_module_memory
+[2026-01-26 05:23:02] [rank:0] PARALLEL MODE PROCESSING
+[2026-01-26 05:23:02] [local_rank:3] Rank 0 finished
+[2026-01-26 05:23:02] [local_rank:7] Rank 0 finished
+[2026-01-26 05:23:02] [local_rank:4] Rank 0 finished[2026-01-26 05:23:02] [local_rank:3] Waiting for rank 1...
+
+[2026-01-26 05:23:02] [local_rank:7] Waiting for rank 1...
+[2026-01-26 05:23:02] [local_rank:4] Waiting for rank 1...
+[2026-01-26 05:23:02] [local_rank:5] Rank 0 finished[2026-01-26 05:23:02] [local_rank:2] Rank 0 finished
+
+[2026-01-26 05:23:02] [local_rank:1] Rank 0 finished
+[2026-01-26 05:23:02] [local_rank:2] Waiting for rank 1...[2026-01-26 05:23:02] [local_rank:5] Waiting for rank 1...
+
+[2026-01-26 05:23:02] [local_rank:6] Rank 0 finished
+[2026-01-26 05:23:02] [local_rank:6] Waiting for rank 1...
+[2026-01-26 05:23:11] [rank:1] GPU mode is used.
+[2026-01-26 05:23:11] [rank:1] Communication already initialized
+[2026-01-26 05:23:11] [rank:1] before init_device_mesh
+[2026-01-26 05:23:11] [rank:1] after init_device_mesh
+[2026-01-26 05:23:11] [rank:1] pp group:DeviceMesh('cuda', [0, 1, 2, 3, 4, 5, 6, 7], mesh_dim_names=('pp',))
+[2026-01-26 05:23:11] [rank:1] tp group:DeviceMesh('cuda', [1], mesh_dim_names=('tp',))
+[2026-01-26 05:23:11] [rank:1] dp group:DeviceMesh('cuda', [1], mesh_dim_names=('dp',))
+[2026-01-26 05:23:11] [rank:1] Using GPU ... cuda:1
+[2026-01-26 05:23:11] [rank:1] model class name: LlamaForCausalLM
+[2026-01-26 05:23:11] [rank:1] split method: simple
+length:809, modcnt:66, num_stage:8, segment:8
+[2026-01-26 05:23:11] [rank:1] second metadata_range
+[2026-01-26 05:23:11] [rank:1] last_node[stage#0] = submod_0
+[2026-01-26 05:23:11] [rank:1] last_node[stage#1] = submod_1
+[2026-01-26 05:23:11] [rank:1] last_node[stage#2] = submod_2
+[2026-01-26 05:23:11] [rank:1] last_node[stage#3] = submod_3
+[2026-01-26 05:23:11] [rank:1] last_node[stage#4] = submod_4
+[2026-01-26 05:23:11] [rank:1] last_node[stage#5] = submod_5
+[2026-01-26 05:23:11] [rank:1] last_node[stage#6] = submod_6
+[2026-01-26 05:23:11] [rank:1] last_node[stage#7] = submod_7
+ ### Rank:1, name:submod_1, move submod_1 to cuda:1
+[2026-01-26 05:23:11] [rank:1] clean_module_memory
+[2026-01-26 05:23:11] [rank:1] PARALLEL MODE PROCESSING
+[2026-01-26 05:23:11] [local_rank:4] Rank 1 finished
+[2026-01-26 05:23:11] [local_rank:4] Waiting for rank 2...
+[2026-01-26 05:23:11] [local_rank:2] Rank 1 finished
+[2026-01-26 05:23:11] [local_rank:6] Rank 1 finished
+[2026-01-26 05:23:11] [local_rank:6] Waiting for rank 2...
+[2026-01-26 05:23:11] [local_rank:3] Rank 1 finished[2026-01-26 05:23:11] [local_rank:7] Rank 1 finished
+
+[2026-01-26 05:23:11] [local_rank:3] Waiting for rank 2...
+[2026-01-26 05:23:11] [local_rank:7] Waiting for rank 2...
+[2026-01-26 05:23:11] [local_rank:5] Rank 1 finished
+[2026-01-26 05:23:11] [local_rank:5] Waiting for rank 2...
+[2026-01-26 05:23:20] [rank:2] GPU mode is used.
+[2026-01-26 05:23:20] [rank:2] Communication already initialized
+[2026-01-26 05:23:20] [rank:2] before init_device_mesh
+[2026-01-26 05:23:20] [rank:2] after init_device_mesh
+[2026-01-26 05:23:20] [rank:2] pp group:DeviceMesh('cuda', [0, 1, 2, 3, 4, 5, 6, 7], mesh_dim_names=('pp',))
+[2026-01-26 05:23:20] [rank:2] tp group:DeviceMesh('cuda', [2], mesh_dim_names=('tp',))
+[2026-01-26 05:23:20] [rank:2] dp group:DeviceMesh('cuda', [2], mesh_dim_names=('dp',))
+[2026-01-26 05:23:20] [rank:2] Using GPU ... cuda:2
+[2026-01-26 05:23:20] [rank:2] model class name: LlamaForCausalLM
+[2026-01-26 05:23:20] [rank:2] split method: simple
+length:809, modcnt:66, num_stage:8, segment:8
+[2026-01-26 05:23:20] [rank:2] second metadata_range
+[2026-01-26 05:23:20] [rank:2] last_node[stage#0] = submod_0
+[2026-01-26 05:23:20] [rank:2] last_node[stage#1] = submod_1
+[2026-01-26 05:23:20] [rank:2] last_node[stage#2] = submod_2
+[2026-01-26 05:23:20] [rank:2] last_node[stage#3] = submod_3
+[2026-01-26 05:23:20] [rank:2] last_node[stage#4] = submod_4
+[2026-01-26 05:23:20] [rank:2] last_node[stage#5] = submod_5
+[2026-01-26 05:23:20] [rank:2] last_node[stage#6] = submod_6
+[2026-01-26 05:23:20] [rank:2] last_node[stage#7] = submod_7
+ ### Rank:2, name:submod_2, move submod_2 to cuda:2
+[2026-01-26 05:23:21] [rank:2] clean_module_memory
+[2026-01-26 05:23:21] [rank:2] PARALLEL MODE PROCESSING
+[2026-01-26 05:23:21] [local_rank:3] Rank 2 finished
+[2026-01-26 05:23:21] [local_rank:7] Rank 2 finished
+[2026-01-26 05:23:21] [local_rank:7] Waiting for rank 3...
+[2026-01-26 05:23:21] [local_rank:5] Rank 2 finished
+[2026-01-26 05:23:21] [local_rank:5] Waiting for rank 3...
+[2026-01-26 05:23:21] [local_rank:4] Rank 2 finished
+[2026-01-26 05:23:21] [local_rank:4] Waiting for rank 3...[2026-01-26 05:23:21] [local_rank:6] Rank 2 finished
+
+[2026-01-26 05:23:21] [local_rank:6] Waiting for rank 3...
+[2026-01-26 05:23:29] [rank:3] GPU mode is used.
+[2026-01-26 05:23:29] [rank:3] Communication already initialized
+[2026-01-26 05:23:29] [rank:3] before init_device_mesh
+[2026-01-26 05:23:29] [rank:3] after init_device_mesh
+[2026-01-26 05:23:29] [rank:3] pp group:DeviceMesh('cuda', [0, 1, 2, 3, 4, 5, 6, 7], mesh_dim_names=('pp',))
+[2026-01-26 05:23:29] [rank:3] tp group:DeviceMesh('cuda', [3], mesh_dim_names=('tp',))
+[2026-01-26 05:23:29] [rank:3] dp group:DeviceMesh('cuda', [3], mesh_dim_names=('dp',))
+[2026-01-26 05:23:30] [rank:3] Using GPU ... cuda:3
+[2026-01-26 05:23:30] [rank:3] model class name: LlamaForCausalLM
+[2026-01-26 05:23:30] [rank:3] split method: simple
+length:809, modcnt:66, num_stage:8, segment:8
+[2026-01-26 05:23:30] [rank:3] second metadata_range
+[2026-01-26 05:23:30] [rank:3] last_node[stage#0] = submod_0
+[2026-01-26 05:23:30] [rank:3] last_node[stage#1] = submod_1
+[2026-01-26 05:23:30] [rank:3] last_node[stage#2] = submod_2
+[2026-01-26 05:23:30] [rank:3] last_node[stage#3] = submod_3
+[2026-01-26 05:23:30] [rank:3] last_node[stage#4] = submod_4
+[2026-01-26 05:23:30] [rank:3] last_node[stage#5] = submod_5
+[2026-01-26 05:23:30] [rank:3] last_node[stage#6] = submod_6
+[2026-01-26 05:23:30] [rank:3] last_node[stage#7] = submod_7
+ ### Rank:3, name:submod_3, move submod_3 to cuda:3
+[2026-01-26 05:23:30] [rank:3] clean_module_memory
+[2026-01-26 05:23:30] [rank:3] PARALLEL MODE PROCESSING
+[2026-01-26 05:23:30] [local_rank:7] Rank 3 finished[2026-01-26 05:23:30] [local_rank:4] Rank 3 finished
+
+[2026-01-26 05:23:30] [local_rank:7] Waiting for rank 4...
+[2026-01-26 05:23:30] [local_rank:6] Rank 3 finished
+[2026-01-26 05:23:30] [local_rank:5] Rank 3 finished
+[2026-01-26 05:23:30] [local_rank:6] Waiting for rank 4...
+[2026-01-26 05:23:30] [local_rank:5] Waiting for rank 4...
+[2026-01-26 05:23:39] [rank:4] GPU mode is used.
+[2026-01-26 05:23:39] [rank:4] Communication already initialized
+[2026-01-26 05:23:39] [rank:4] before init_device_mesh
+[2026-01-26 05:23:39] [rank:4] after init_device_mesh
+[2026-01-26 05:23:39] [rank:4] pp group:DeviceMesh('cuda', [0, 1, 2, 3, 4, 5, 6, 7], mesh_dim_names=('pp',))
+[2026-01-26 05:23:39] [rank:4] tp group:DeviceMesh('cuda', [4], mesh_dim_names=('tp',))
+[2026-01-26 05:23:39] [rank:4] dp group:DeviceMesh('cuda', [4], mesh_dim_names=('dp',))
+[2026-01-26 05:23:39] [rank:4] Using GPU ... cuda:4
+[2026-01-26 05:23:39] [rank:4] model class name: LlamaForCausalLM
+[2026-01-26 05:23:39] [rank:4] split method: simple
+length:809, modcnt:66, num_stage:8, segment:8
+[2026-01-26 05:23:39] [rank:4] second metadata_range
+[2026-01-26 05:23:39] [rank:4] last_node[stage#0] = submod_0
+[2026-01-26 05:23:39] [rank:4] last_node[stage#1] = submod_1
+[2026-01-26 05:23:39] [rank:4] last_node[stage#2] = submod_2
+[2026-01-26 05:23:39] [rank:4] last_node[stage#3] = submod_3
+[2026-01-26 05:23:39] [rank:4] last_node[stage#4] = submod_4
+[2026-01-26 05:23:39] [rank:4] last_node[stage#5] = submod_5
+[2026-01-26 05:23:39] [rank:4] last_node[stage#6] = submod_6
+[2026-01-26 05:23:39] [rank:4] last_node[stage#7] = submod_7
+ ### Rank:4, name:submod_4, move submod_4 to cuda:4
+[2026-01-26 05:23:40] [rank:4] clean_module_memory
+[2026-01-26 05:23:40] [rank:4] PARALLEL MODE PROCESSING
+[2026-01-26 05:23:40] [local_rank:6] Rank 4 finished
+[2026-01-26 05:23:40] [local_rank:5] Rank 4 finished[2026-01-26 05:23:40] [local_rank:6] Waiting for rank 5...
+
+[2026-01-26 05:23:40] [local_rank:7] Rank 4 finished
+[2026-01-26 05:23:40] [local_rank:7] Waiting for rank 5...
+[2026-01-26 05:23:48] [rank:5] GPU mode is used.
+[2026-01-26 05:23:48] [rank:5] Communication already initialized
+[2026-01-26 05:23:48] [rank:5] before init_device_mesh
+[2026-01-26 05:23:48] [rank:5] after init_device_mesh
+[2026-01-26 05:23:48] [rank:5] pp group:DeviceMesh('cuda', [0, 1, 2, 3, 4, 5, 6, 7], mesh_dim_names=('pp',))
+[2026-01-26 05:23:48] [rank:5] tp group:DeviceMesh('cuda', [5], mesh_dim_names=('tp',))
+[2026-01-26 05:23:48] [rank:5] dp group:DeviceMesh('cuda', [5], mesh_dim_names=('dp',))
+[2026-01-26 05:23:49] [rank:5] Using GPU ... cuda:5
+[2026-01-26 05:23:49] [rank:5] model class name: LlamaForCausalLM
+[2026-01-26 05:23:49] [rank:5] split method: simple
+length:809, modcnt:66, num_stage:8, segment:8
+[2026-01-26 05:23:49] [rank:5] second metadata_range
+[2026-01-26 05:23:49] [rank:5] last_node[stage#0] = submod_0
+[2026-01-26 05:23:49] [rank:5] last_node[stage#1] = submod_1
+[2026-01-26 05:23:49] [rank:5] last_node[stage#2] = submod_2
+[2026-01-26 05:23:49] [rank:5] last_node[stage#3] = submod_3
+[2026-01-26 05:23:49] [rank:5] last_node[stage#4] = submod_4
+[2026-01-26 05:23:49] [rank:5] last_node[stage#5] = submod_5
+[2026-01-26 05:23:49] [rank:5] last_node[stage#6] = submod_6
+[2026-01-26 05:23:49] [rank:5] last_node[stage#7] = submod_7
+ ### Rank:5, name:submod_5, move submod_5 to cuda:5
+[2026-01-26 05:23:49] [rank:5] clean_module_memory
+[2026-01-26 05:23:49] [rank:5] PARALLEL MODE PROCESSING
+[2026-01-26 05:23:49] [local_rank:6] Rank 5 finished
+[2026-01-26 05:23:49] [local_rank:7] Rank 5 finished
+[2026-01-26 05:23:49] [local_rank:7] Waiting for rank 6...
+[2026-01-26 05:23:58] [rank:6] GPU mode is used.
+[2026-01-26 05:23:58] [rank:6] Communication already initialized
+[2026-01-26 05:23:58] [rank:6] before init_device_mesh
+[2026-01-26 05:23:58] [rank:6] after init_device_mesh
+[2026-01-26 05:23:58] [rank:6] pp group:DeviceMesh('cuda', [0, 1, 2, 3, 4, 5, 6, 7], mesh_dim_names=('pp',))
+[2026-01-26 05:23:58] [rank:6] tp group:DeviceMesh('cuda', [6], mesh_dim_names=('tp',))
+[2026-01-26 05:23:58] [rank:6] dp group:DeviceMesh('cuda', [6], mesh_dim_names=('dp',))
+[2026-01-26 05:23:58] [rank:6] Using GPU ... cuda:6
+[2026-01-26 05:23:58] [rank:6] model class name: LlamaForCausalLM
+[2026-01-26 05:23:58] [rank:6] split method: simple
+length:809, modcnt:66, num_stage:8, segment:8
+[2026-01-26 05:23:58] [rank:6] second metadata_range
+[2026-01-26 05:23:58] [rank:6] last_node[stage#0] = submod_0
+[2026-01-26 05:23:58] [rank:6] last_node[stage#1] = submod_1
+[2026-01-26 05:23:58] [rank:6] last_node[stage#2] = submod_2
+[2026-01-26 05:23:58] [rank:6] last_node[stage#3] = submod_3
+[2026-01-26 05:23:58] [rank:6] last_node[stage#4] = submod_4
+[2026-01-26 05:23:58] [rank:6] last_node[stage#5] = submod_5
+[2026-01-26 05:23:58] [rank:6] last_node[stage#6] = submod_6
+[2026-01-26 05:23:58] [rank:6] last_node[stage#7] = submod_7
+ ### Rank:6, name:submod_6, move submod_6 to cuda:6
+[2026-01-26 05:23:58] [rank:6] clean_module_memory
+[2026-01-26 05:23:58] [rank:6] PARALLEL MODE PROCESSING
+[2026-01-26 05:23:58] [local_rank:7] Rank 6 finished
+[2026-01-26 05:24:07] [rank:7] GPU mode is used.
+[2026-01-26 05:24:07] [rank:7] Communication already initialized
+[2026-01-26 05:24:07] [rank:7] before init_device_mesh
+[2026-01-26 05:24:07] [rank:7] after init_device_mesh
+[2026-01-26 05:24:07] [rank:7] pp group:DeviceMesh('cuda', [0, 1, 2, 3, 4, 5, 6, 7], mesh_dim_names=('pp',))
+[2026-01-26 05:24:07] [rank:7] tp group:DeviceMesh('cuda', [7], mesh_dim_names=('tp',))
+[2026-01-26 05:24:07] [rank:7] dp group:DeviceMesh('cuda', [7], mesh_dim_names=('dp',))
+[2026-01-26 05:24:07] [rank:7] Using GPU ... cuda:7
+[2026-01-26 05:24:07] [rank:7] model class name: LlamaForCausalLM
+[2026-01-26 05:24:07] [rank:7] split method: simple
+length:809, modcnt:66, num_stage:8, segment:8
+[2026-01-26 05:24:08] [rank:7] second metadata_range
+[2026-01-26 05:24:08] [rank:7] last_node[stage#0] = submod_0
+[2026-01-26 05:24:08] [rank:7] last_node[stage#1] = submod_1
+[2026-01-26 05:24:08] [rank:7] last_node[stage#2] = submod_2
+[2026-01-26 05:24:08] [rank:7] last_node[stage#3] = submod_3
+[2026-01-26 05:24:08] [rank:7] last_node[stage#4] = submod_4
+[2026-01-26 05:24:08] [rank:7] last_node[stage#5] = submod_5
+[2026-01-26 05:24:08] [rank:7] last_node[stage#6] = submod_6
+[2026-01-26 05:24:08] [rank:7] last_node[stage#7] = submod_7
+ ### Rank:7, name:submod_7, move submod_7 to cuda:7
+[2026-01-26 05:24:08] [rank:7] clean_module_memory
+[2026-01-26 05:24:08] [rank:7] PARALLEL MODE PROCESSING
+[2026-01-26 05:24:08]  special_nodes | total=9 far=2 max_span=6 dropped_submod_adj=7
+[2026-01-26 05:24:08]       top_far: getitem_3: stage1→stage7 (span=6), getitem_2: stage1→stage7 (span=6)
+[2026-01-26 05:24:08] [rank:7] Optimus_p initialized
+[2026-01-26 05:24:08]  special_nodes | total=9 far=2 max_span=6 dropped_submod_adj=7
+[2026-01-26 05:24:08]       top_far: getitem_3: stage1→stage7 (span=6), getitem_2: stage1→stage7 (span=6)
+[2026-01-26 05:24:08] [rank:3] Optimus_p initialized
+[2026-01-26 05:24:08]  special_nodes | total=9 far=2 max_span=6 dropped_submod_adj=7
+[2026-01-26 05:24:08]  special_nodes by rank | world_size=8 | far=span>=2 | topk=5[2026-01-26 05:24:08]  special_nodes | total=9 far=2 max_span=6 dropped_submod_adj=7[2026-01-26 05:24:08]       top_far: getitem_3: stage1→stage7 (span=6), getitem_2: stage1→stage7 (span=6)
+
+
+[2026-01-26 05:24:08]  special_nodes | total=9 far=2 max_span=6 dropped_submod_adj=7
+[2026-01-26 05:24:08]  special_nodes | total=9 far=2 max_span=6 dropped_submod_adj=7
+[2026-01-26 05:24:08]       top_far: getitem_3: stage1→stage7 (span=6), getitem_2: stage1→stage7 (span=6)
+[2026-01-26 05:24:08]  special_nodes | total=9 far=2 max_span=6 dropped_submod_adj=7[2026-01-26 05:24:08]       top_far: getitem_3: stage1→stage7 (span=6), getitem_2: stage1→stage7 (span=6)
+
+[2026-01-26 05:24:08] [rank:4] Optimus_p initialized[2026-01-26 05:24:08]       top_far: getitem_3: stage1→stage7 (span=6), getitem_2: stage1→stage7 (span=6)
+
+[2026-01-26 05:24:08]  special_nodes | total=9 far=2 max_span=6 dropped_submod_adj=7[2026-01-26 05:24:08] [rank:5] Optimus_p initialized
+
+[2026-01-26 05:24:08]       top_far: getitem_3: stage1→stage7 (span=6), getitem_2: stage1→stage7 (span=6)[2026-01-26 05:24:08] [rank:1] Optimus_p initialized
+
+[2026-01-26 05:24:08] [rank:0] Optimus_p initialized
+[2026-01-26 05:24:08]       top_far: getitem_3: stage1→stage7 (span=6), getitem_2: stage1→stage7 (span=6)
+[2026-01-26 05:24:08] [rank:6] Optimus_p initialized
+[2026-01-26 05:24:08] [rank:2] Optimus_p initialized[2026-01-26 05:24:08] ===> Model loading completed
+
+[2026-01-26 05:24:08] [2026-01-26 05:24:08] ========== PROFILE MODE ==========
+[ModuleProfiler] Embedding hooks: model_embed_tokens
+[ModuleProfiler] Module end hook: model_layers_0_self_attn_q_proj
+[ModuleProfiler] Module end hook: model_layers_0_self_attn_k_proj
+[ModuleProfiler] Module end hook: model_layers_0_self_attn_v_proj
+[ModuleProfiler] Module end hook: model_layers_0_self_attn_o_proj
+[ModuleProfiler] Module end hook: model_layers_0_mlp_gate_proj
+Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+WARNING:datasets.load:Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+[ModuleProfiler] Module end hook: model_layers_0_mlp_act_fn
+WARNING:datasets.load:Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+[ModuleProfiler] Module end hook: model_layers_0_mlp_up_proj
+[ModuleProfiler] Module end hook: model_layers_0_mlp_down_proj
+[ModuleProfiler] MODULE PROFILING (module end boundary-based)
+[ModuleProfiler] Embedding: stage_start → embed end
+[ModuleProfiler] Module N: module_(N-1) end → module_N end
+[ModuleProfiler] First Module: embed end → module end (else stage start)
+[ModuleProfiler] LM Head: mlp_down end → lm_head end (else stage start)
+[ModuleProfiler] has_lm_head=False
+[ModuleProfiler] num_mb=8 (times will be per-forward-pass average)
+Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+WARNING:datasets.packaged_modules.cache.cache:Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+WARNING:datasets.packaged_modules.cache.cache:Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+WARNING:datasets.load:Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+WARNING:datasets.load:Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+WARNING:datasets.load:Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+WARNING:datasets.load:Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+WARNING:datasets.load:Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+WARNING:datasets.load:Using the latest cached version of the dataset since squad couldn't be found on the Hugging Face Hub (offline mode is enabled).
+Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+WARNING:datasets.packaged_modules.cache.cache:Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+WARNING:datasets.packaged_modules.cache.cache:Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+WARNING:datasets.packaged_modules.cache.cache:Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+WARNING:datasets.packaged_modules.cache.cache:Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+WARNING:datasets.packaged_modules.cache.cache:Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+WARNING:datasets.packaged_modules.cache.cache:Found the latest cached dataset configuration 'plain_text' at /root/.cache/huggingface/datasets/squad/plain_text/0.0.0/7b6d24c440a36b6815f21b70d25016731768db1f (last modified on Wed Nov 12 05:58:19 2025).
+[2026-01-26 05:24:08] [rank:5] Profile: 10 steps (50 warmup)
+[2026-01-26 05:24:08] [rank:7] Profile: 10 steps (50 warmup)
+[2026-01-26 05:24:08] [rank:1] Profile: 10 steps (50 warmup)
+[2026-01-26 05:24:08] [rank:0] Profile: 10 steps (50 warmup)
+[2026-01-26 05:24:08] [rank:3] Profile: 10 steps (50 warmup)
+[2026-01-26 05:24:08] [rank:6] Profile: 10 steps (50 warmup)
+[2026-01-26 05:24:08] [rank:2] Profile: 10 steps (50 warmup)
+[2026-01-26 05:24:08] [rank:4] Profile: 10 steps (50 warmup)
+[2026-01-26 05:24:14] [rank:0] Profile step 5/10
+[2026-01-26 05:24:17] [rank:0] Profile step 10/10
+
+==========================================================================================
+ Module Profile (Stage 0, Rank 0)
+ Measures: module_(N-1) end → module_N end (first uses embed end or stage start)
+ Includes: prev module 이후 ~ current module 종료 직전 연산 (call_function/method 포함)
+ Warmup: 50 steps, Measured: 10 steps
+ Values: per-forward-pass average (num_mb=8)
+==========================================================================================
+
+[Summary - Per Forward Pass]
+Component            Median(ms)   Min(ms)      Max(ms)      Mean(ms)     %       
+--------------------------------------------------------------------------------
+Embedding            0.2030       0.0933       5.6123       0.7381       5.96    
+Modules (total)      3.2030       -            -            5.3974       94.04   
+--------------------------------------------------------------------------------
+TOTAL                3.4060      
+
+[Per-Module Breakdown (prev_module_end → module_end)]
+Module                                        Mean(ms)     Min(ms)      Max(ms)      Std(ms)      %       
+------------------------------------------------------------------------------------------
+model_layers_0_self_attn_q_proj               2.7698       0.4407       21.1758      6.1367       81.32   
+model_layers_0_self_attn_k_proj               0.1062       0.0377       0.6345       0.1764       3.12    
+model_layers_0_self_attn_v_proj               0.0644       0.0525       0.0955       0.0112       1.89    
+model_layers_0_self_attn_o_proj               1.1280       0.6683       2.5928       0.5156       33.12   
+model_layers_0_mlp_gate_proj                  0.6905       0.3502       0.9239       0.1401       20.27   
+model_layers_0_mlp_act_fn                     0.0545       0.0049       0.4694       0.1383       1.60    
+model_layers_0_mlp_up_proj                    0.3031       0.1800       0.3425       0.0433       8.90    
+model_layers_0_mlp_down_proj                  0.2810       0.2597       0.3063       0.0107       8.25    
+
+==========================================================================================
+
+
+==========================================================================================
+ COMBINED PROFILE (All Stages/Ranks)
+ PP=8 stages, 64 modules
+ Values: per-forward-pass average
+==========================================================================================
+
+[Combined Summary - Per Forward Pass (Median values for stability)]
+Component                 Median(ms)   Min(ms)      Max(ms)      %       
+---------------------------------------------------------------------------
+Embedding                 0.2030       0.0933       5.6123       0.78    
+Modules (total)           21.3547      -            -            82.15   
+LM Head                   4.4376       3.2922       5.5922       17.07   
+---------------------------------------------------------------------------
+TOTAL                     25.9954     
+
+[Per-Module Breakdown]
+Module                                        Median(ms)   Min(ms)      Max(ms)      Mean(ms)     %       
+-----------------------------------------------------------------------------------------------
+model_layers_0_mlp_act_fn                     0.0088       0.0049       0.4694       0.0545       0.03    
+model_layers_0_mlp_down_proj                  0.2815       0.2597       0.3063       0.2810       1.08    
+model_layers_0_mlp_gate_proj                  0.7140       0.3502       0.9239       0.6905       2.75    
+model_layers_0_mlp_up_proj                    0.3168       0.1800       0.3425       0.3031       1.22    
+model_layers_0_self_attn_k_proj               0.0485       0.0377       0.6345       0.1062       0.19    
+model_layers_0_self_attn_o_proj               0.9802       0.6683       2.5928       1.1280       3.77    
+model_layers_0_self_attn_q_proj               0.7913       0.4407       21.1758      2.7698       3.04    
+model_layers_0_self_attn_v_proj               0.0618       0.0525       0.0955       0.0644       0.24    
+model_layers_1_mlp_act_fn                     0.0087       0.0045       0.4097       0.0483       0.03    
+model_layers_1_mlp_down_proj                  0.2713       0.1853       0.5005       0.2843       1.04    
+model_layers_1_mlp_gate_proj                  0.5871       0.2974       0.6731       0.5662       2.26    
+model_layers_1_mlp_up_proj                    0.3137       0.1797       0.3343       0.2975       1.21    
+model_layers_1_self_attn_k_proj               0.0508       0.0332       0.5651       0.0968       0.20    
+model_layers_1_self_attn_o_proj               1.0679       0.5958       3.3711       1.2342       4.11    
+model_layers_1_self_attn_q_proj               0.7863       0.5299       17.2289      2.4922       3.02    
+model_layers_1_self_attn_v_proj               0.0663       0.0453       0.0740       0.0638       0.25    
+model_layers_2_mlp_act_fn                     0.0089       0.0047       0.4026       0.0477       0.03    
+model_layers_2_mlp_down_proj                  0.2708       0.1853       0.3736       0.2741       1.04    
+model_layers_2_mlp_gate_proj                  0.6947       0.4943       1.8807       0.7713       2.67    
+model_layers_2_mlp_up_proj                    0.3131       0.1805       0.3268       0.2967       1.20    
+model_layers_2_self_attn_k_proj               0.0454       0.0406       0.6756       0.1086       0.17    
+model_layers_2_self_attn_o_proj               1.0904       0.6364       3.6356       1.2672       4.19    
+model_layers_2_self_attn_q_proj               0.5273       0.3109       18.0701      2.2555       2.03    
+model_layers_2_self_attn_v_proj               0.0617       0.0521       0.0755       0.0626       0.24    
+model_layers_3_mlp_act_fn                     0.0090       0.0048       0.3978       0.0473       0.03    
+model_layers_3_mlp_down_proj                  0.2696       0.1856       0.2958       0.2638       1.04    
+model_layers_3_mlp_gate_proj                  0.5393       0.3670       0.7183       0.5390       2.07    
+model_layers_3_mlp_up_proj                    0.3119       0.1887       0.3231       0.2964       1.20    
+model_layers_3_self_attn_k_proj               0.0553       0.0488       0.5519       0.1047       0.21    
+model_layers_3_self_attn_o_proj               0.7577       0.6246       3.0606       0.9648       2.91    
+model_layers_3_self_attn_q_proj               0.4608       0.3723       16.3074      2.1196       1.77    
+model_layers_3_self_attn_v_proj               0.0720       0.0595       0.0854       0.0697       0.28    
+model_layers_4_mlp_act_fn                     0.0091       0.0051       0.4042       0.0482       0.04    
+model_layers_4_mlp_down_proj                  0.2737       0.2545       0.4988       0.2967       1.05    
+model_layers_4_mlp_gate_proj                  0.5978       0.3397       0.6656       0.5661       2.30    
+model_layers_4_mlp_up_proj                    0.3137       0.1798       0.3278       0.2976       1.21    
+model_layers_4_self_attn_k_proj               0.0568       0.0380       0.6043       0.1069       0.22    
+model_layers_4_self_attn_o_proj               0.7814       0.5038       3.2710       0.9895       3.01    
+model_layers_4_self_attn_q_proj               0.4226       0.2552       18.5855      2.2860       1.63    
+model_layers_4_self_attn_v_proj               0.0640       0.0582       0.1110       0.0700       0.25    
+model_layers_5_mlp_act_fn                     0.0091       0.0045       0.4414       0.0515       0.03    
+model_layers_5_mlp_down_proj                  0.2720       0.1851       0.2989       0.2698       1.05    
+model_layers_5_mlp_gate_proj                  0.5953       0.3238       0.6688       0.5478       2.29    
+model_layers_5_mlp_up_proj                    0.3149       0.1798       0.3377       0.2996       1.21    
+model_layers_5_self_attn_k_proj               0.0513       0.0392       0.5927       0.1044       0.20    
+model_layers_5_self_attn_o_proj               0.8314       0.5074       2.9828       1.1104       3.20    
+model_layers_5_self_attn_q_proj               0.4158       0.2845       17.9645      2.1630       1.60    
+model_layers_5_self_attn_v_proj               0.0673       0.0470       0.0776       0.0630       0.26    
+model_layers_6_mlp_act_fn                     0.0123       0.0080       0.4622       0.0571       0.05    
+model_layers_6_mlp_down_proj                  0.2749       0.1843       0.2847       0.2649       1.06    
+model_layers_6_mlp_gate_proj                  0.6060       0.3594       0.6519       0.5662       2.33    
+model_layers_6_mlp_up_proj                    0.3177       0.1896       0.3317       0.3019       1.22    
+model_layers_6_self_attn_k_proj               0.0528       0.0444       0.6060       0.1064       0.20    
+model_layers_6_self_attn_o_proj               0.6717       0.4708       3.0236       0.8423       2.58    
+model_layers_6_self_attn_q_proj               0.3512       0.2462       17.7000      2.0697       1.35    
+model_layers_6_self_attn_v_proj               0.0688       0.0567       0.1222       0.0722       0.26    
+model_layers_7_mlp_act_fn                     0.0091       0.0047       0.3975       0.0474       0.03    
+model_layers_7_mlp_down_proj                  0.2817       0.1852       0.8090       0.3379       1.08    
+model_layers_7_mlp_gate_proj                  0.4467       0.3014       0.4679       0.4288       1.72    
+model_layers_7_mlp_up_proj                    0.3203       0.1801       0.3270       0.2989       1.23    
+model_layers_7_self_attn_k_proj               0.0375       0.0332       0.5354       0.0888       0.14    
+model_layers_7_self_attn_o_proj               0.6633       0.4173       2.3801       0.7935       2.55    
+model_layers_7_self_attn_q_proj               0.2606       0.2263       16.9094      1.9320       1.00    
+model_layers_7_self_attn_v_proj               0.0609       0.0482       0.0765       0.0608       0.23    
+
+==========================================================================================
+
+[2026-01-26 05:24:18] [rank:0] Profile results saved to results/profile_Llama-3.2-1B-8-1-8-1-1.json
+[rank:0] process group destroyed.
+>>> EXIT_CODE: 0, ELAPSED_TIME: 8.734114646911621
+[2026-01-26 05:24:20] [rank:0] EXIT_CODE 0 saved to tmp/exitcode_Llama-3.2-1B-8-1-8-1-1.txt
+[rank:5] process group destroyed.
+>>> EXIT_CODE: 0, ELAPSED_TIME: None
+[rank:2] process group destroyed.
+>>> EXIT_CODE: 0, ELAPSED_TIME: None
+[rank:6] process group destroyed.
+>>> EXIT_CODE: 0, ELAPSED_TIME: None
+[rank:4] process group destroyed.
+>>> EXIT_CODE: 0, ELAPSED_TIME: None
+[rank:1] process group destroyed.
+>>> EXIT_CODE: 0, ELAPSED_TIME: None
+[rank:3] process group destroyed.
+>>> EXIT_CODE: 0, ELAPSED_TIME: None
+[rank:7] process group destroyed.
+>>> EXIT_CODE: 0, ELAPSED_TIME: None
+SUCCESS → 8.734s
+
+=================================================
+ Completed!
+=================================================

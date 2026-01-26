@@ -188,15 +188,7 @@ def save_profile_result(result: dict, output_path: str = ""):
 
 
 def gather_and_print_combined_profile(block_profiler, warmup_steps: int, world_size: int, rank: int, gloo_group=None):
-    """
-    Gather profile results from all ranks and print combined summary.
-    
-    PP=2 with 2 layers:
-      - Stage 0 (rank 0): embedding + layer_0
-      - Stage 1 (rank 1): layer_1 + lm_head
-    
-    Combined output shows: embedding, avg(layer_0, layer_1), lm_head
-    """
+    """Gather profile results from all ranks and print combined summary."""
     import pickle
     
     # Get local summary
@@ -234,7 +226,7 @@ def gather_and_print_combined_profile(block_profiler, warmup_steps: int, world_s
         # Combine results
         combined = {
             'embedding': {'mean_ms': 0, 'min_ms': float('inf'), 'max_ms': 0, 'count': 0},
-            'layers': [],  # List of layer times
+            'modules': [],
             'lm_head': {'mean_ms': 0, 'min_ms': float('inf'), 'max_ms': 0, 'count': 0}
         }
         
@@ -253,8 +245,8 @@ def gather_and_print_combined_profile(block_profiler, warmup_steps: int, world_s
                     combined['lm_head']['min_ms'] = stats['min_ms']
                     combined['lm_head']['max_ms'] = stats['max_ms']
                     combined['lm_head']['count'] = 1
-                elif key.startswith('layer_'):
-                    combined['layers'].append({
+                else:
+                    combined['modules'].append({
                         'name': key,
                         'mean_ms': stats['mean_ms'],
                         'median_ms': stats.get('median_ms', stats['mean_ms']),
@@ -262,29 +254,25 @@ def gather_and_print_combined_profile(block_profiler, warmup_steps: int, world_s
                         'max_ms': stats['max_ms'],
                         'std_ms': stats.get('std_ms', 0)
                     })
-        
-        # Sort layers by index
-        combined['layers'].sort(key=lambda x: int(x['name'].split('_')[1]))
-        
-        # Calculate layer average (use median for more stable values)
-        if combined['layers']:
-            layer_median_total = sum(l.get('median_ms', l['mean_ms']) for l in combined['layers'])
-            layer_mean_total = sum(l['mean_ms'] for l in combined['layers'])
-            layer_avg = layer_median_total / len(combined['layers'])
+
+        combined['modules'].sort(key=lambda x: x['name'])
+
+        if combined['modules']:
+            module_median_total = sum(m.get('median_ms', m['mean_ms']) for m in combined['modules'])
+            module_mean_total = sum(m['mean_ms'] for m in combined['modules'])
         else:
-            layer_median_total = 0
-            layer_mean_total = 0
-            layer_avg = 0
+            module_median_total = 0
+            module_mean_total = 0
         
         # Use median values for total (more robust to outliers)
         emb_val = combined['embedding'].get('median_ms', combined['embedding']['mean_ms'])
         lm_val = combined['lm_head'].get('median_ms', combined['lm_head']['mean_ms'])
-        total_time = emb_val + layer_median_total + lm_val
+        total_time = emb_val + module_median_total + lm_val
         
         # Print combined summary
         print(f"\n{'='*90}")
         print(f" COMBINED PROFILE (All Stages/Ranks)")
-        print(f" PP={world_size} stages, {len(combined['layers'])} transformer layers")
+        print(f" PP={world_size} stages, {len(combined['modules'])} modules")
         print(f" Values: per-forward-pass average")
         print(f"{'='*90}")
         
@@ -299,11 +287,10 @@ def gather_and_print_combined_profile(block_profiler, warmup_steps: int, world_s
             pct = (median_val / total_time * 100) if total_time > 0 else 0
             print(f"{'Embedding':<25} {median_val:<12.4f} {emb['min_ms']:<12.4f} {emb['max_ms']:<12.4f} {pct:<8.2f}")
         
-        # Transformer Layers (average)
-        if combined['layers']:
-            pct = (layer_median_total / total_time * 100) if total_time > 0 else 0
-            print(f"{'Transformer (total)':<25} {layer_median_total:<12.4f} {'-':<12} {'-':<12} {pct:<8.2f}")
-            print(f"{'  └ Avg per layer':<25} {layer_avg:<12.4f}")
+        # Modules (total)
+        if combined['modules']:
+            pct = (module_median_total / total_time * 100) if total_time > 0 else 0
+            print(f"{'Modules (total)':<25} {module_median_total:<12.4f} {'-':<12} {'-':<12} {pct:<8.2f}")
         
         # LM Head
         if combined['lm_head']['count'] > 0:
@@ -315,26 +302,15 @@ def gather_and_print_combined_profile(block_profiler, warmup_steps: int, world_s
         print(f"{'-'*75}")
         print(f"{'TOTAL':<25} {total_time:<12.4f}")
         
-        # Per-layer breakdown
-        if combined['layers']:
-            print(f"\n[Per-Layer Breakdown]")
-            print(f"{'Layer':<15} {'Median(ms)':<12} {'Min(ms)':<12} {'Max(ms)':<12} {'Mean(ms)':<12} {'%':<8}")
-            print(f"{'-'*75}")
-            for layer in combined['layers']:
-                median_val = layer.get('median_ms', layer['mean_ms'])
+        # Per-module breakdown
+        if combined['modules']:
+            print(f"\n[Per-Module Breakdown]")
+            print(f"{'Module':<45} {'Median(ms)':<12} {'Min(ms)':<12} {'Max(ms)':<12} {'Mean(ms)':<12} {'%':<8}")
+            print(f"{'-'*95}")
+            for module in combined['modules']:
+                median_val = module.get('median_ms', module['mean_ms'])
                 pct = (median_val / total_time * 100) if total_time > 0 else 0
-                print(f"{layer['name']:<15} {median_val:<12.4f} {layer['min_ms']:<12.4f} {layer['max_ms']:<12.4f} {layer['mean_ms']:<12.4f} {pct:<8.2f}")
-
-            # Average excluding first and last layers (more stable measurement)
-            if len(combined['layers']) > 2:
-                middle_layers = combined['layers'][0:-1]  # Exclude first and last
-                middle_median_total = sum(l.get('median_ms', l['mean_ms']) for l in middle_layers)
-                middle_mean_total = sum(l['mean_ms'] for l in middle_layers)
-                avg_middle_median = middle_median_total / len(middle_layers)
-                avg_middle_mean = middle_mean_total / len(middle_layers)
-                print(f"{'-'*75}")
-                print(f"{'Avg (excl 1st/last)':<15} {avg_middle_median:<12.4f} {'-':<12} {'-':<12} {avg_middle_mean:<12.4f}")
-                print(f"  (excludes layer_0 warmup overhead and last layer boundary effect)")
+                print(f"{module['name'][:45]:<45} {median_val:<12.4f} {module['min_ms']:<12.4f} {module['max_ms']:<12.4f} {module['mean_ms']:<12.4f} {pct:<8.2f}")
 
         print(f"\n{'='*90}\n")
         
@@ -361,28 +337,32 @@ def gather_and_print_combined_profile(block_profiler, warmup_steps: int, world_s
 
 
 # ============================================================================
-# Layer Block Profiler (q_proj boundary-based, low overhead)
+# Module Profiler (module end boundary-based, low overhead)
 # ============================================================================
-class LayerBlockProfiler:
+class ModuleProfiler:
     """
-    Measures FULL transformer decoder layer time using boundary-based approach.
+    Measures module boundary time using end-to-end timestamps.
     
     FX Graph에서 pow/add는 call_method/call_function이므로 직접 hook 불가.
-    대신 q_proj를 경계로 사용하여 레이어 시간을 측정:
+    대신 module end hook을 경계로 사용하여 시간을 측정:
     
     Embedding:
-      START: embed_tokens pre_hook
-      END:   embed_tokens post_hook
+      START: stage_start
+      END:   embed_tokens end
     
-    Layer N:
-      START: layer_N q_proj pre_hook
-      END:   layer_(N+1) q_proj pre_hook (또는 lm_head pre_hook for last layer)
-      포함: attn + 1st_residual + post_attn_norm + mlp + 2nd_residual + next_input_layernorm
+    Module N:
+      START: module_(N-1) end hook
+      END:   module_N end hook
+      (first module uses embed_tokens post hook if available, else stage start)
+      포함: 이전 module 종료 이후 ~ 현재 module 종료 직전의 모든 연산 (call_function/method 포함)
     
+    Embedding:
+      START: stage_start
+      END:   embed_tokens end
+
     LM Head:
-      START: lm_head pre_hook
-      END:   lm_head post_hook
-      포함: lm_head Linear만 (model_norm은 last layer에 포함)
+      START: mlp_down_end if exists, else stage_start
+      END:   lm_head end
     
     NOTE: Times are accumulated per-step.
           With num_mb micro-batches per step, this measures total time across all micro-batches.
@@ -404,14 +384,14 @@ class LayerBlockProfiler:
         # Timing state for boundary-based measurement
         self.embedding_start = None
         self.embedding_end_event = None
-        self.layer_q_proj_events = {}     # layer_idx -> q_proj start event
-        self.lm_head_start_event = None   # Last layer end & LM head start
+        self.stage_start_event = None
+        self.module_prev_end_event = None
+        self.last_mlp_down_end_event = None
+        self.lm_head_start_event = None   # LM head start
         
-        # Track layer indices (sorted for proper boundary handling)
-        self.layer_indices = set()
-        self.sorted_layer_indices = []  # Filled after first pass
-        self.min_layer_idx = None
-        self.max_layer_idx = None
+        # Track module execution order (filled at runtime)
+        self.module_seen = set()
+        self.module_order = []
         
         # Deferred event pairs (will be processed at step_end)
         self.pending_events = []  # [(key, start_event, end_event), ...]
@@ -420,77 +400,62 @@ class LayerBlockProfiler:
         self._register_hooks()
     
     def _register_hooks(self):
-        """Register hooks for boundary-based layer timing (q_proj 기반, down_proj fallback)"""
-        import re
+        """Register hooks for boundary-based module timing"""
 
-        # First pass: find all layer indices via q_proj
-        for name, module in self.submod.named_modules():
-            name_lower = name.lower()
-            if 'self_attn_q_proj' in name_lower or 'self_attn.q_proj' in name_lower:
-                match = re.search(r'layers?[_.]?(\d+)', name_lower)
-                if match:
-                    self.layer_indices.add(int(match.group(1)))
-
-        if self.layer_indices:
-            self.sorted_layer_indices = sorted(self.layer_indices)
-            self.min_layer_idx = self.sorted_layer_indices[0]
-            self.max_layer_idx = self.sorted_layer_indices[-1]
-
-        # Check if lm_head exists in this stage (for last layer boundary)
+        # Check if lm_head exists in this stage
         self.has_lm_head = False
         for name, module in self.submod.named_modules():
             if 'lm_head' in name.lower():
                 self.has_lm_head = True
                 break
 
-        # Second pass: register hooks (q_proj for timing boundary)
-        registered_q_proj = set()
-        registered_down_proj = set()
+        # Stage start boundary (for first module when embed_tokens is absent)
+        self._register_stage_start_hook()
 
+        # Second pass: register hooks (module end boundaries)
         for name, module in self.submod.named_modules():
+            if name == "":
+                continue
+            if len(list(module.children())) > 0:
+                continue
+
             name_lower = name.lower()
 
             # Embedding: record start/end for embedding time
             if 'embed_tokens' in name_lower or name_lower == 'model_embed_tokens':
                 self._register_embedding_hooks(name, module)
+                continue
 
-            # LM Head: records lm_head timing + last layer end boundary
-            elif 'lm_head' in name_lower:
+            # LM Head: records lm_head timing only
+            if 'lm_head' in name_lower:
                 self._register_lm_head_hooks(name, module)
+                continue
 
-            # q_proj: records layer start boundaries
-            elif 'self_attn_q_proj' in name_lower or 'self_attn.q_proj' in name_lower:
-                match = re.search(r'layers?[_.]?(\d+)', name_lower)
-                if match:
-                    layer_idx = int(match.group(1))
-                    if layer_idx not in registered_q_proj:
-                        self._register_q_proj_hook(name, module, layer_idx)
-                        registered_q_proj.add(layer_idx)
-
-            # down_proj: fallback end boundary for last layer when lm_head is not in this stage
-            elif ('mlp_down_proj' in name_lower or 'mlp.down_proj' in name_lower):
-                match = re.search(r'layers?[_.]?(\d+)', name_lower)
-                if match:
-                    layer_idx = int(match.group(1))
-                    # Register down_proj hook for the last layer if lm_head is not in this stage
-                    if layer_idx == self.max_layer_idx and not self.has_lm_head:
-                        if layer_idx not in registered_down_proj:
-                            self._register_down_proj_hook(name, module, layer_idx)
-                            registered_down_proj.add(layer_idx)
+            # All other leaf modules: module end boundary
+            self._register_module_end_hook(name, module)
 
         if self.rank == 0:
-            print(f"[LayerBlockProfiler] LAYER PROFILING (q_proj boundary-based)")
-            print(f"[LayerBlockProfiler] Embedding: embed_tokens pre → post")
-            print(f"[LayerBlockProfiler] Layer N: q_proj_N start → q_proj_(N+1) start")
-            if self.has_lm_head:
-                print(f"[LayerBlockProfiler] Last Layer: q_proj start → lm_head start (includes model_norm)")
-            else:
-                print(f"[LayerBlockProfiler] Last Layer: q_proj start → down_proj end (PP stage boundary)")
-            print(f"[LayerBlockProfiler] LM Head: lm_head start → lm_head end")
-            print(f"[LayerBlockProfiler] Registered layers: {self.sorted_layer_indices}")
-            print(f"[LayerBlockProfiler] has_lm_head={self.has_lm_head}")
-            print(f"[LayerBlockProfiler] num_mb={self.num_mb} (times will be per-forward-pass average)")
-    
+            print(f"[ModuleProfiler] MODULE PROFILING (module end boundary-based)")
+            print(f"[ModuleProfiler] Embedding: stage_start → embed end")
+            print(f"[ModuleProfiler] Module N: module_(N-1) end → module_N end")
+            print(f"[ModuleProfiler] First Module: embed end → module end (else stage start)")
+            print(f"[ModuleProfiler] LM Head: mlp_down end → lm_head end (else stage start)")
+            print(f"[ModuleProfiler] has_lm_head={self.has_lm_head}")
+            print(f"[ModuleProfiler] num_mb={self.num_mb} (times will be per-forward-pass average)")
+
+    def _register_stage_start_hook(self):
+        """Register pre_hook for stage start boundary"""
+        profiler = self
+
+        def pre_hook(mod, inp):
+            profiler.stage_start_event = torch.cuda.Event(enable_timing=True)
+            profiler.stage_start_event.record()
+            profiler.module_prev_end_event = None
+            profiler.embedding_end_event = None
+            profiler.last_mlp_down_end_event = None
+
+        self.hooks.append(self.submod.register_forward_pre_hook(pre_hook))
+
     def _register_embedding_hooks(self, name, module):
         """Register pre/post hooks for embedding"""
         profiler = self
@@ -503,105 +468,69 @@ class LayerBlockProfiler:
             if profiler.embedding_start:
                 end_event = torch.cuda.Event(enable_timing=True)
                 end_event.record()
-                profiler.pending_events.append(('embedding', profiler.embedding_start, end_event))
+                if profiler.stage_start_event is not None:
+                    profiler.pending_events.append(('embedding', profiler.stage_start_event, end_event))
                 profiler.embedding_end_event = end_event
+                profiler.module_prev_end_event = end_event
                 profiler.embedding_start = None
         
         self.hooks.append(module.register_forward_pre_hook(pre_hook))
         self.hooks.append(module.register_forward_hook(post_hook))
         if self.rank == 0:
-            print(f"[LayerBlockProfiler] Embedding hooks: {name}")
+            print(f"[ModuleProfiler] Embedding hooks: {name}")
     
     def _register_lm_head_hooks(self, name, module):
-        """Register pre/post hooks for lm_head (also serves as last layer end boundary)"""
+        """Register pre/post hooks for lm_head timing"""
         profiler = self
         
         def pre_hook(mod, inp):
             start_event = torch.cuda.Event(enable_timing=True)
             start_event.record()
             profiler.lm_head_start_event = start_event
-            
-            # lm_head start = last layer end
-            if profiler.max_layer_idx is not None:
-                last_layer_key = f"layer_{profiler.max_layer_idx}"
-                last_start = profiler.layer_q_proj_events.get(profiler.max_layer_idx)
-                if last_start is not None:
-                    profiler.pending_events.append((last_layer_key, last_start, start_event))
         
         def post_hook(mod, inp, out):
             if profiler.lm_head_start_event:
                 end_event = torch.cuda.Event(enable_timing=True)
                 end_event.record()
-                profiler.pending_events.append(('lm_head', profiler.lm_head_start_event, end_event))
+                start_event = profiler.last_mlp_down_end_event or profiler.stage_start_event
+                if start_event is not None:
+                    profiler.pending_events.append(('lm_head', start_event, end_event))
                 profiler.lm_head_start_event = None
+                profiler.module_prev_end_event = end_event
         
         self.hooks.append(module.register_forward_pre_hook(pre_hook))
         self.hooks.append(module.register_forward_hook(post_hook))
         if self.rank == 0:
-            print(f"[LayerBlockProfiler] LM Head hooks: {name} (also last layer end)")
-    
-    def _register_q_proj_hook(self, name, module, layer_idx):
-        """
-        Register pre_hook on q_proj for boundary-based layer timing.
-        
-        Layer boundary logic (q_proj 기반):
-        - Layer N: q_proj_N start → q_proj_(N+1) start
-        - Last layer: q_proj start → lm_head start
-        """
-        profiler = self
-        is_last_layer = (layer_idx == self.max_layer_idx)
-        layer_key = f"layer_{layer_idx}"
-        
-        def pre_hook(mod, inp):
-            current_event = torch.cuda.Event(enable_timing=True)
-            current_event.record()
-            
-            # For non-first layers: measure previous layer (prev_q_proj → current_q_proj)
-            try:
-                current_pos = profiler.sorted_layer_indices.index(layer_idx)
-                if current_pos > 0:
-                    prev_layer_idx = profiler.sorted_layer_indices[current_pos - 1]
-                    prev_layer_key = f"layer_{prev_layer_idx}"
-                    prev_start = profiler.layer_q_proj_events.get(prev_layer_idx)
-                    if prev_start is not None:
-                        profiler.pending_events.append((prev_layer_key, prev_start, current_event))
-            except ValueError:
-                pass
-            
-            # Store this layer's start event
-            profiler.layer_q_proj_events[layer_idx] = current_event
-        
-        self.hooks.append(module.register_forward_pre_hook(pre_hook))
-        if self.rank == 0:
-            if is_last_layer and self.has_lm_head:
-                print(f"[LayerBlockProfiler] {layer_key}: q_proj start → lm_head start ({name})")
-            elif is_last_layer and not self.has_lm_head:
-                print(f"[LayerBlockProfiler] {layer_key}: q_proj start → down_proj end ({name})")
-            else:
-                print(f"[LayerBlockProfiler] {layer_key}: q_proj start → next_q_proj start ({name})")
+            print(f"[ModuleProfiler] LM Head hooks: {name}")
 
-    def _register_down_proj_hook(self, name, module, layer_idx):
-        """
-        Register post_hook on down_proj for last layer end boundary (PP stage fallback).
-
-        Used when lm_head is not in this stage, so we use down_proj as the end marker.
-        This ensures the last layer of each PP stage can be measured.
-        """
+    def _register_module_end_hook(self, name, module):
+        """Register post_hook for module end boundary timing"""
         profiler = self
-        layer_key = f"layer_{layer_idx}"
+        name_lower = name.lower()
+        is_mlp_down = 'mlp_down_proj' in name_lower or 'mlp.down_proj' in name_lower
 
         def post_hook(mod, inp, out):
             end_event = torch.cuda.Event(enable_timing=True)
             end_event.record()
 
-            # Record last layer timing: q_proj start → down_proj end
-            last_start = profiler.layer_q_proj_events.get(layer_idx)
-            if last_start is not None:
-                profiler.pending_events.append((layer_key, last_start, end_event))
+            if name not in profiler.module_seen:
+                profiler.module_seen.add(name)
+                profiler.module_order.append(name)
+
+            start_event = profiler.module_prev_end_event
+            if start_event is None:
+                start_event = profiler.embedding_end_event or profiler.stage_start_event
+
+            if start_event is not None:
+                profiler.pending_events.append((name, start_event, end_event))
+
+            profiler.module_prev_end_event = end_event
+            if is_mlp_down:
+                profiler.last_mlp_down_end_event = end_event
 
         self.hooks.append(module.register_forward_hook(post_hook))
         if self.rank == 0:
-            print(f"[LayerBlockProfiler] {layer_key} down_proj end hook: {name} (PP stage boundary fallback)")
+            print(f"[ModuleProfiler] Module end hook: {name}")
 
     def step_end(self):
         """Called at end of each training step to finalize measurements"""
@@ -613,8 +542,10 @@ class LayerBlockProfiler:
         self.pending_events.clear()
         
         self.embedding_end_event = None
+        self.stage_start_event = None
         self.lm_head_start_event = None
-        self.layer_q_proj_events.clear()
+        self.module_prev_end_event = None
+        self.last_mlp_down_end_event = None
         
         for key, value in self.current_step_times.items():
             self.step_times[key].append(value)
@@ -643,20 +574,20 @@ class LayerBlockProfiler:
         return summary
     
     def print_summary(self, warmup_steps: int = 0):
-        """Print layer block timing summary"""
+        """Print module timing summary"""
         if self.rank != 0:
             return
         
         summary = self.get_summary(warmup_steps)
         total_time = sum(v.get('median_ms', v['mean_ms']) for v in summary.values())
-        transformer_layers = {k: v for k, v in summary.items() if k.startswith('layer_')}
-        transformer_total = sum(v['mean_ms'] for v in transformer_layers.values())
+        modules = {k: v for k, v in summary.items() if k not in ['embedding', 'lm_head']}
+        module_total = sum(v['mean_ms'] for v in modules.values())
         measured_steps = list(summary.values())[0].get('measured_steps', 0) if summary else 0
         
         print(f"\n{'='*90}")
-        print(f" Layer Block Profile (Stage {self.stage}, Rank {self.rank})")
-        print(f" Measures: q_proj_N → q_proj_(N+1) (last layer → lm_head)")
-        print(f" Includes: attn + post_attn_norm + mlp + residuals + next_input_layernorm")
+        print(f" Module Profile (Stage {self.stage}, Rank {self.rank})")
+        print(f" Measures: module_(N-1) end → module_N end (first uses embed end or stage start)")
+        print(f" Includes: prev module 이후 ~ current module 종료 직전 연산 (call_function/method 포함)")
         print(f" Warmup: {warmup_steps} steps, Measured: {measured_steps} steps")
         print(f" Values: per-forward-pass average (num_mb={self.num_mb})")
         print(f"{'='*90}")
@@ -670,10 +601,10 @@ class LayerBlockProfiler:
             pct = (s['median_ms'] / total_time * 100) if total_time > 0 else 0
             print(f"{'Embedding':<20} {s['median_ms']:<12.4f} {s['min_ms']:<12.4f} {s['max_ms']:<12.4f} {s['mean_ms']:<12.4f} {pct:<8.2f}")
         
-        if transformer_layers:
-            trans_median_total = sum(v.get('median_ms', v['mean_ms']) for v in transformer_layers.values())
-            trans_pct = (trans_median_total / total_time * 100) if total_time > 0 else 0
-            print(f"{'Transformer (total)':<20} {trans_median_total:<12.4f} {'-':<12} {'-':<12} {transformer_total:<12.4f} {trans_pct:<8.2f}")
+        if modules:
+            module_median_total = sum(v.get('median_ms', v['mean_ms']) for v in modules.values())
+            module_pct = (module_median_total / total_time * 100) if total_time > 0 else 0
+            print(f"{'Modules (total)':<20} {module_median_total:<12.4f} {'-':<12} {'-':<12} {module_total:<12.4f} {module_pct:<8.2f}")
         
         if 'lm_head' in summary:
             s = summary['lm_head']
@@ -683,27 +614,19 @@ class LayerBlockProfiler:
         print(f"{'-'*80}")
         print(f"{'TOTAL':<20} {total_time:<12.4f}")
         
-        if transformer_layers:
-            print(f"\n[Per-Layer Breakdown (q_proj → next_q_proj)]")
-            print(f"{'Layer':<15} {'Mean(ms)':<12} {'Min(ms)':<12} {'Max(ms)':<12} {'Std(ms)':<12} {'%':<8}")
-            print(f"{'-'*75}")
-            
-            sorted_layers = sorted(transformer_layers.items(), key=lambda x: int(x[0].split('_')[1]))
-            for layer_key, stats in sorted_layers:
-                pct = (stats['mean_ms'] / total_time * 100) if total_time > 0 else 0
-                print(f"{layer_key:<15} {stats['mean_ms']:<12.4f} {stats['min_ms']:<12.4f} {stats['max_ms']:<12.4f} {stats['std_ms']:<12.4f} {pct:<8.2f}")
-            
-            if len(transformer_layers) > 0:
-                avg_layer_time = transformer_total / len(transformer_layers)
-                print(f"{'-'*75}")
-                print(f"{'Avg per layer':<15} {avg_layer_time:<12.4f}")
+        if modules:
+            print(f"\n[Per-Module Breakdown (prev_module_end → module_end)]")
+            print(f"{'Module':<45} {'Mean(ms)':<12} {'Min(ms)':<12} {'Max(ms)':<12} {'Std(ms)':<12} {'%':<8}")
+            print(f"{'-'*90}")
 
-                # Average excluding last layer (last layer includes model_norm)
-                if len(sorted_layers) > 1:
-                    layers_excl_last = sorted_layers[:-1]
-                    total_excl_last = sum(stats['mean_ms'] for _, stats in layers_excl_last)
-                    avg_excl_last = total_excl_last / len(layers_excl_last)
-                    print(f"{'Avg (excl last)':<15} {avg_excl_last:<12.4f}  (last layer includes model_norm)")
+            ordered_keys = [key for key in self.module_order if key in modules]
+            remaining_keys = [key for key in modules.keys() if key not in self.module_order]
+            ordered_keys.extend(sorted(remaining_keys))
+
+            for module_key in ordered_keys:
+                stats = modules[module_key]
+                pct = (stats['mean_ms'] / total_time * 100) if total_time > 0 else 0
+                print(f"{module_key[:45]:<45} {stats['mean_ms']:<12.4f} {stats['min_ms']:<12.4f} {stats['max_ms']:<12.4f} {stats['std_ms']:<12.4f} {pct:<8.2f}")
 
         print(f"\n{'='*90}\n")
     
@@ -909,14 +832,13 @@ try:
     log(f"[{ts()}] ========== PROFILE MODE ==========") if rank == 0 else None
 
     # ================================================================
-    # LayerBlockProfiler: q_proj boundary-based layer timing
-    # Measures:
-    #   - Embedding: embed_tokens pre → post
-    #   - Layer N: q_proj_N start → q_proj_(N+1) start
-    #   - Last Layer: q_proj start → lm_head start (includes model_norm)
-    #   - LM Head: lm_head start → lm_head end
-    # ================================================================
-    block_profiler = LayerBlockProfiler(
+# ModuleProfiler: module end boundary-based timing
+# Measures:
+#   - Embedding: stage_start → embed_tokens end
+#   - Module N: module_(N-1) end → module_N end
+#   - LM Head: mlp_down end → lm_head end (else stage_start)
+# ================================================================
+    module_profiler = ModuleProfiler(
         optimus_p.run_info.submod,
         optimus_p.run_info.device,
         rank,
@@ -960,7 +882,7 @@ try:
             torch.nn.utils.clip_grad_norm_(optimus_p.parameters(), 0.5)
 
         optimus_p.optimizer.step()
-        block_profiler.step_end()
+        module_profiler.step_end()
 
         step_count += 1
         if rank == 0 and step_count % 5 == 0:
@@ -972,14 +894,14 @@ try:
     dist.barrier()
 
     # Print per-rank results
-    block_profiler.print_summary(warmup_steps=args.profile_warmup_steps)
+    module_profiler.print_summary(warmup_steps=args.profile_warmup_steps)
 
     # Synchronize again
     dist.barrier()
 
     # Gather and print combined results from all ranks
     combined_result = gather_and_print_combined_profile(
-        block_profiler,
+        module_profiler,
         args.profile_warmup_steps,
         world_size,
         rank,
@@ -1009,7 +931,7 @@ try:
             },
             'combined_timing': combined_result,
             'per_rank_timing': {
-                f'rank_{rank}': block_profiler.get_summary(args.profile_warmup_steps)
+                f'rank_{rank}': module_profiler.get_summary(args.profile_warmup_steps)
             }
         }
 
@@ -1017,7 +939,7 @@ try:
         save_profile_result(profile_result, output_path)
         ELAPSED_TIME = tock - tick
 
-    block_profiler.remove_hooks()
+    module_profiler.remove_hooks()
     EXIT_CODE = 0
 
 except torch.cuda.OutOfMemoryError as e:

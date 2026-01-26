@@ -187,6 +187,109 @@ def save_profile_result(result: dict, output_path: str = ""):
         log(f"[rank:0] Failed to save profile results: {e}")
 
 
+def _build_lookup_row(profile_result: dict):
+    import math
+    import re
+    import numpy as np
+
+    combined = profile_result.get('combined_timing') or {}
+    embed_mean = (combined.get('embedding') or {}).get('mean_ms', math.nan)
+    modules = combined.get('modules', []) or []
+
+    cols = [
+        'embed',
+        'attn_q', 'attn_k', 'attn_v', 'attn_o',
+        'mlp_gate', 'mlp_up', 'mlp_down', 'mlp_act',
+    ]
+    suffix_map = {
+        'attn_q': 'self_attn_q_proj',
+        'attn_k': 'self_attn_k_proj',
+        'attn_v': 'self_attn_v_proj',
+        'attn_o': 'self_attn_o_proj',
+        'mlp_gate': 'mlp_gate_proj',
+        'mlp_up': 'mlp_up_proj',
+        'mlp_down': 'mlp_down_proj',
+        'mlp_act': 'mlp_act_fn',
+    }
+
+    suffix_vals = {k: [] for k in suffix_map}
+    name_re = re.compile(r'^model_layers_(\d+)_([a-z0-9_]+)$')
+    for m in modules:
+        name = m.get('name', '')
+        mean = m.get('mean_ms', None)
+        if mean is None:
+            continue
+        mm = name_re.match(name)
+        if not mm:
+            continue
+        suffix = mm.group(2)
+        for key, suf in suffix_map.items():
+            if suffix == suf:
+                suffix_vals[key].append(mean)
+                break
+
+    row_vals = [embed_mean]
+    for key in cols[1:]:
+        vals = suffix_vals.get(key, [])
+        row_vals.append(float(np.mean(vals)) if vals else math.nan)
+
+    return np.array([row_vals], dtype=float)
+
+
+def _get_gpu_type():
+    try:
+        import torch
+        name = torch.cuda.get_device_name(0)
+        # Normalize common NVIDIA names (A40/A100/H100/...)
+        for tag in ["A40", "A100", "H100", "V100", "L40", "L4", "T4"]:
+            if tag in name:
+                return tag
+        # Fallback: first token without spaces
+        return name.split()[0]
+    except Exception:
+        return "unknown"
+
+
+def append_profile_npz(profile_result: dict):
+    if os.environ.get("RANK", "0") != "0":
+        return
+
+    try:
+        import numpy as np
+        cfg = profile_result.get('config', {})
+        model_size_raw = str(cfg.get('model_size', '')).lower()
+        model_size = model_size_raw
+        import re
+        m = re.search(r'(\d+)\s*b', model_size_raw)
+        if m:
+            model_size = f"{m.group(1)}b"
+        tp = cfg.get('tp_size', 'unknown')
+        gpu_type = _get_gpu_type()
+        if not model_size:
+            model_size = "unknown"
+        npz_name = f"llama{model_size}_{gpu_type}_{tp}.npz"
+        npz_path = os.path.join(RESULT_DIR, npz_name)
+        row = _build_lookup_row(profile_result)
+
+        if os.path.exists(npz_path):
+            existing = np.load(npz_path)
+            data = existing.get('data')
+            if data is None:
+                keys = list(existing.keys())
+                data = existing[keys[0]] if keys else None
+            if data is None:
+                data = row
+            else:
+                data = np.vstack([data, row])
+        else:
+            data = row
+
+        np.savez(npz_path, data=data)
+        log(f"[rank:0] Profile lookup saved to {npz_path}")
+    except Exception as e:
+        log(f"[rank:0] Failed to save profile lookup npz: {e}")
+
+
 def gather_and_print_combined_profile(block_profiler, warmup_steps: int, world_size: int, rank: int, gloo_group=None):
     """Gather profile results from all ranks and print combined summary."""
     import pickle
@@ -937,6 +1040,7 @@ try:
 
         output_path = f"{RESULT_DIR}/profile_{args.run_id}.json"
         save_profile_result(profile_result, output_path)
+        append_profile_npz(profile_result)
         ELAPSED_TIME = tock - tick
 
     module_profiler.remove_hooks()

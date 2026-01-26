@@ -361,28 +361,28 @@ def gather_and_print_combined_profile(block_profiler, warmup_steps: int, world_s
 
 
 # ============================================================================
-# Layer Block Profiler (q_proj boundary-based, low overhead)
+# Layer Block Profiler (down_proj boundary-based, low overhead)
 # ============================================================================
 class LayerBlockProfiler:
     """
     Measures FULL transformer decoder layer time using boundary-based approach.
     
     FX Graph에서 pow/add는 call_method/call_function이므로 직접 hook 불가.
-    대신 q_proj를 경계로 사용하여 레이어 시간을 측정:
+    대신 mlp_down_proj를 경계로 사용하여 레이어 시간을 측정:
     
     Embedding:
-      START: embed_tokens pre_hook
+      START: stage start
       END:   embed_tokens post_hook
     
     Layer N:
-      START: layer_N q_proj pre_hook
-      END:   layer_(N+1) q_proj pre_hook (또는 lm_head pre_hook for last layer)
-      포함: attn + 1st_residual + post_attn_norm + mlp + 2nd_residual + next_input_layernorm
+      START: stage start (첫 layer는 embedding end)
+      END:   layer_N down_proj end
+      포함: input_layernorm + attn + 1st_residual + post_attn_norm + mlp + 2nd_residual
     
     LM Head:
-      START: lm_head pre_hook
+      START: last layer down_proj end
       END:   lm_head post_hook
-      포함: lm_head Linear만 (model_norm은 last layer에 포함)
+      포함: model_norm + lm_head Linear
     
     NOTE: Times are accumulated per-step.
           With num_mb micro-batches per step, this measures total time across all micro-batches.
@@ -402,10 +402,11 @@ class LayerBlockProfiler:
         self.current_step_times = defaultdict(float)
         
         # Timing state for boundary-based measurement
-        self.embedding_start = None
+        self.stage_start_event = None
         self.embedding_end_event = None
-        self.layer_q_proj_events = {}     # layer_idx -> q_proj start event
-        self.lm_head_start_event = None   # Last layer end & LM head start
+        self.last_layer_end_event = None
+        self.last_mlp_down_end_event = None
+        self.lm_head_start_event = None
         
         # Track layer indices (sorted for proper boundary handling)
         self.layer_indices = set()
@@ -420,13 +421,13 @@ class LayerBlockProfiler:
         self._register_hooks()
     
     def _register_hooks(self):
-        """Register hooks for boundary-based layer timing (q_proj 기반, down_proj fallback)"""
+        """Register hooks for boundary-based layer timing (down_proj 기반)"""
         import re
 
-        # First pass: find all layer indices via q_proj
+        # First pass: find all layer indices via down_proj
         for name, module in self.submod.named_modules():
             name_lower = name.lower()
-            if 'self_attn_q_proj' in name_lower or 'self_attn.q_proj' in name_lower:
+            if 'mlp_down_proj' in name_lower or 'mlp.down_proj' in name_lower:
                 match = re.search(r'layers?[_.]?(\d+)', name_lower)
                 if match:
                     self.layer_indices.add(int(match.group(1)))
@@ -443,8 +444,7 @@ class LayerBlockProfiler:
                 self.has_lm_head = True
                 break
 
-        # Second pass: register hooks (q_proj for timing boundary)
-        registered_q_proj = set()
+        # Second pass: register hooks (down_proj for timing boundary)
         registered_down_proj = set()
 
         for name, module in self.submod.named_modules():
@@ -458,134 +458,84 @@ class LayerBlockProfiler:
             elif 'lm_head' in name_lower:
                 self._register_lm_head_hooks(name, module)
 
-            # q_proj: records layer start boundaries
-            elif 'self_attn_q_proj' in name_lower or 'self_attn.q_proj' in name_lower:
+            # down_proj: layer end boundary
+            elif 'mlp_down_proj' in name_lower or 'mlp.down_proj' in name_lower:
                 match = re.search(r'layers?[_.]?(\d+)', name_lower)
                 if match:
                     layer_idx = int(match.group(1))
-                    if layer_idx not in registered_q_proj:
-                        self._register_q_proj_hook(name, module, layer_idx)
-                        registered_q_proj.add(layer_idx)
-
-            # down_proj: fallback end boundary for last layer when lm_head is not in this stage
-            elif ('mlp_down_proj' in name_lower or 'mlp.down_proj' in name_lower):
-                match = re.search(r'layers?[_.]?(\d+)', name_lower)
-                if match:
-                    layer_idx = int(match.group(1))
-                    # Register down_proj hook for the last layer if lm_head is not in this stage
-                    if layer_idx == self.max_layer_idx and not self.has_lm_head:
-                        if layer_idx not in registered_down_proj:
-                            self._register_down_proj_hook(name, module, layer_idx)
-                            registered_down_proj.add(layer_idx)
+                    if layer_idx not in registered_down_proj:
+                        self._register_down_proj_hook(name, module, layer_idx)
+                        registered_down_proj.add(layer_idx)
 
         if self.rank == 0:
-            print(f"[LayerBlockProfiler] LAYER PROFILING (q_proj boundary-based)")
-            print(f"[LayerBlockProfiler] Embedding: embed_tokens pre → post")
-            print(f"[LayerBlockProfiler] Layer N: q_proj_N start → q_proj_(N+1) start")
-            if self.has_lm_head:
-                print(f"[LayerBlockProfiler] Last Layer: q_proj start → lm_head start (includes model_norm)")
-            else:
-                print(f"[LayerBlockProfiler] Last Layer: q_proj start → down_proj end (PP stage boundary)")
-            print(f"[LayerBlockProfiler] LM Head: lm_head start → lm_head end")
+            print(f"[LayerBlockProfiler] LAYER PROFILING (down_proj boundary-based)")
+            print(f"[LayerBlockProfiler] Embedding: stage start → embed_tokens end")
+            print(f"[LayerBlockProfiler] Layer N: stage start (first uses embed end) → down_proj end")
+            print(f"[LayerBlockProfiler] LM Head: last down_proj end → lm_head end")
             print(f"[LayerBlockProfiler] Registered layers: {self.sorted_layer_indices}")
             print(f"[LayerBlockProfiler] has_lm_head={self.has_lm_head}")
             print(f"[LayerBlockProfiler] num_mb={self.num_mb} (times will be per-forward-pass average)")
-    
+
+        self._register_stage_start_hook()
+
+    def _register_stage_start_hook(self):
+        """Register pre_hook for stage start boundary"""
+        profiler = self
+
+        def pre_hook(mod, inp):
+            profiler.stage_start_event = torch.cuda.Event(enable_timing=True)
+            profiler.stage_start_event.record()
+            profiler.embedding_end_event = None
+            profiler.last_layer_end_event = None
+            profiler.last_mlp_down_end_event = None
+
+        self.hooks.append(self.submod.register_forward_pre_hook(pre_hook))
+
     def _register_embedding_hooks(self, name, module):
         """Register pre/post hooks for embedding"""
         profiler = self
         
-        def pre_hook(mod, inp):
-            profiler.embedding_start = torch.cuda.Event(enable_timing=True)
-            profiler.embedding_start.record()
-        
         def post_hook(mod, inp, out):
-            if profiler.embedding_start:
-                end_event = torch.cuda.Event(enable_timing=True)
-                end_event.record()
-                profiler.pending_events.append(('embedding', profiler.embedding_start, end_event))
-                profiler.embedding_end_event = end_event
-                profiler.embedding_start = None
+            end_event = torch.cuda.Event(enable_timing=True)
+            end_event.record()
+            start_event = profiler.stage_start_event
+            if start_event is not None:
+                profiler.pending_events.append(('embedding', start_event, end_event))
+            profiler.embedding_end_event = end_event
         
-        self.hooks.append(module.register_forward_pre_hook(pre_hook))
         self.hooks.append(module.register_forward_hook(post_hook))
         if self.rank == 0:
             print(f"[LayerBlockProfiler] Embedding hooks: {name}")
     
     def _register_lm_head_hooks(self, name, module):
-        """Register pre/post hooks for lm_head (also serves as last layer end boundary)"""
+        """Register pre/post hooks for lm_head timing"""
         profiler = self
         
         def pre_hook(mod, inp):
             start_event = torch.cuda.Event(enable_timing=True)
             start_event.record()
             profiler.lm_head_start_event = start_event
-            
-            # lm_head start = last layer end
-            if profiler.max_layer_idx is not None:
-                last_layer_key = f"layer_{profiler.max_layer_idx}"
-                last_start = profiler.layer_q_proj_events.get(profiler.max_layer_idx)
-                if last_start is not None:
-                    profiler.pending_events.append((last_layer_key, last_start, start_event))
         
         def post_hook(mod, inp, out):
             if profiler.lm_head_start_event:
                 end_event = torch.cuda.Event(enable_timing=True)
                 end_event.record()
-                profiler.pending_events.append(('lm_head', profiler.lm_head_start_event, end_event))
+                start_event = profiler.last_mlp_down_end_event or profiler.embedding_end_event or profiler.stage_start_event
+                if start_event is not None:
+                    profiler.pending_events.append(('lm_head', start_event, end_event))
                 profiler.lm_head_start_event = None
         
         self.hooks.append(module.register_forward_pre_hook(pre_hook))
         self.hooks.append(module.register_forward_hook(post_hook))
         if self.rank == 0:
-            print(f"[LayerBlockProfiler] LM Head hooks: {name} (also last layer end)")
+            print(f"[LayerBlockProfiler] LM Head hooks: {name}")
     
-    def _register_q_proj_hook(self, name, module, layer_idx):
-        """
-        Register pre_hook on q_proj for boundary-based layer timing.
-        
-        Layer boundary logic (q_proj 기반):
-        - Layer N: q_proj_N start → q_proj_(N+1) start
-        - Last layer: q_proj start → lm_head start
-        """
-        profiler = self
-        is_last_layer = (layer_idx == self.max_layer_idx)
-        layer_key = f"layer_{layer_idx}"
-        
-        def pre_hook(mod, inp):
-            current_event = torch.cuda.Event(enable_timing=True)
-            current_event.record()
-            
-            # For non-first layers: measure previous layer (prev_q_proj → current_q_proj)
-            try:
-                current_pos = profiler.sorted_layer_indices.index(layer_idx)
-                if current_pos > 0:
-                    prev_layer_idx = profiler.sorted_layer_indices[current_pos - 1]
-                    prev_layer_key = f"layer_{prev_layer_idx}"
-                    prev_start = profiler.layer_q_proj_events.get(prev_layer_idx)
-                    if prev_start is not None:
-                        profiler.pending_events.append((prev_layer_key, prev_start, current_event))
-            except ValueError:
-                pass
-            
-            # Store this layer's start event
-            profiler.layer_q_proj_events[layer_idx] = current_event
-        
-        self.hooks.append(module.register_forward_pre_hook(pre_hook))
-        if self.rank == 0:
-            if is_last_layer and self.has_lm_head:
-                print(f"[LayerBlockProfiler] {layer_key}: q_proj start → lm_head start ({name})")
-            elif is_last_layer and not self.has_lm_head:
-                print(f"[LayerBlockProfiler] {layer_key}: q_proj start → down_proj end ({name})")
-            else:
-                print(f"[LayerBlockProfiler] {layer_key}: q_proj start → next_q_proj start ({name})")
-
     def _register_down_proj_hook(self, name, module, layer_idx):
         """
-        Register post_hook on down_proj for last layer end boundary (PP stage fallback).
+        Register post_hook on down_proj for layer end boundary.
 
-        Used when lm_head is not in this stage, so we use down_proj as the end marker.
-        This ensures the last layer of each PP stage can be measured.
+        Layer boundary logic (down_proj 기반):
+        - Layer N: prev_layer_end (or embedding/stage start for first) → down_proj end
         """
         profiler = self
         layer_key = f"layer_{layer_idx}"
@@ -594,14 +544,19 @@ class LayerBlockProfiler:
             end_event = torch.cuda.Event(enable_timing=True)
             end_event.record()
 
-            # Record last layer timing: q_proj start → down_proj end
-            last_start = profiler.layer_q_proj_events.get(layer_idx)
-            if last_start is not None:
-                profiler.pending_events.append((layer_key, last_start, end_event))
+            if profiler.min_layer_idx is not None and layer_idx == profiler.min_layer_idx:
+                start_event = profiler.embedding_end_event or profiler.stage_start_event
+            else:
+                start_event = profiler.last_layer_end_event or profiler.stage_start_event
+            if start_event is not None:
+                profiler.pending_events.append((layer_key, start_event, end_event))
+
+            profiler.last_layer_end_event = end_event
+            profiler.last_mlp_down_end_event = end_event
 
         self.hooks.append(module.register_forward_hook(post_hook))
         if self.rank == 0:
-            print(f"[LayerBlockProfiler] {layer_key} down_proj end hook: {name} (PP stage boundary fallback)")
+            print(f"[LayerBlockProfiler] {layer_key} down_proj end hook: {name}")
 
     def step_end(self):
         """Called at end of each training step to finalize measurements"""
@@ -614,7 +569,8 @@ class LayerBlockProfiler:
         
         self.embedding_end_event = None
         self.lm_head_start_event = None
-        self.layer_q_proj_events.clear()
+        self.last_layer_end_event = None
+        self.last_mlp_down_end_event = None
         
         for key, value in self.current_step_times.items():
             self.step_times[key].append(value)
@@ -655,8 +611,8 @@ class LayerBlockProfiler:
         
         print(f"\n{'='*90}")
         print(f" Layer Block Profile (Stage {self.stage}, Rank {self.rank})")
-        print(f" Measures: q_proj_N → q_proj_(N+1) (last layer → lm_head)")
-        print(f" Includes: attn + post_attn_norm + mlp + residuals + next_input_layernorm")
+        print(f" Measures: stage start → down_proj end (first uses embed end)")
+        print(f" Includes: input_layernorm + attn + post_attn_norm + mlp + residuals")
         print(f" Warmup: {warmup_steps} steps, Measured: {measured_steps} steps")
         print(f" Values: per-forward-pass average (num_mb={self.num_mb})")
         print(f"{'='*90}")
@@ -684,7 +640,7 @@ class LayerBlockProfiler:
         print(f"{'TOTAL':<20} {total_time:<12.4f}")
         
         if transformer_layers:
-            print(f"\n[Per-Layer Breakdown (q_proj → next_q_proj)]")
+            print(f"\n[Per-Layer Breakdown (stage start → down_proj end)]")
             print(f"{'Layer':<15} {'Mean(ms)':<12} {'Min(ms)':<12} {'Max(ms)':<12} {'Std(ms)':<12} {'%':<8}")
             print(f"{'-'*75}")
             
@@ -698,12 +654,12 @@ class LayerBlockProfiler:
                 print(f"{'-'*75}")
                 print(f"{'Avg per layer':<15} {avg_layer_time:<12.4f}")
 
-                # Average excluding last layer (last layer includes model_norm)
+                # Optional: average excluding last layer (boundary effects)
                 if len(sorted_layers) > 1:
                     layers_excl_last = sorted_layers[:-1]
                     total_excl_last = sum(stats['mean_ms'] for _, stats in layers_excl_last)
                     avg_excl_last = total_excl_last / len(layers_excl_last)
-                    print(f"{'Avg (excl last)':<15} {avg_excl_last:<12.4f}  (last layer includes model_norm)")
+                    print(f"{'Avg (excl last)':<15} {avg_excl_last:<12.4f}  (boundary effect)")
 
         print(f"\n{'='*90}\n")
     
@@ -909,12 +865,11 @@ try:
     log(f"[{ts()}] ========== PROFILE MODE ==========") if rank == 0 else None
 
     # ================================================================
-    # LayerBlockProfiler: q_proj boundary-based layer timing
+    # LayerBlockProfiler: down_proj boundary-based layer timing
     # Measures:
-    #   - Embedding: embed_tokens pre → post
-    #   - Layer N: q_proj_N start → q_proj_(N+1) start
-    #   - Last Layer: q_proj start → lm_head start (includes model_norm)
-    #   - LM Head: lm_head start → lm_head end
+    #   - Embedding: stage start → embed_tokens end
+    #   - Layer N: prev_end (embed/stage or prev down_proj) → down_proj end
+    #   - LM Head: last down_proj end → lm_head end
     # ================================================================
     block_profiler = LayerBlockProfiler(
         optimus_p.run_info.submod,

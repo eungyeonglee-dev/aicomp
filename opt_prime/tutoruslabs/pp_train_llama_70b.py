@@ -199,7 +199,7 @@ def _build_lookup_row(profile_result: dict):
     cols = [
         'embed',
         'attn_q', 'attn_k', 'attn_v', 'attn_o',
-        'mlp_gate', 'mlp_up', 'mlp_down', 'mlp_act',
+        'mlp_gate', 'mlp_act', 'mlp_up', 'mlp_down', 
     ]
     suffix_map = {
         'attn_q': 'self_attn_q_proj',
@@ -207,9 +207,10 @@ def _build_lookup_row(profile_result: dict):
         'attn_v': 'self_attn_v_proj',
         'attn_o': 'self_attn_o_proj',
         'mlp_gate': 'mlp_gate_proj',
+        'mlp_act': 'mlp_act_fn',
         'mlp_up': 'mlp_up_proj',
         'mlp_down': 'mlp_down_proj',
-        'mlp_act': 'mlp_act_fn',
+        
     }
 
     suffix_vals = {k: [] for k in suffix_map}

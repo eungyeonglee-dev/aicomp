@@ -1,0 +1,9 @@
+batch_size,micro_batch_size,pp_size,tp_size,dp_size,training_time(sec)
+8,1,8,1,1,19.211
+16,2,8,1,1,26.905
+32,4,8,1,1,37.122
+64,8,8,1,1,62.970
+128,16,8,1,1,FAIL(1)
+256,32,8,1,1,OOM ERROR
+512,64,8,1,1,OOM ERROR
+1024,128,8,1,1,OOM ERROR

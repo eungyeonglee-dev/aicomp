@@ -194,12 +194,13 @@ def _build_lookup_row(profile_result: dict):
 
     combined = profile_result.get('combined_timing') or {}
     embed_mean = (combined.get('embedding') or {}).get('mean_ms', math.nan)
+    lm_head_mean = (combined.get('lm_head') or {}).get('mean_ms', math.nan)
     modules = combined.get('modules', []) or []
 
     cols = [
         'embed',
         'attn_q', 'attn_k', 'attn_v', 'attn_o',
-        'mlp_gate', 'mlp_act', 'mlp_up', 'mlp_down', 
+        'mlp_gate', 'mlp_act', 'mlp_up', 'mlp_down', 'lm_head'
     ]
     suffix_map = {
         'attn_q': 'self_attn_q_proj',
@@ -231,6 +232,9 @@ def _build_lookup_row(profile_result: dict):
 
     row_vals = [embed_mean]
     for key in cols[1:]:
+        if key == 'lm_head':
+            row_vals.append(float(lm_head_mean) if lm_head_mean is not None else math.nan)
+            continue
         vals = suffix_vals.get(key, [])
         row_vals.append(float(np.mean(vals)) if vals else math.nan)
 
